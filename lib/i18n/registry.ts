@@ -11,6 +11,7 @@
  *   visits        (tabs)/visits.tsx, visits/*, VisitRow, StatusPill, VisitLogForm, ProductPicker, lib/visits
  *   clinics       (tabs)/clinics.tsx, ClinicRow
  *   booking       clinics/[id]/book, visits/[id]/move, booking.tsx, visit detail Move/Cancel
+ *   deliveries    visits/[id]/deliver, DeliveryCard, product "Where it is", log form clinic link
  *   plan          plan.tsx, PlanCard, lib/plan
  *   team          team/*, TeamMemberRow, lib/team
  *   products      (tabs)/products.tsx, products/*, ProductCards, ProductForm, lib/products
@@ -25,6 +26,7 @@ import auth from './strings/auth';
 import booking from './strings/booking';
 import clinics from './strings/clinics';
 import common from './strings/common';
+import deliveries from './strings/deliveries';
 import home from './strings/home';
 import more from './strings/more';
 import nav from './strings/nav';
@@ -44,6 +46,7 @@ export const catalogs = {
   booking,
   clinics,
   common,
+  deliveries,
   home,
   more,
   nav,

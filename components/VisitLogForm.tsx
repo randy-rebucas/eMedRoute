@@ -8,6 +8,7 @@ import { LogEntryInput, PersonalVisitStatus, Visit } from '@/lib/types';
 import { type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { visitDay } from '@/lib/visits';
+import { ClinicLinkField, LinkedClinic } from './ClinicLinkField';
 import { Field } from './forms';
 import { ChoiceChips, DateField, TimeField } from './pickers';
 import { ProductPickerField } from './ProductPicker';
@@ -27,6 +28,7 @@ interface FormState {
   status: PersonalVisitStatus;
   notes: string;
   productIds: string[];
+  linked: LinkedClinic | null;
 }
 
 function initial(visit?: Visit): FormState {
@@ -41,6 +43,7 @@ function initial(visit?: Visit): FormState {
       status: 'scheduled',
       notes: '',
       productIds: [],
+      linked: null,
     };
   }
   return {
@@ -55,6 +58,7 @@ function initial(visit?: Visit): FormState {
       : 'scheduled',
     notes: visit.notes ?? '',
     productIds: visit.productIds ?? [],
+    linked: visit.linkedClinicId ? { id: visit.linkedClinicId, name: visit.clinicName, location: visit.clinicLocation } : null,
   };
 }
 
@@ -90,13 +94,16 @@ export function VisitLogForm({
   async function save() {
     if (saving) return;
     setSubmitted(true);
-    if (!form.clinicName.trim() || !form.clinicLocation.trim() || !form.purpose.trim() || !form.date || !form.time) return;
+    const name = form.linked ? form.linked.name : form.clinicName.trim();
+    const location = form.linked ? form.linked.location || form.clinicLocation.trim() || form.linked.name : form.clinicLocation.trim();
+    if (!name || !location || !form.purpose.trim() || !form.date || !form.time) return;
     setSaving(true);
     setError(null);
     try {
       await onSubmit({
-        clinicName: form.clinicName.trim(),
-        clinicLocation: form.clinicLocation.trim(),
+        clinicName: name,
+        clinicLocation: location,
+        linkedClinicId: form.linked ? form.linked.id : null,
         purpose: form.purpose.trim(),
         date: form.date,
         time: form.time,
@@ -118,21 +125,34 @@ export function VisitLogForm({
         {!visit ? <Text style={[type.secondary, styles.intro]}>{t('visits.form.logIntro')}</Text> : null}
         {error ? <Banner message={error} /> : null}
 
-        <Field
-          label={t('visits.form.clinicName')}
-          value={form.clinicName}
-          onChangeText={(v) => set('clinicName', v)}
-          maxLength={MAX.clinicName}
-          error={required('clinicName')}
+        <ClinicLinkField
+          value={form.linked}
+          onChange={(clinic) => {
+            set('linked', clinic);
+            // Unlinking leaves the clinic's details in the fields, to keep or change.
+            if (!clinic && form.linked) setForm((f) => ({ ...f, linked: null, clinicName: form.linked!.name, clinicLocation: form.linked!.location }));
+          }}
         />
-        <Field
-          label={t('visits.form.clinicLocation')}
-          value={form.clinicLocation}
-          onChangeText={(v) => set('clinicLocation', v)}
-          maxLength={MAX.clinicLocation}
-          hint={t('visits.form.clinicLocationHint')}
-          error={required('clinicLocation')}
-        />
+        {/* A linked clinic names the visit; the typed fields are for a clinic not on MyClinicSoft. */}
+        {!form.linked ? (
+          <>
+            <Field
+              label={t('visits.form.clinicName')}
+              value={form.clinicName}
+              onChangeText={(v) => set('clinicName', v)}
+              maxLength={MAX.clinicName}
+              error={required('clinicName')}
+            />
+            <Field
+              label={t('visits.form.clinicLocation')}
+              value={form.clinicLocation}
+              onChangeText={(v) => set('clinicLocation', v)}
+              maxLength={MAX.clinicLocation}
+              hint={t('visits.form.clinicLocationHint')}
+              error={required('clinicLocation')}
+            />
+          </>
+        ) : null}
         <DateField
           label={t('visits.form.date')}
           value={form.date}

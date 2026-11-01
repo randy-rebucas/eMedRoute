@@ -80,6 +80,11 @@ export interface Visit {
   _id: string;
   /** Set for visits booked with a clinic on MyClinicSoft; unset on the rep's own log entries. */
   clinicId?: string | null;
+  /**
+   * An own log entry linked to a clinic on MyClinicSoft (the clinic didn't book it): deliveries
+   * can go to it. Doesn't make the visit a booking.
+   */
+  linkedClinicId?: string | null;
   clinicName: string;
   clinicLocation: string;
   /** Shown to the clinic. */
@@ -114,6 +119,8 @@ export interface LogEntryInput {
   status?: PersonalVisitStatus;
   notes?: string;
   productIds?: string[];
+  /** A clinic from GET /clinics (its name and location replace the typed ones); null unlinks. */
+  linkedClinicId?: string | null;
 }
 
 /** POST /visits with `clinicId`: a request to the clinic. `date` is "YYYY-MM-DD", `time` one of its slots. */
@@ -339,4 +346,47 @@ export interface SupportCreateResponse {
   success: true;
   message?: string;
   reference: string;
+}
+
+// ── Deliveries ───────────────────────────────────────────────────────────────
+
+export type DeliveryKind = 'sample' | 'delivery';
+export type DeliveryStatus = 'pending' | 'received' | 'rejected' | 'cancelled';
+
+export interface DeliveryLine {
+  productId: string;
+  /** As the product was when delivered. */
+  productName: string;
+  strength?: string;
+  quantity: number;
+  unit: string;
+  lotNumber?: string;
+  expiryDate?: string;
+  /** What the clinic counted on receipt; can differ from `quantity`. */
+  receivedQuantity?: number;
+  /** Set when the clinic put the line into its stock. */
+  inventoryItemId?: string;
+}
+
+/** GET /deliveries item (MOBILE_API.md → Deliveries and samples). */
+export interface Delivery {
+  _id: string;
+  visitId: string;
+  clinicId: string;
+  clinicName: string;
+  kind: DeliveryKind;
+  status: DeliveryStatus;
+  lines: DeliveryLine[];
+  note?: string;
+  clinicNote?: string;
+  respondedAt?: string;
+  createdAt: string;
+}
+
+/** POST /deliveries. `expiryDate` is "YYYY-MM-DD"; left out, the product's is used. */
+export interface DeliveryInput {
+  visitId: string;
+  kind: DeliveryKind;
+  lines: { productId: string; quantity: number; unit: string; lotNumber?: string; expiryDate?: string }[];
+  note?: string;
 }

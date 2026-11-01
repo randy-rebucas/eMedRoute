@@ -18,7 +18,9 @@ import { ThinProgress } from '@/components/Loading';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { productLabel } from '@/components/ProductPicker';
 import { StatusPill } from '@/components/StatusPill';
-import { Banner, Button, IconName, LoadingView, screenStyles, useBottomPadding } from '@/components/ui';
+import { Banner, Button, IconName, LoadingView, screenStyles, SectionHeader, useBottomPadding } from '@/components/ui';
+import { DeliveryCard } from '@/components/DeliveryCard';
+import { canDeliver, cancelDelivery, useVisitDeliveries } from '@/lib/deliveries';
 import { isNetworkError } from '@/lib/useApiData';
 import { nextStepText, visitA11yLabel } from '@/components/VisitRow';
 
@@ -28,6 +30,8 @@ export default function VisitDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: visit, loading, refreshing, error, offline, stale, updatedAt, refresh } = useVisit(id);
   const { data: activeProducts } = useActiveProducts();
+  const { data: deliveries } = useVisitDeliveries(id);
+  const [cancellingDelivery, setCancellingDelivery] = useState<string | null>(null);
   const paddingBottom = useBottomPadding();
   // The clinic's booking instructions go with an approved visit ("Arrive by 15:00" + where to go).
   const { clinic } = useClinic(visit?.status === 'scheduled' && !visit.checkedInAt ? visit.clinicId : null);
@@ -58,6 +62,31 @@ export default function VisitDetailScreen() {
       topics: ['visits', 'dashboard'],
     });
     router.back();
+  }
+
+  function confirmCancelDelivery(deliveryId: string) {
+    if (!visit) return;
+    // The clinic was asked to confirm it, so cancelling is confirmed first.
+    Alert.alert(t('deliveries.cancelConfirmTitle'), t('deliveries.cancelConfirmBody', { clinic: visit.clinicName }), [
+      { text: t('deliveries.keep'), style: 'cancel' },
+      {
+        text: t('deliveries.cancel'),
+        style: 'destructive',
+        onPress: async () => {
+          setCancellingDelivery(deliveryId);
+          setProblem(null);
+          try {
+            await cancelDelivery(deliveryId);
+          } catch (err) {
+            if (isNetworkError(err)) setProblem(t('common.needsConnection'));
+            else if (err instanceof ApiError && err.code === 'DELIVERY_CLOSED') setProblem(t('deliveries.error.closed'));
+            else setProblem(errorMessage(err));
+          } finally {
+            setCancellingDelivery(null);
+          }
+        },
+      },
+    ]);
   }
 
   function confirmCancel() {
@@ -156,6 +185,34 @@ export default function VisitDetailScreen() {
           <Text style={[type.body, !visit.notes && styles.muted]}>{visit.notes || t('visits.detail.noNotes')}</Text>
         </Fact>
       </View>
+
+      {deliveries?.length || canDeliver(visit) || (own && visit.status !== 'cancelled') ? (
+        <View style={styles.deliveries}>
+          <SectionHeader title={t('deliveries.section')} />
+          {(deliveries ?? []).map((d) => (
+            <DeliveryCard
+              key={d._id}
+              delivery={d}
+              cancelling={cancellingDelivery === d._id}
+              onCancel={offline ? undefined : () => confirmCancelDelivery(d._id)}
+            />
+          ))}
+          {canDeliver(visit) ? (
+            <>
+              {!deliveries?.length ? <Text style={type.secondary}>{t('deliveries.recordHint')}</Text> : null}
+              <Button
+                title={t('deliveries.record')}
+                icon="cube-outline"
+                variant="secondary"
+                onPress={() => router.push(`/visits/${visit._id}/deliver`)}
+                disabled={offline}
+              />
+            </>
+          ) : own && !visit.linkedClinicId ? (
+            <Text style={type.secondary}>{t('deliveries.linkToDeliver')}</Text>
+          ) : null}
+        </View>
+      ) : null}
 
       {upcoming && visit.clinicLocation ? (
         <Button
@@ -257,4 +314,5 @@ const styles = StyleSheet.create({
   factBody: { flex: 1, gap: 2 },
   factLast: { borderBottomWidth: 0 },
   muted: { color: colors.textMuted },
+  deliveries: { marginTop: spacing.md, marginBottom: spacing.sm, gap: spacing.xs },
 });
