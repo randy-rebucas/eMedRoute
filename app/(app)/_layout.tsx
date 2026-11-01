@@ -35,6 +35,7 @@ export default function AppLayout() {
         <Stack.Screen name="products/[id]/index" options={{ title: t('products.title.product') }} />
         <Stack.Screen name="products/[id]/edit" options={{ title: t('products.title.edit') }} />
         <Stack.Screen name="products/new" options={{ title: t('products.title.new'), presentation: 'modal' }} />
+        <Stack.Screen name="products/import" options={{ title: t('products.import.title'), presentation: 'modal' }} />
         <Stack.Screen name="profile/index" options={{ title: t('more.profile') }} />
         <Stack.Screen name="profile/edit" options={{ title: t('profile.editTitle') }} />
         <Stack.Screen name="settings" options={{ title: t('more.settings') }} />

@@ -39,7 +39,16 @@ export default function ProductsScreen() {
               <Text style={type.screenTitle} accessibilityRole="header">
                 {t('nav.products')}
               </Text>
-              <Button title={t('products.add')} icon="add-outline" variant="secondary" onPress={() => router.push('/products/new')} style={styles.addButton} />
+              <View style={styles.actions}>
+                <Button
+                  title={t('products.import.action')}
+                  icon="cloud-upload-outline"
+                  variant="secondary"
+                  onPress={() => router.push('/products/import')}
+                  style={styles.addButton}
+                />
+                <Button title={t('products.add')} icon="add-outline" variant="secondary" onPress={() => router.push('/products/new')} style={styles.addButton} />
+              </View>
             </View>
             <ChoiceChips
               options={[
@@ -64,7 +73,7 @@ export default function ProductsScreen() {
             <EmptyState
               art="products"
               title={filter === 'active' ? t('products.emptyActive') : t('products.empty')}
-              action={filter === 'active' ? { title: t('products.add'), icon: 'add-outline', onPress: () => router.push('/products/new') } : undefined}
+              action={filter === 'active' ? { title: t('products.import.title'), icon: 'cloud-upload-outline', onPress: () => router.push('/products/import') } : undefined}
             />
           )
         }
@@ -78,5 +87,6 @@ export default function ProductsScreen() {
 const styles = StyleSheet.create({
   header: { gap: spacing.sm, marginBottom: spacing.sm },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   addButton: { marginTop: 0 },
 });
