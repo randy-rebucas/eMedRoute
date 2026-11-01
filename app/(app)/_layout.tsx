@@ -29,6 +29,8 @@ export default function AppLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="visits/[id]/index" options={{ title: t('visits.title.visit') }} />
         <Stack.Screen name="visits/[id]/edit" options={{ title: t('visits.title.edit') }} />
+        <Stack.Screen name="visits/[id]/move" options={{ title: t('booking.moveTitle'), presentation: 'modal' }} />
+        <Stack.Screen name="clinics/[id]/book" options={{ title: t('booking.title'), presentation: 'modal' }} />
         <Stack.Screen name="visits/log" options={{ title: t('visits.title.new'), presentation: 'modal' }} />
         <Stack.Screen name="products/[id]/index" options={{ title: t('products.title.product') }} />
         <Stack.Screen name="products/[id]/edit" options={{ title: t('products.title.edit') }} />

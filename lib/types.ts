@@ -116,6 +116,50 @@ export interface LogEntryInput {
   productIds?: string[];
 }
 
+/** POST /visits with `clinicId`: a request to the clinic. `date` is "YYYY-MM-DD", `time` one of its slots. */
+export interface BookingInput {
+  clinicId: string;
+  purpose: string;
+  date: string;
+  time: string;
+  notes?: string;
+  productIds?: string[];
+}
+
+// ── Clinics ──────────────────────────────────────────────────────────────────
+
+/** GET /clinics items: clinics the rep can book. */
+export interface Clinic {
+  id: string;
+  name: string;
+  location: string;
+  city: string | null;
+  /** The clinic added this rep (otherwise it is open to all reps). */
+  linked: boolean;
+  /** One line per window, from describeWindows: "Tue 15:00–17:00" (English day, clinic time). */
+  hours: string[];
+  slotMinutes: number;
+  maxAdvanceDays: number;
+  /** Shown to reps when they book: where to go, what to bring. */
+  instructions: string | null;
+}
+
+export interface Slot {
+  /** "HH:mm", the clinic's local time. */
+  time: string;
+  /** Approved visits the slot can still take; 0 = full. */
+  remaining: number;
+}
+
+/** GET /clinics/[id]/slots?date=YYYY-MM-DD */
+export interface ClinicSlots {
+  clinicId: string;
+  date: string;
+  timezone: string;
+  slotMinutes: number;
+  slots: Slot[];
+}
+
 // ── Products ─────────────────────────────────────────────────────────────────
 
 export const PRODUCT_STATUSES = ['active', 'discontinued', 'inactive'] as const;

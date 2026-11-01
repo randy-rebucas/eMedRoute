@@ -1,6 +1,10 @@
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { ApiError, errorMessage } from '@/lib/api';
+import { cancelVisit, useClinic } from '@/lib/clinics';
+import { emitRefresh } from '@/lib/events';
 import { formatDay } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { openDirections } from '@/lib/maps';
@@ -14,7 +18,8 @@ import { ThinProgress } from '@/components/Loading';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { productLabel } from '@/components/ProductPicker';
 import { StatusPill } from '@/components/StatusPill';
-import { Button, LoadingView, screenStyles, useBottomPadding } from '@/components/ui';
+import { Banner, Button, LoadingView, screenStyles, useBottomPadding } from '@/components/ui';
+import { isNetworkError } from '@/lib/useApiData';
 import { nextStepText, visitA11yLabel } from '@/components/VisitRow';
 
 /** One visit: status and who acts next, the clinic's words, the details, and what the rep can do. */
@@ -24,6 +29,10 @@ export default function VisitDetailScreen() {
   const { data: visit, loading, refreshing, error, offline, stale, updatedAt, refresh } = useVisit(id);
   const { data: activeProducts } = useActiveProducts();
   const paddingBottom = useBottomPadding();
+  // The clinic's booking instructions go with an approved visit ("Arrive by 15:00" + where to go).
+  const { clinic } = useClinic(visit?.status === 'scheduled' && !visit.checkedInAt ? visit.clinicId : null);
+  const [cancelling, setCancelling] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
 
   if (!visit) {
     if (loading) return <LoadingView />;
@@ -49,6 +58,35 @@ export default function VisitDetailScreen() {
       topics: ['visits', 'dashboard'],
     });
     router.back();
+  }
+
+  function confirmCancel() {
+    if (!visit) return;
+    // The clinic sees a cancellation, so it is confirmed first.
+    Alert.alert(t('booking.cancelConfirmTitle'), t('booking.cancelConfirmBody', { clinic: visit.clinicName }), [
+      { text: t('booking.keep'), style: 'cancel' },
+      { text: t('booking.cancelVisit'), style: 'destructive', onPress: () => doCancel(visit._id) },
+    ]);
+  }
+
+  async function doCancel(visitId: string) {
+    setCancelling(true);
+    setProblem(null);
+    try {
+      await cancelVisit(visitId);
+    } catch (err) {
+      if (isNetworkError(err)) setProblem(t('common.needsConnection'));
+      else if (err instanceof ApiError && err.code === 'VISIT_CHANGED') {
+        // The clinic answered at the same moment: show what it did, then the rep decides again.
+        emitRefresh('visits');
+        setProblem(t('booking.visitChanged'));
+      } else if (err instanceof ApiError && err.code === 'VISIT_CLOSED') {
+        emitRefresh('visits');
+        setProblem(t('booking.closedCantMove'));
+      } else setProblem(errorMessage(err));
+    } finally {
+      setCancelling(false);
+    }
   }
 
   return (
@@ -78,6 +116,12 @@ export default function VisitDetailScreen() {
           <Text style={[type.body, styles.strong]}>{line}</Text>
           {state === 'waiting' ? <Text style={type.secondary}>{t('visits.whoNext.clinic')}</Text> : null}
           {state === 'approved' ? <Text style={type.secondary}>{t('visits.whoNext.you')}</Text> : null}
+          {state === 'approved' && clinic?.instructions ? (
+            <View style={styles.quote}>
+              <Text style={type.label}>{t('booking.fromClinic', { clinic: visit.clinicName })}</Text>
+              <Text style={type.body}>{clinic.instructions}</Text>
+            </View>
+          ) : null}
         </View>
       ) : null}
 
@@ -120,6 +164,13 @@ export default function VisitDetailScreen() {
           variant="secondary"
           onPress={() => openDirections(`${visit.clinicName}, ${visit.clinicLocation}`).catch(() => {})}
         />
+      ) : null}
+      {problem ? <Banner message={problem} /> : null}
+      {open ? (
+        <>
+          <Button title={t('booking.move')} icon="swap-horizontal-outline" variant="secondary" onPress={() => router.push(`/visits/${visit._id}/move`)} disabled={offline} />
+          <Button title={t('booking.cancelVisit')} icon="close-circle-outline" variant="dangerOutline" onPress={confirmCancel} loading={cancelling} disabled={offline} />
+        </>
       ) : null}
       {own ? (
         <Button title={t('visits.edit')} icon="create-outline" variant="secondary" onPress={() => router.push(`/visits/${visit._id}/edit`)} />

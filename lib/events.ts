@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
  * Tiny in-process "this data changed" bus. Push taps and mutations (booking, cancelling,
  * editing a product…) emit a topic; screens showing that data refetch.
  */
-export type RefreshTopic = 'visits' | 'products' | 'team' | 'subscription' | 'dashboard' | 'profile' | 'support';
+export type RefreshTopic = 'visits' | 'products' | 'clinics' | 'team' | 'subscription' | 'dashboard' | 'profile' | 'support';
 
 type Listener = () => void;
 const listeners = new Map<RefreshTopic, Set<Listener>>();

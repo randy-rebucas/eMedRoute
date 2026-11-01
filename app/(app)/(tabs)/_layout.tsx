@@ -11,7 +11,7 @@ function tabIcon(name: IconName) {
 }
 
 /**
- * Bottom tabs. Clinics joins them in phase 3.
+ * Bottom tabs: Home, Visits, Clinics, Products, More.
  */
 export default function TabsLayout() {
   const t = useT();
@@ -28,6 +28,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="home" options={{ title: t('nav.home'), tabBarIcon: tabIcon('home-outline') }} />
       <Tabs.Screen name="visits" options={{ title: t('nav.visits'), tabBarIcon: tabIcon('calendar-outline') }} />
+      <Tabs.Screen name="clinics" options={{ title: t('nav.clinics'), tabBarIcon: tabIcon('business-outline') }} />
       <Tabs.Screen name="products" options={{ title: t('nav.products'), tabBarIcon: tabIcon('medkit-outline') }} />
       <Tabs.Screen
         name="more"

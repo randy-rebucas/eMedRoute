@@ -50,8 +50,9 @@ cache folder (`rep-offline`) and push registration (`/api/medical-representative
 
 ```
 app/(auth)/        login, two-step (authenticator code), enable-notifications
-app/(app)/(tabs)/  home, visits, products, more  (clinics: phase 3)
-app/(app)/         visits/[id], visits/log, products/[id], products/new, profile, settings,
+app/(app)/(tabs)/  home, visits, clinics, products, more
+app/(app)/         visits/[id] (+ edit, move), visits/log, clinics/[id]/book, products/[id], products/new,
+                   profile, settings,
                    change-password, support
 lib/               api (Bearer + single-flight refresh), auth, push, storage, i18n, types,
                    visits (status rules + lists), products, dashboard, undo (delete + Undo)
@@ -65,5 +66,5 @@ scripts/           generate-brand.mjs (npm run brand)
 1. **Foundation** (done): sign-in with two-step code, token refresh, device registration,
    Profile, Settings, Support.
 2. **Own work** (done): Home, Visits with the own log, Products, offline cache, reminder push routing.
-3. Clinic booking: Clinics, slot sheet, request/move/cancel, visit pushes and deep links.
+3. **Clinic booking** (built; end-to-end run pending): Clinics, slot sheet, request/move/cancel, visit pushes.
 4. Teams and plan.

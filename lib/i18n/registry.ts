@@ -9,6 +9,8 @@
  *   nav           app/(app)/(tabs)/_layout.tsx (tab names)
  *   home          app/(app)/(tabs)/home.tsx, NextVisitCard
  *   visits        (tabs)/visits.tsx, visits/*, VisitRow, StatusPill, VisitLogForm, ProductPicker, lib/visits
+ *   clinics       (tabs)/clinics.tsx, ClinicRow
+ *   booking       clinics/[id]/book, visits/[id]/move, booking.tsx, visit detail Move/Cancel
  *   products      (tabs)/products.tsx, products/*, ProductCards, ProductForm, lib/products
  *   more          app/(app)/(tabs)/more.tsx, stack titles in app/(app)/_layout.tsx
  *   profile       app/(app)/profile/*
@@ -18,6 +20,8 @@
  *   notifications lib/push
  */
 import auth from './strings/auth';
+import booking from './strings/booking';
+import clinics from './strings/clinics';
 import common from './strings/common';
 import home from './strings/home';
 import more from './strings/more';
@@ -33,6 +37,8 @@ import type { Message, ParamsArg } from './types';
 
 export const catalogs = {
   auth,
+  booking,
+  clinics,
   common,
   home,
   more,

@@ -19,7 +19,7 @@ const RANGES: DateRange[] = ['any', 'thisMonth', 'lastMonth', 'last90'];
 /** Visits: Upcoming (waiting + approved), Past, and My log, with a date filter on the last two. */
 export default function VisitsScreen() {
   const t = useT();
-  const params = useLocalSearchParams<{ segment?: string; range?: string }>();
+  const params = useLocalSearchParams<{ segment?: string; range?: string; open?: string }>();
   const [segment, setSegment] = useState<VisitSegment>('upcoming');
   const [range, setRange] = useState<DateRange>('any');
 
@@ -28,6 +28,14 @@ export default function VisitsScreen() {
     if (params.segment && (SEGMENTS as string[]).includes(params.segment)) setSegment(params.segment as VisitSegment);
     setRange(params.range && (RANGES as string[]).includes(params.range) ? (params.range as DateRange) : 'any');
   }, [params.segment, params.range]);
+
+  // After a booking is sent: land on Upcoming, then open the new visit on top of it.
+  useEffect(() => {
+    if (!params.open) return;
+    const id = params.open;
+    router.setParams({ open: undefined });
+    router.push(`/visits/${id}`);
+  }, [params.open]);
 
   const list = useVisitList(segment, segment === 'upcoming' ? 'any' : range);
   const { items, loading, refreshing, loadingMore, error, loadMoreError, offline, stale, updatedAt, hasMore } = list;
