@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { parseHours } from '@/lib/clinics';
 import { formatDay } from '@/lib/format';
@@ -23,22 +23,46 @@ export function clinicA11yLabel(t: TFunction, clinic: Clinic): string {
   return [clinic.name, clinic.location, clinic.linked ? t('clinics.linked') : null, hoursLines(clinic).join('; ')].filter(Boolean).join(', ');
 }
 
-/** A clinic in the directory: name, place, linked badge, rep hours, instructions, and Book. */
+/** "Sunrise Medical Clinic" → "SM": the clinic's monogram tile, since clinics have no logo in the API. */
+function monogram(name: string): string {
+  const words = name.split(/\s+/).filter((w) => /^[\p{L}\p{N}]/u.test(w));
+  return words
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+}
+
+/** A clinic in the directory: monogram, name, place, linked badge, rep hours, instructions, and Book. */
 export function ClinicRow({ clinic, onBook }: { clinic: Clinic; onBook: () => void }) {
   const t = useT();
   return (
     <View style={styles.card}>
       <View accessible accessibilityLabel={clinicA11yLabel(t, clinic)}>
-        <View style={styles.head}>
-          <Text style={[type.cardTitle, styles.name]}>{clinic.name}</Text>
-          {clinic.linked ? (
-            <View style={styles.linked}>
-              <Ionicons name="link-outline" size={14} color={colors.primaryOnSoft} />
-              <Text style={[type.pill, { color: colors.primaryOnSoft }]}>{t('clinics.linked')}</Text>
+        <View style={styles.top}>
+          <View style={styles.mark}>
+            <Text style={styles.markText} maxFontSizeMultiplier={1.3}>
+              {monogram(clinic.name)}
+            </Text>
+          </View>
+          <View style={styles.titleBox}>
+            <View style={styles.head}>
+              <Text style={[type.cardTitle, styles.name]}>{clinic.name}</Text>
+              {clinic.linked ? (
+                <View style={styles.linked}>
+                  <Ionicons name="link-outline" size={14} color={colors.primaryOnSoft} />
+                  <Text style={[type.pill, { color: colors.primaryOnSoft }]}>{t('clinics.linked')}</Text>
+                </View>
+              ) : null}
             </View>
-          ) : null}
+            {clinic.location ? (
+              <View style={styles.place}>
+                <Ionicons name="location-outline" size={14} color={colors.textMuted} />
+                <Text style={[type.secondary, styles.placeText]}>{clinic.location}</Text>
+              </View>
+            ) : null}
+          </View>
         </View>
-        {clinic.location ? <Text style={type.secondary}>{clinic.location}</Text> : null}
         <View style={styles.hours}>
           <Ionicons name="time-outline" size={16} color={colors.textMuted} />
           <View style={styles.hoursLines}>
@@ -50,9 +74,12 @@ export function ClinicRow({ clinic, onBook }: { clinic: Clinic; onBook: () => vo
           </View>
         </View>
         {clinic.instructions ? (
-          <Text style={[type.secondary, styles.instructions]} numberOfLines={2}>
-            {clinic.instructions}
-          </Text>
+          <View style={styles.instructions}>
+            <Ionicons name="information-circle-outline" size={16} color={colors.textMuted} />
+            <Text style={[type.secondary, styles.placeText]} numberOfLines={2}>
+              {clinic.instructions}
+            </Text>
+          </View>
         ) : null}
       </View>
       <Button
@@ -74,7 +101,13 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
+  top: { flexDirection: 'row', gap: spacing.sm + 4 },
+  mark: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.slateSoft, alignItems: 'center', justifyContent: 'center' },
+  markText: { fontSize: 17, fontWeight: '700', color: colors.slate },
+  titleBox: { flex: 1, gap: 2 },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, flexWrap: 'wrap' },
+  place: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs },
+  placeText: { flex: 1 },
   name: { flexShrink: 1 },
   linked: {
     flexDirection: 'row',
@@ -85,8 +118,17 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     backgroundColor: colors.primarySoft,
   },
-  hours: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  hours: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm + 4,
+    padding: spacing.sm + 4,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
   hoursLines: { gap: 2 },
-  instructions: { marginTop: spacing.sm },
+  instructions: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginTop: spacing.sm },
   book: { marginTop: spacing.md },
 });

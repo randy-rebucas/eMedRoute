@@ -6,13 +6,10 @@ import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/lib/theme';
 import { BrandLogo } from './BrandLogo';
 
-/** Logo + profile avatar, for the top of tab screens. */
-export function AppHeader() {
-  const { rep } = useAuth();
-  const pathname = usePathname();
-  const t = useT();
-  const initials = rep?.name
-    ? rep.name
+/** "Ana Reyes" → "AR", for avatars. */
+export function initialsOf(name: string | null | undefined): string {
+  return name
+    ? name
         .split(/\s+/)
         .filter(Boolean)
         .slice(0, 2)
@@ -20,6 +17,14 @@ export function AppHeader() {
         .join('')
         .toUpperCase()
     : '';
+}
+
+/** Logo + profile avatar, for the top of tab screens. */
+export function AppHeader() {
+  const { rep } = useAuth();
+  const pathname = usePathname();
+  const t = useT();
+  const initials = initialsOf(rep?.name);
 
   return (
     <View style={styles.bar}>

@@ -27,13 +27,14 @@ const LOOK: Record<VisitState, { icon: IconName; box: ViewStyle; text: TextStyle
 
 /**
  * A visit's status as word + icon + colour, the same everywhere. Screen readers get the word
- * from the row's own label, so the pill itself is hidden from them.
+ * from the row's own label, so the pill itself is hidden from them. `onDark` (the navy hero)
+ * fills the outline-only pills so their text keeps 4.5:1.
  */
-export function StatusPill({ state }: { state: VisitState }) {
+export function StatusPill({ state, onDark = false }: { state: VisitState; onDark?: boolean }) {
   const t = useT();
   const look = LOOK[state];
   return (
-    <View style={[styles.pill, look.box]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <View style={[styles.pill, look.box, onDark && look.box.backgroundColor === 'transparent' && styles.filled]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <Ionicons name={look.icon} size={14} color={look.text.color as string} />
       <Text style={[type.pill, look.text]} maxFontSizeMultiplier={1.6}>
         {t(VISIT_STATE_LABEL[state])}
@@ -43,6 +44,7 @@ export function StatusPill({ state }: { state: VisitState }) {
 }
 
 const styles = StyleSheet.create({
+  filled: { backgroundColor: colors.surface },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',

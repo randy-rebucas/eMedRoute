@@ -8,7 +8,7 @@ import { colors, radius, spacing } from '@/lib/theme';
 import { Product, ProductStatus } from '@/lib/types';
 import { mono, type } from '@/lib/typography';
 import { productLabel } from './ProductPicker';
-import { IconName } from './ui';
+import { IconName, IconTile } from './ui';
 
 export const PRODUCT_STATUS_LABEL: Record<ProductStatus, PlainKey> = {
   active: 'products.status.active',
@@ -44,6 +44,18 @@ export function ExpiryBadge({ product }: { product: Pick<Product, 'expiryDate' |
   );
 }
 
+/** An icon for the product's dosage form, read from the free-text dosage and packaging fields. */
+export function productIcon(product: Pick<Product, 'dosage' | 'packaging' | 'category'>): IconName {
+  const text = [product.dosage, product.packaging, product.category].filter(Boolean).join(' ').toLowerCase();
+  if (/inject|vial|ampul|syringe|\b(iv|im)\b/.test(text)) return 'medical-outline';
+  if (/drop|ophthal|\b(eye|ear)\b/.test(text)) return 'eyedrop-outline';
+  if (/syrup|suspension|solution|liquid|bottle|oral sol|elixir/.test(text)) return 'flask-outline';
+  if (/cream|ointment|gel|lotion|topical|patch/.test(text)) return 'bandage-outline';
+  if (/inhal|spray|nebul|aerosol/.test(text)) return 'cloud-outline';
+  if (/tablet|capsule|caplet|pill|\b(tabs?|caps?)\b/.test(text)) return 'medkit-outline';
+  return 'cube-outline';
+}
+
 /** One product in the catalog list. */
 export function ProductRow({ product }: { product: Product }) {
   const t = useT();
@@ -58,6 +70,9 @@ export function ProductRow({ product }: { product: Product }) {
 
   return (
     <TouchableOpacity style={styles.row} onPress={() => router.push(`/products/${product._id}`)} accessibilityRole="button" accessibilityLabel={a11y}>
+      <View style={styles.rowIcon}>
+        <IconTile icon={productIcon(product)} tone={product.status === 'active' ? 'slate' : 'neutral'} size={44} />
+      </View>
       <View style={styles.rowBody}>
         <Text style={type.cardTitle}>{productLabel(product)}</Text>
         <Text style={type.secondary} numberOfLines={1}>
@@ -92,6 +107,9 @@ export function ProductSheetCard({ product }: { product: Product }) {
   ];
   return (
     <View style={styles.sheet}>
+      <View style={styles.sheetIcon}>
+        <IconTile icon={productIcon(product)} tone="slate" size={56} />
+      </View>
       <Text style={type.screenTitle} accessibilityRole="header">
         {product.name}
       </Text>
@@ -130,7 +148,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.sm + 4,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: 1,
@@ -138,7 +156,9 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
+  rowIcon: { alignSelf: 'flex-start' },
   rowBody: { flex: 1, gap: 2 },
+  sheetIcon: { marginBottom: spacing.md },
   figure: { color: colors.text },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs },
   badge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 4 },

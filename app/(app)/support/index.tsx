@@ -8,6 +8,7 @@ import { useSupportRequests } from '@/lib/support';
 import { colors, radius, spacing } from '@/lib/theme';
 import { SupportRequest, SupportStatus } from '@/lib/types';
 import { mono, type } from '@/lib/typography';
+import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { Badge, Button, Card, IconName, ListFooter, LoadingView, screenStyles, useBottomPadding } from '@/components/ui';
 
@@ -43,7 +44,7 @@ export default function SupportScreen() {
           <Button title={t('support.new')} icon="create-outline" onPress={() => router.push('/support/new')} />
         </View>
       }
-      ListEmptyComponent={<Text style={[type.secondary, styles.empty]}>{t('support.empty')}</Text>}
+      ListEmptyComponent={<EmptyState art="search" title={t('support.empty')} />}
       ListFooterComponent={<ListFooter loadingMore={loadingMore} error={loadMoreError} onRetry={loadMore} />}
       renderItem={({ item }) => (
         <RequestCard request={item} expanded={open === item._id} onToggle={() => setOpen(open === item._id ? null : item._id)} />
@@ -117,7 +118,6 @@ function Message({ who, when, text, team = false }: { who: string; when: string;
 
 const styles = StyleSheet.create({
   header: { marginBottom: spacing.md, gap: spacing.xs },
-  empty: { textAlign: 'center', marginTop: spacing.lg },
   cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, minHeight: 48 },
   cardText: { flex: 1, gap: 2 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },

@@ -1,6 +1,7 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
-import { formatDay, formatTime } from '@/lib/format';
+import { Ionicons } from '@expo/vector-icons';
+import { daysFromToday, formatDay, formatTime } from '@/lib/format';
 import { TFunction, useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Visit } from '@/lib/types';
@@ -51,6 +52,7 @@ export function VisitRow({ visit, member }: { visit: VisitLike; member?: string 
   // The clinic's note on a decline replaces the generic line, quoted in the detail screen.
   const line = state === 'declined' && visit.clinicNote ? null : nextStepText(t, nextStep({ ...visit, cancelledBy: visit.cancelledBy }));
   const logWord = isOwnLog(visit) ? LOG_STATUS_LABEL[visit.status] : null;
+  const today = daysFromToday(day) === 0;
 
   return (
     <TouchableOpacity
@@ -61,14 +63,14 @@ export function VisitRow({ visit, member }: { visit: VisitLike; member?: string 
       accessibilityLabel={member ? `${member}, ${visitA11yLabel(t, visit)}` : visitA11yLabel(t, visit)}
       accessibilityHint={line ?? undefined}
     >
-      <View style={styles.day}>
-        <Text style={[type.secondary, styles.dayWeek]} maxFontSizeMultiplier={1.4}>
+      <View style={[styles.day, today && styles.dayToday]}>
+        <Text style={[type.secondary, styles.dayWeek, today && styles.onNavyMuted]} maxFontSizeMultiplier={1.4}>
           {formatDay(day, { weekday: 'short' })}
         </Text>
-        <Text style={[mono, styles.dayNumber]} maxFontSizeMultiplier={1.4}>
+        <Text style={[mono, styles.dayNumber, today && styles.onNavy]} maxFontSizeMultiplier={1.4}>
           {day.slice(8, 10)}
         </Text>
-        <Text style={[type.secondary, styles.dayWeek]} maxFontSizeMultiplier={1.4}>
+        <Text style={[type.secondary, styles.dayWeek, today && styles.onNavyMuted]} maxFontSizeMultiplier={1.4}>
           {formatDay(day, { month: 'short' })}
         </Text>
       </View>
@@ -87,6 +89,7 @@ export function VisitRow({ visit, member }: { visit: VisitLike; member?: string 
         </View>
         {line ? <Text style={[type.secondary, styles.line]}>{line}</Text> : null}
       </View>
+      {member ? null : <Ionicons name="chevron-forward" size={20} color={colors.textMuted} style={styles.chevron} />}
     </TouchableOpacity>
   );
 }
@@ -102,9 +105,14 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
-  day: { width: 48, alignItems: 'center' },
-  dayWeek: { textTransform: 'uppercase', fontSize: 12 },
-  dayNumber: { fontSize: 22, fontWeight: '700', color: colors.text },
+  // The date as a tile; today's is navy, the rep app's own colour (not teal, which means "act").
+  day: { width: 56, alignItems: 'center', alignSelf: 'flex-start', borderRadius: radius.sm + 2, backgroundColor: colors.slateSoft, paddingVertical: spacing.sm },
+  dayToday: { backgroundColor: colors.navy },
+  dayWeek: { textTransform: 'uppercase', fontSize: 12, fontWeight: '600' },
+  dayNumber: { fontSize: 22, lineHeight: 26, fontWeight: '700', color: colors.text },
+  onNavy: { color: colors.primaryText },
+  onNavyMuted: { color: colors.onNavyMuted },
+  chevron: { alignSelf: 'center' },
   body: { flex: 1, gap: 2 },
   time: { color: colors.text, fontWeight: '600' },
   status: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs, flexWrap: 'wrap' },

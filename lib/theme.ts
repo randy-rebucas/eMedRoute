@@ -24,6 +24,12 @@ export const colors = {
   warningSoft: '#FFF4DC',
   slateSoft: '#EAF0F5',
   slate: '#4A6684',
+  /** The rep app's own surface (its icon is the mark on navy): the next-visit hero only. */
+  navy: '#0B2136',
+  /** Secondary text on navy: 9.6:1. */
+  onNavyMuted: '#A9BCCF',
+  /** Hairlines and outline buttons on navy. */
+  navyLine: '#24405C',
 };
 
 export const spacing = {

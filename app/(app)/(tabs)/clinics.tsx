@@ -9,6 +9,7 @@ import { bookingBlocked, useSubscription } from '@/lib/plan';
 import { colors, radius, spacing } from '@/lib/theme';
 import { type } from '@/lib/typography';
 import { ClinicRow } from '@/components/ClinicRow';
+import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { SkeletonRows } from '@/components/Loading';
 import { ListFooter, screenStyles } from '@/components/ui';
@@ -71,7 +72,7 @@ export default function ClinicsScreen() {
           ) : error ? (
             <ErrorState message={error} onRetry={list.reload} />
           ) : (
-            <Text style={[type.secondary, styles.empty]}>{query.trim() ? t('clinics.noMatch') : t('clinics.empty')}</Text>
+            <EmptyState art={query.trim() ? 'search' : 'clinic'} title={query.trim() ? t('clinics.noMatch') : t('clinics.empty')} />
           )
         }
         ListFooterComponent={<ListFooter loadingMore={loadingMore} error={loadMoreError} onRetry={list.loadMore} />}
@@ -99,5 +100,4 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   searchInput: { flex: 1, fontSize: 15, color: colors.text, paddingVertical: spacing.sm },
-  empty: { textAlign: 'center', marginTop: spacing.lg },
 });

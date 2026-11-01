@@ -6,6 +6,7 @@ import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/lib/theme';
 import { type } from '@/lib/typography';
 import { DateRange, useVisitList, VisitSegment } from '@/lib/visits';
+import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { SkeletonRows, ThinProgress } from '@/components/Loading';
 import { OfflineBanner } from '@/components/OfflineBanner';
@@ -93,7 +94,11 @@ export default function VisitsScreen() {
           ) : error ? (
             <ErrorState message={error} onRetry={list.reload} />
           ) : (
-            <Text style={[type.secondary, styles.empty]}>{empty}</Text>
+            <EmptyState
+              art="calendar"
+              title={empty}
+              action={segment === 'past' ? undefined : { title: t('visits.log'), icon: 'add-outline', onPress: () => router.push('/visits/log') }}
+            />
           )
         }
         ListFooterComponent={<ListFooter loadingMore={loadingMore} error={loadMoreError} onRetry={list.loadMore} />}
@@ -108,5 +113,4 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
   logButton: { marginTop: 0 },
   range: { marginBottom: -spacing.md },
-  empty: { textAlign: 'center', marginTop: spacing.lg },
 });

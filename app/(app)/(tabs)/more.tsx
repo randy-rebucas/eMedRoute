@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
-import { spacing } from '@/lib/theme';
+import { colors, radius, spacing } from '@/lib/theme';
 import { type } from '@/lib/typography';
+import { initialsOf } from '@/components/AppHeader';
 import { NavRow, RowGroup } from '@/components/forms';
 import { screenStyles } from '@/components/ui';
 
@@ -34,10 +36,23 @@ export default function MoreScreen() {
           {t('nav.more')}
         </Text>
         {rep ? (
-          <View style={styles.who}>
-            <Text style={type.cardTitle}>{rep.name}</Text>
-            <Text style={type.secondary}>{[rep.company, rep.email].filter(Boolean).join(' · ')}</Text>
-          </View>
+          <TouchableOpacity
+            style={styles.who}
+            onPress={() => router.push('/profile')}
+            accessibilityRole="button"
+            accessibilityLabel={`${rep.name}, ${t('more.profile')}`}
+          >
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText} maxFontSizeMultiplier={1.3}>
+                {initialsOf(rep.name)}
+              </Text>
+            </View>
+            <View style={styles.whoText}>
+              <Text style={type.cardTitle}>{rep.name}</Text>
+              <Text style={type.secondary}>{[rep.company, rep.email].filter(Boolean).join(' · ')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
         ) : null}
 
         <RowGroup title={t('more.work')}>
@@ -70,5 +85,18 @@ export default function MoreScreen() {
 
 const styles = StyleSheet.create({
   title: { marginTop: spacing.sm, marginBottom: spacing.md },
-  who: { marginBottom: spacing.lg, gap: 2 },
+  who: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontSize: 20, fontWeight: '700', color: colors.primaryText },
+  whoText: { flex: 1, gap: 2 },
 });

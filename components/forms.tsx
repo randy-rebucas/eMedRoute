@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
 import { type } from '@/lib/typography';
-import { IconName } from './ui';
+import { IconName, IconTile } from './ui';
 
 // Labelled inputs and ruled rows for the signed-in forms (profile, settings, support).
 
@@ -93,7 +93,7 @@ export function NavRow({
       accessibilityRole="button"
       accessibilityLabel={value ? `${label}, ${value}` : label}
     >
-      <Ionicons name={icon} size={22} color={tone === 'danger' ? colors.danger : colors.textMuted} />
+      <IconTile icon={icon} tone={tone === 'danger' ? 'danger' : 'slate'} size={36} />
       <View style={styles.rowText}>
         <Text style={[type.body, { color }]}>{label}</Text>
         {value ? <Text style={type.secondary}>{value}</Text> : null}
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     overflow: 'hidden',
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 56, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 4, minHeight: 56, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   rowRule: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   rowText: { flex: 1, gap: 2 },
   switchRow: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 4, gap: spacing.sm },

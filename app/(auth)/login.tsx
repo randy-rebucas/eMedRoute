@@ -6,9 +6,9 @@ import { ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { API_BASE_URL } from '@/lib/config';
 import { useT } from '@/lib/i18n';
-import { spacing } from '@/lib/theme';
+import { colors, radius, spacing } from '@/lib/theme';
 import { type } from '@/lib/typography';
-import { BrandLogo } from '@/components/BrandLogo';
+import { BrandLogo, BrandMark } from '@/components/BrandLogo';
 import { Banner, Button } from '@/components/ui';
 import {
   AuthHeader,
@@ -120,6 +120,10 @@ export default function LoginScreen() {
   return (
     <AuthScreen>
       <View style={styles.logo}>
+        {/* The app icon's look (the mark on navy), so the sign-in screen matches what was tapped. */}
+        <View style={styles.iconTile}>
+          <BrandMark size={52} />
+        </View>
         <BrandLogo />
       </View>
       <AuthHeader title={t('auth.login.title')} subtitle={t('auth.login.subtitle')} align="center" />
@@ -171,7 +175,8 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  logo: { marginTop: spacing.lg, marginBottom: spacing.xl },
+  logo: { marginTop: spacing.lg, marginBottom: spacing.xl, alignItems: 'center', gap: spacing.md },
+  iconTile: { width: 88, height: 88, borderRadius: radius.lg + 6, backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center' },
   footer: {
     alignItems: 'center',
     marginTop: 'auto',

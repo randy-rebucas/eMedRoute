@@ -18,7 +18,7 @@ import { ThinProgress } from '@/components/Loading';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { productLabel } from '@/components/ProductPicker';
 import { StatusPill } from '@/components/StatusPill';
-import { Banner, Button, LoadingView, screenStyles, useBottomPadding } from '@/components/ui';
+import { Banner, Button, IconName, LoadingView, screenStyles, useBottomPadding } from '@/components/ui';
 import { isNetworkError } from '@/lib/useApiData';
 import { nextStepText, visitA11yLabel } from '@/components/VisitRow';
 
@@ -133,17 +133,17 @@ export default function VisitDetailScreen() {
       ) : null}
 
       <View style={styles.facts}>
-        <Fact label={t('visits.detail.place')}>
+        <Fact icon="location-outline" label={t('visits.detail.place')}>
           <Text style={type.body}>{visit.clinicLocation}</Text>
         </Fact>
-        <Fact label={t('visits.detail.length')}>
+        <Fact icon="time-outline" label={t('visits.detail.length')}>
           <Text style={[type.body, mono]}>{t('visits.minutes', { minutes: visit.duration })}</Text>
         </Fact>
-        <Fact label={own ? t('visits.form.purpose') : t('visits.form.purposeShared')}>
+        <Fact icon="flag-outline" label={own ? t('visits.form.purpose') : t('visits.form.purposeShared')}>
           <Text style={type.body}>{visit.purpose}</Text>
         </Fact>
         {products.length ? (
-          <Fact label={t('visits.form.products')}>
+          <Fact icon="medkit-outline" label={t('visits.form.products')}>
             {known.map((p) => (
               <Text key={p!._id} style={type.body} onPress={() => router.push(`/products/${p!._id}`)} accessibilityRole="link">
                 {productLabel(p!)}
@@ -152,7 +152,7 @@ export default function VisitDetailScreen() {
             {unknownCount ? <Text style={type.secondary}>{t('visits.detail.productsInactive', { count: unknownCount })}</Text> : null}
           </Fact>
         ) : null}
-        <Fact label={t('visits.form.notes')} hint={t('visits.form.notesHint')} last>
+        <Fact icon="document-text-outline" label={t('visits.form.notes')} hint={t('visits.form.notesHint')} last>
           <Text style={[type.body, !visit.notes && styles.muted]}>{visit.notes || t('visits.detail.noNotes')}</Text>
         </Fact>
       </View>
@@ -182,25 +182,48 @@ export default function VisitDetailScreen() {
   );
 }
 
-function Fact({ label, hint, last = false, children }: { label: string; hint?: string; last?: boolean; children: React.ReactNode }) {
+function Fact({
+  icon,
+  label,
+  hint,
+  last = false,
+  children,
+}: {
+  icon: IconName;
+  label: string;
+  hint?: string;
+  last?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <View style={[styles.fact, last && styles.factLast]}>
-      <Text style={type.secondary}>
-        {label}
-        {hint ? (
-          <Text>
-            {' · '}
-            <Ionicons name="lock-closed-outline" size={12} color={colors.textMuted} /> {hint}
-          </Text>
-        ) : null}
-      </Text>
-      {children}
+      <Ionicons name={icon} size={20} color={colors.slate} style={styles.factIcon} />
+      <View style={styles.factBody}>
+        <Text style={type.secondary}>
+          {label}
+          {hint ? (
+            <Text>
+              {' · '}
+              <Ionicons name="lock-closed-outline" size={12} color={colors.textMuted} /> {hint}
+            </Text>
+          ) : null}
+        </Text>
+        {children}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  head: { gap: spacing.xs, marginBottom: spacing.md },
+  head: {
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+  },
   strong: { fontWeight: '600' },
   struck: { textDecorationLine: 'line-through', color: colors.textMuted },
   pillRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
@@ -223,7 +246,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     marginBottom: spacing.sm,
   },
-  fact: { paddingVertical: spacing.sm + 4, gap: 2, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  fact: {
+    flexDirection: 'row',
+    gap: spacing.sm + 4,
+    paddingVertical: spacing.sm + 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  factIcon: { marginTop: 1 },
+  factBody: { flex: 1, gap: 2 },
   factLast: { borderBottomWidth: 0 },
   muted: { color: colors.textMuted },
 });

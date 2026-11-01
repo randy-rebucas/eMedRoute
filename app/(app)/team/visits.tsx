@@ -5,6 +5,7 @@ import { useT } from '@/lib/i18n';
 import { useTeam, useTeamVisits } from '@/lib/team';
 import { colors, spacing } from '@/lib/theme';
 import { type } from '@/lib/typography';
+import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { SkeletonRows, ThinProgress } from '@/components/Loading';
 import { OfflineBanner } from '@/components/OfflineBanner';
@@ -50,7 +51,7 @@ export default function TeamVisitsScreen() {
         ) : list.error ? (
           <ErrorState message={list.error} onRetry={list.reload} />
         ) : (
-          <Text style={[type.secondary, styles.empty]}>{t('team.noVisits')}</Text>
+          <EmptyState art="team" title={t('team.noVisits')} />
         )
       }
       ListFooterComponent={<ListFooter loadingMore={list.loadingMore} error={list.loadMoreError} onRetry={list.loadMore} />}
@@ -61,5 +62,4 @@ export default function TeamVisitsScreen() {
 
 const styles = StyleSheet.create({
   header: { gap: spacing.sm, marginBottom: spacing.sm },
-  empty: { textAlign: 'center', marginTop: spacing.lg },
 });

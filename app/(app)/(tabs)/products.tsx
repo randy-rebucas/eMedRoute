@@ -7,6 +7,7 @@ import { useProducts } from '@/lib/products';
 import { colors, spacing } from '@/lib/theme';
 import { ProductStatus } from '@/lib/types';
 import { type } from '@/lib/typography';
+import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { SkeletonRows, ThinProgress } from '@/components/Loading';
 import { OfflineBanner } from '@/components/OfflineBanner';
@@ -60,7 +61,11 @@ export default function ProductsScreen() {
           ) : error ? (
             <ErrorState message={error} onRetry={list.reload} />
           ) : (
-            <Text style={[type.secondary, styles.empty]}>{filter === 'active' ? t('products.emptyActive') : t('products.empty')}</Text>
+            <EmptyState
+              art="products"
+              title={filter === 'active' ? t('products.emptyActive') : t('products.empty')}
+              action={filter === 'active' ? { title: t('products.add'), icon: 'add-outline', onPress: () => router.push('/products/new') } : undefined}
+            />
           )
         }
         ListFooterComponent={<ListFooter loadingMore={loadingMore} error={loadMoreError} onRetry={list.loadMore} />}
@@ -74,5 +79,4 @@ const styles = StyleSheet.create({
   header: { gap: spacing.sm, marginBottom: spacing.sm },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
   addButton: { marginTop: 0 },
-  empty: { textAlign: 'center', marginTop: spacing.lg },
 });

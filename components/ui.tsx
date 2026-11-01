@@ -75,6 +75,37 @@ export function Button({
 
 type Tone = 'neutral' | 'primary' | 'danger' | 'warning';
 
+/** A list's heading, with an optional text action at the right ("See all"). */
+export function SectionHeader({ title, action }: { title: string; action?: { title: string; onPress: () => void } }) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle} accessibilityRole="header">
+        {title}
+      </Text>
+      {action ? (
+        <TouchableOpacity onPress={action.onPress} style={styles.sectionAction} accessibilityRole="link" hitSlop={8}>
+          <Text style={styles.sectionActionText}>{action.title}</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.primaryOnSoft} />
+        </TouchableOpacity>
+      ) : null}
+    </View>
+  );
+}
+
+/** A rounded square holding one icon: the leading mark on rows and tiles. Decorative. */
+export function IconTile({ icon, tone = 'neutral', size = 40 }: { icon: IconName; tone?: Tone | 'slate'; size?: number }) {
+  const palette = tone === 'slate' ? { bg: colors.slateSoft, fg: colors.slate } : tone === 'neutral' ? { bg: colors.slateSoft, fg: colors.textMuted } : badgeTones[tone];
+  return (
+    <View
+      style={[styles.tile, { width: size, height: size, backgroundColor: palette.bg }]}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Ionicons name={icon} size={Math.round(size * 0.5)} color={palette.fg} />
+    </View>
+  );
+}
+
 export function Badge({ label, tone = 'neutral' }: { label: string; tone?: Tone }) {
   const palette = badgeTones[tone];
   return (
@@ -221,6 +252,12 @@ const styles = StyleSheet.create({
   buttonInner: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   buttonInnerReverse: { flexDirection: 'row-reverse' },
   buttonText: { fontSize: 16, fontWeight: '600' },
+  section: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, marginBottom: spacing.sm, flexWrap: 'wrap' },
+  sectionTitle: { fontSize: 17, fontWeight: '600', color: colors.text },
+  sectionAction: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 48, justifyContent: 'center' },
+  // The darker teal: this sits on the page background, where `primary` is under 4.5:1.
+  sectionActionText: { fontSize: 15, fontWeight: '600', color: colors.primaryOnSoft },
+  tile: { borderRadius: radius.sm + 2, alignItems: 'center', justifyContent: 'center' },
   badge: { borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 4, alignSelf: 'flex-start' },
   badgeText: { fontSize: 12, fontWeight: '600' },
   row: {
