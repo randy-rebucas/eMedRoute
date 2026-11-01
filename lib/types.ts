@@ -185,6 +185,8 @@ export interface Product {
   /** Stored as UTC midnight of the day. */
   expiryDate: string;
   status: ProductStatus;
+  /** What one pack holds in the unit clinics dispense ("30 tablets"); clinics use it to count deliveries into stock. */
+  packSize?: { count: number; unit: string } | null;
   specifications?: string[];
   createdAt?: string;
   updatedAt?: string;
@@ -201,6 +203,8 @@ export interface ProductInput {
   dosage?: string;
   strength?: string;
   status?: ProductStatus;
+  /** null clears it (PUT); left out keeps it. */
+  packSize?: { count: number; unit: string } | null;
 }
 
 // ── Plan and teams ───────────────────────────────────────────────────────────
@@ -362,8 +366,12 @@ export interface DeliveryLine {
   unit: string;
   lotNumber?: string;
   expiryDate?: string;
+  /** The product's pack size when delivered. */
+  packSize?: { count: number; unit: string };
   /** What the clinic counted on receipt; can differ from `quantity`. */
   receivedQuantity?: number;
+  /** Stock units the clinic put into its stock (receivedQuantity × its conversion). */
+  stockQuantity?: number;
   /** Set when the clinic put the line into its stock. */
   inventoryItemId?: string;
 }

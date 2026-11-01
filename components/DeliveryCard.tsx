@@ -54,7 +54,7 @@ export function DeliveryCard({ delivery, onCancel, cancelling }: { delivery: Del
                   counted ? t('deliveries.counted', { count: line.receivedQuantity! }) : null,
                   line.lotNumber ? t('deliveries.lot', { lot: line.lotNumber }) : null,
                   line.expiryDate ? t('deliveries.expires', { date: formatDay(line.expiryDate, { month: 'short', year: 'numeric' }) }) : null,
-                  line.inventoryItemId ? t('deliveries.inStock') : null,
+                  line.inventoryItemId ? (line.stockQuantity ? t('deliveries.inStockCount', { count: line.stockQuantity }) : t('deliveries.inStock')) : null,
                 ]
                   .filter(Boolean)
                   .join(' · ')}

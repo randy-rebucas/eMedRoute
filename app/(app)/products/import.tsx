@@ -51,6 +51,8 @@ function problemText(t: TFunction, p: RowProblem): string {
       return t('products.import.problem.badDate', { value: p.value });
     case 'badStatus':
       return t('products.import.problem.badStatus', { value: p.value });
+    case 'badPack':
+      return t('products.import.problem.badPack', { value: p.value });
   }
 }
 
@@ -264,9 +266,9 @@ export default function ImportProductsScreen() {
 function Columns({ required }: { required: boolean }) {
   return (
     <View style={styles.columns}>
-      {IMPORT_COLUMNS.filter((c) => c.required === required).map((c) => (
-        <View key={c.field} style={styles.column}>
-          <Text style={[mono, styles.columnText]}>{c.field}</Text>
+      {[...IMPORT_COLUMNS.filter((c) => c.required === required).map((c) => c.field), ...(required ? [] : ['packCount', 'packUnit'])].map((name) => (
+        <View key={name} style={styles.column}>
+          <Text style={[mono, styles.columnText]}>{name}</Text>
         </View>
       ))}
     </View>

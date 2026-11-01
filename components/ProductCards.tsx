@@ -104,6 +104,7 @@ export function ProductSheetCard({ product }: { product: Product }) {
     [t('products.form.dosage'), product.dosage],
     [t('products.form.strength'), product.strength],
     [t('products.form.packaging'), product.packaging],
+    [t('products.form.packSize'), product.packSize ? t('products.packOf', { count: product.packSize.count, unit: product.packSize.unit }) : undefined],
   ];
   return (
     <View style={styles.sheet}>

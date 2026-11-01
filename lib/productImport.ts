@@ -7,7 +7,8 @@ const IMPORT_PATH = '/api/medical-representatives/products/import';
 /** The server's cap on one import (MOBILE_API.md → products/import). */
 export const MAX_IMPORT_ROWS = 200;
 
-export type ImportField = keyof ProductInput;
+/** The text columns; the pack size has its own two (packCount, packUnit). */
+export type ImportField = Exclude<keyof ProductInput, 'packSize'>;
 
 /** Columns in the order the template lists them. The first six are required. */
 export const IMPORT_COLUMNS: { field: ImportField; required: boolean }[] = [
@@ -54,15 +55,20 @@ const HEADER_ALIASES: Record<string, ImportField> = {
   status: 'status',
 };
 
+/** Optional pack size columns ("30" and "tablets"), header spellings after normalising. */
+const PACK_COUNT_HEADERS = ['packcount', 'packsize', 'unitsperpack', 'perpack'];
+const PACK_UNIT_HEADERS = ['packunit', 'packsizeunit'];
+
 export const IMPORT_TEMPLATE =
-  'name,category,manufacturer,description,packaging,expiryDate,strength,dosage,status\n' +
-  'Amlodipine,Antihypertensive,Acme Pharma,Calcium channel blocker for hypertension,Box of 30 tablets,2027-03-31,5 mg,1 tablet once a day,active\n';
+  'name,category,manufacturer,description,packaging,expiryDate,strength,dosage,status,packCount,packUnit\n' +
+  'Amlodipine,Antihypertensive,Acme Pharma,Calcium channel blocker for hypertension,Box of 30 tablets,2027-03-31,5 mg,1 tablet once a day,active,30,tablets\n';
 
 export type RowProblem =
   | { kind: 'missing'; fields: ImportField[] }
   | { kind: 'tooLong'; field: ImportField; max: number }
   | { kind: 'badDate'; value: string }
-  | { kind: 'badStatus'; value: string };
+  | { kind: 'badStatus'; value: string }
+  | { kind: 'badPack'; value: string };
 
 /** One data row of the file. `line` is the spreadsheet row number (the header is row 1). */
 export type ImportRow = { line: number; input: ProductInput; problems: RowProblem[] };
@@ -130,7 +136,10 @@ export function parseProductCsv(text: string, fileName?: string): ParsedImport {
   const table = splitCsv(text).filter((r) => r.some((c) => c.trim() !== ''));
   if (table.length < 2) return { ok: false, error: 'empty' };
 
-  const header = table[0].map((h) => HEADER_ALIASES[h.toLowerCase().replace(/[^a-z]/g, '')]);
+  const normalized = table[0].map((h) => h.toLowerCase().replace(/[^a-z]/g, ''));
+  const header = normalized.map((h) => HEADER_ALIASES[h]);
+  const packCountAt = normalized.findIndex((h) => PACK_COUNT_HEADERS.includes(h));
+  const packUnitAt = normalized.findIndex((h) => PACK_UNIT_HEADERS.includes(h));
   const missingColumns = IMPORT_COLUMNS.filter((c) => c.required && !header.includes(c.field)).map((c) => c.field);
   if (missingColumns.length) return { ok: false, error: 'missingColumns', columns: missingColumns };
   if (table.length - 1 > MAX_IMPORT_ROWS) return { ok: false, error: 'tooManyRows' };
@@ -158,6 +167,11 @@ export function parseProductCsv(text: string, fileName?: string): ParsedImport {
     const rawStatus = value('status').toLowerCase();
     const status = (rawStatus || 'active') as ProductStatus;
     if (!(PRODUCT_STATUSES as readonly string[]).includes(status)) problems.push({ kind: 'badStatus', value: value('status') });
+    // Pack size: both cells or neither; a whole count of 1-10000 (server rule).
+    const packCount = packCountAt >= 0 ? (cells[packCountAt] ?? '').trim() : '';
+    const packUnit = packUnitAt >= 0 ? (cells[packUnitAt] ?? '').trim() : '';
+    const validPack = /^\d+$/.test(packCount) && Number(packCount) >= 1 && Number(packCount) <= 10000 && !!packUnit && packUnit.length <= 50;
+    if ((packCount || packUnit) && !validPack) problems.push({ kind: 'badPack', value: [packCount, packUnit].filter(Boolean).join(' ') });
 
     rows.push({
       line: index + 1,
@@ -172,6 +186,7 @@ export function parseProductCsv(text: string, fileName?: string): ParsedImport {
         strength: value('strength') || undefined,
         dosage: value('dosage') || undefined,
         status,
+        ...(validPack ? { packSize: { count: Number(packCount), unit: packUnit } } : {}),
       },
     });
   });
