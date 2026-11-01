@@ -15,6 +15,11 @@ export default defineStrings({
     signOut: 'Sign out',
     tapToRetry: '{error} Tap to retry.',
     optional: '(optional)',
+    undo: 'Undo',
+    dismiss: 'Dismiss',
+    notSet: 'not set',
+    pickDate: 'Pick a day',
+    pickTime: 'Pick a time',
 
     // lib/api, useApiData, usePaginatedList (shown only when the server sent no message)
     somethingWrong: 'Something went wrong. Please try again.',
@@ -54,6 +59,11 @@ export default defineStrings({
     signOut: 'Mag-sign out',
     tapToRetry: '{error} I-tap para subukan ulit.',
     optional: '(opsyonal)',
+    undo: 'I-undo',
+    dismiss: 'Isara',
+    notSet: 'wala pa',
+    pickDate: 'Pumili ng araw',
+    pickTime: 'Pumili ng oras',
 
     somethingWrong: 'May nangyaring mali. Pakisubukan ulit.',
     failedToLoad: 'Hindi ma-load. Hilahin pababa para subukan ulit.',

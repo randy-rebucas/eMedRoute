@@ -7,7 +7,9 @@
  *                 lib/api, useApiData, usePaginatedList
  *   auth          app/(auth)/*, components/auth.tsx, lib/auth.tsx
  *   nav           app/(app)/(tabs)/_layout.tsx (tab names)
- *   home          app/(app)/(tabs)/home.tsx
+ *   home          app/(app)/(tabs)/home.tsx, NextVisitCard
+ *   visits        (tabs)/visits.tsx, visits/*, VisitRow, StatusPill, VisitLogForm, ProductPicker, lib/visits
+ *   products      (tabs)/products.tsx, products/*, ProductCards, ProductForm, lib/products
  *   more          app/(app)/(tabs)/more.tsx, stack titles in app/(app)/_layout.tsx
  *   profile       app/(app)/profile/*
  *   settings      app/(app)/settings.tsx
@@ -22,9 +24,11 @@ import more from './strings/more';
 import nav from './strings/nav';
 import notifications from './strings/notifications';
 import password from './strings/password';
+import products from './strings/products';
 import profile from './strings/profile';
 import settings from './strings/settings';
 import support from './strings/support';
+import visits from './strings/visits';
 import type { Message, ParamsArg } from './types';
 
 export const catalogs = {
@@ -35,9 +39,11 @@ export const catalogs = {
   nav,
   notifications,
   password,
+  products,
   profile,
   settings,
   support,
+  visits,
 };
 
 type Catalogs = typeof catalogs;

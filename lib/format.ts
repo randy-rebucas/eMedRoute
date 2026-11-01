@@ -223,3 +223,36 @@ export function toYmd(date: Date): string {
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
+
+/**
+ * A calendar day ("YYYY-MM-DD", or a stored date whose first 10 characters are the day) in the
+ * app's locale. The day is never shifted into the phone's timezone.
+ */
+export function formatDay(day: string, options: Omit<FormatDateOptions, 'utc'> = {}): string {
+  const ymd = day.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return '—';
+  return formatDate(`${ymd}T00:00:00.000Z`, { ...options, utc: true });
+}
+
+/** Whole days from today (in the clinic timezone) to `day`: 0 today, 1 tomorrow, -1 yesterday. */
+export function daysFromToday(day: string): number {
+  const ymd = day.slice(0, 10);
+  const target = Date.parse(`${ymd}T00:00:00.000Z`);
+  const today = Date.parse(`${clinicTodayYmd()}T00:00:00.000Z`);
+  return Math.round((target - today) / 86_400_000);
+}
+
+/** "YYYY-MM-DD" shifted by whole days. */
+export function addDays(ymd: string, days: number): string {
+  const d = new Date(`${ymd}T00:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/** An instant as "HH:mm" on the clinic's clock (e.g. when the clinic checked the rep in). */
+export function clinicHhmm(value: DateInput): string {
+  const d = toDate(value);
+  if (!d) return '';
+  const { h, min } = clinicParts(d);
+  return `${pad2(h)}:${pad2(min)}`;
+}

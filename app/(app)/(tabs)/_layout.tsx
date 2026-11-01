@@ -11,8 +11,7 @@ function tabIcon(name: IconName) {
 }
 
 /**
- * Bottom tabs. Home and More are built (phase 1); Visits, Clinics and Products join them in
- * phases 2 and 3.
+ * Bottom tabs. Clinics joins them in phase 3.
  */
 export default function TabsLayout() {
   const t = useT();
@@ -28,6 +27,8 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="home" options={{ title: t('nav.home'), tabBarIcon: tabIcon('home-outline') }} />
+      <Tabs.Screen name="visits" options={{ title: t('nav.visits'), tabBarIcon: tabIcon('calendar-outline') }} />
+      <Tabs.Screen name="products" options={{ title: t('nav.products'), tabBarIcon: tabIcon('medkit-outline') }} />
       <Tabs.Screen
         name="more"
         options={{ title: t('nav.more'), tabBarIcon: tabIcon('ellipsis-horizontal-outline') }}
