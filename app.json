@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "MyClinicSoft Rep",
+    "slug": "myclinicsoft-rep",
+    "description": "MyClinicSoft Rep — book visits in a clinic's rep hours, keep your visit log and carry your product sheets.",
+    "scheme": "myclinicsoft-rep",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "solutions.myclinicsoft.rep",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "solutions.myclinicsoft.rep",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B2136",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0A7F7E"
+        }
+      ],
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#0B2136"
+        }
+      ],
+      "expo-web-browser",
+      "expo-localization"
+    ],
+    "extra": {
+      "apiUrl": "http://localhost:3000",
+      "router": {}
+    },
+    "owner": "randyreb"
+  }
+}

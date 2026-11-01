@@ -1,0 +1,37 @@
+import { defineStrings } from '../types';
+
+// Area "settings": app/(app)/settings.tsx.
+export default defineStrings({
+  en: {
+    notifications: 'Notifications',
+    push: 'Push notifications',
+    pushHint: 'Clinic answers, visit-day updates, reminders and team invites',
+    pushBlocked: 'Notifications are off for this app in your phone’s settings.',
+    openPhoneSettings: 'Open settings',
+    pushUnavailable: 'This phone or build can’t receive push notifications.',
+    email: 'Email',
+    emailHint: 'Updates by email as well',
+    app: 'App',
+    signIn: 'Sign-in',
+    changePassword: 'Change password',
+    signOutHere: 'Sign out on this phone',
+    signOutEverywhere: 'Sign out on all devices',
+    signOutEverywhereHint: 'Every phone signed in to your account has to sign in again',
+  },
+  fil: {
+    notifications: 'Notifications',
+    push: 'Push notifications',
+    pushHint: 'Sagot ng clinic, update sa araw ng pagbisita, paalala at imbitasyon sa team',
+    pushBlocked: 'Naka-off ang notifications ng app na ito sa settings ng phone mo.',
+    openPhoneSettings: 'Buksan ang settings',
+    pushUnavailable: 'Hindi makakatanggap ng push notifications ang phone o build na ito.',
+    email: 'Email',
+    emailHint: 'Mga update sa email din',
+    app: 'App',
+    signIn: 'Sign-in',
+    changePassword: 'Palitan ang password',
+    signOutHere: 'Mag-sign out sa phone na ito',
+    signOutEverywhere: 'Mag-sign out sa lahat ng device',
+    signOutEverywhereHint: 'Kailangang mag-sign in ulit sa bawat phone na naka-sign in sa account mo',
+  },
+});

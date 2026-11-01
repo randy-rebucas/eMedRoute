@@ -1,0 +1,369 @@
+import { API_BASE_URL } from './config';
+import { clearSession, getSession, sessionGeneration, setSession, StoredSession } from './storage';
+import { t } from './i18n';
+
+export class ApiError extends Error {
+  status: number;
+  code?: string;
+  /** The parsed JSON body, when there was one (e.g. validation `details`). */
+  body: unknown;
+
+  constructor(message: string, status: number, code?: string, body?: unknown) {
+    super(message);
+    this.status = status;
+    this.code = code;
+    this.body = body;
+  }
+}
+
+/** Session lifecycle endpoints (MOBILE_API.md → Medical representative app → Sign-in). */
+export const AUTH_ENDPOINTS = {
+  token: '/api/medical-representatives/auth/token',
+  twoFactor: '/api/medical-representatives/auth/2fa',
+  refresh: '/api/medical-representatives/auth/refresh',
+  session: '/api/medical-representatives/session',
+  devices: '/api/medical-representatives/devices',
+} as const;
+
+/** Fields every sign-in, refresh and password-change response carries. */
+export interface TokenPair {
+  token: string;
+  tokenType?: 'Bearer';
+  /** Access-token lifetime in seconds. */
+  expiresIn?: number;
+  refreshToken?: string | null;
+  refreshExpiresIn?: number;
+}
+
+/** Envelope for list endpoints. */
+export interface Pagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages?: number;
+}
+
+export interface ListEnvelope<T> {
+  success: true;
+  data: T[];
+  pagination?: Pagination;
+}
+
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+export interface RequestOptions {
+  method?: Method;
+  body?: unknown;
+  /**
+   * Builds the body at send time, once per attempt. Used by sign-out so a retry
+   * after a token refresh sends the *new* refresh token, not the spent one.
+   */
+  bodyFactory?: () => Promise<unknown>;
+  auth?: boolean; // default true
+  /** Give up after this long (default `REQUEST_TIMEOUT_MS`). */
+  timeoutMs?: number;
+}
+
+/** Headers for an authenticated request made outside `apiFetch`. */
+export function authHeaders(token: string): Record<string, string> {
+  return { Authorization: `Bearer ${token}` };
+}
+
+// Functions, not constants, so the text follows the app language.
+const SESSION_EXPIRED_MESSAGE = () => t('common.sessionExpired');
+const NETWORK_MESSAGE = () => t('common.network');
+/** Refresh this long before the access token's stated expiry. */
+const EXPIRY_SKEW_MS = 60_000;
+/**
+ * React Native's fetch never times out on its own: on a dead connection a request can hang for
+ * minutes, and screens that poll skip polls while one is still in flight.
+ */
+const REQUEST_TIMEOUT_MS = 20_000;
+
+/** `fetch` that rejects (with an AbortError) after `timeoutMs`. */
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = REQUEST_TIMEOUT_MS): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ── Session expiry notification ──────────────────────────────────────────────
+
+/**
+ * Called when the session is gone. `message` is a server-supplied reason (e.g. a
+ * deactivated account) to show on the sign-in screen instead of the generic notice.
+ */
+export type SessionExpiredHandler = (message?: string) => void;
+
+let sessionExpiredHandler: SessionExpiredHandler | null = null;
+
+/** The AuthProvider registers here so a dead refresh token sends the user to sign-in. */
+export function setSessionExpiredHandler(handler: SessionExpiredHandler | null): void {
+  sessionExpiredHandler = handler;
+}
+
+async function expireSession(message?: string): Promise<never> {
+  await clearSession();
+  sessionExpiredHandler?.(message);
+  throw new ApiError(message ?? SESSION_EXPIRED_MESSAGE(), 401, 'SESSION_EXPIRED');
+}
+
+// ── Token storage ────────────────────────────────────────────────────────────
+
+/**
+ * Persist a token pair from a sign-in, refresh or password-change response.
+ * A response without a refresh token clears the stored one: the backend kills
+ * old refresh tokens whenever it re-issues an access token for a new session version.
+ * With `ifGeneration` (refresh), returns false without storing when the session changed meanwhile.
+ */
+export async function storeTokens(pair: TokenPair, ifGeneration?: number): Promise<boolean> {
+  return setSession(
+    {
+      accessToken: pair.token,
+      refreshToken: pair.refreshToken ?? null,
+      accessExpiresAt: pair.expiresIn ? Date.now() + pair.expiresIn * 1000 : jwtExpiresAt(pair.token),
+    },
+    { ifGeneration }
+  );
+}
+
+const BASE64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+/** Decode base64url to a UTF-8 string without relying on `atob`/`Buffer`. Null when malformed. */
+function decodeBase64Url(input: string): string | null {
+  const b64 = input.replace(/-/g, '+').replace(/_/g, '/');
+  if (!/^[A-Za-z0-9+/]*$/.test(b64) || b64.length % 4 === 1) return null;
+  const bytes: number[] = [];
+  let buffer = 0;
+  let bits = 0;
+  for (const ch of b64) {
+    buffer = (buffer << 6) | BASE64_ALPHABET.indexOf(ch);
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      bytes.push((buffer >> bits) & 0xff);
+    }
+  }
+  try {
+    return decodeURIComponent(bytes.map((b) => `%${b.toString(16).padStart(2, '0')}`).join(''));
+  } catch {
+    return null;
+  }
+}
+
+/** The access token's payload (decoded, not verified), or null when it isn't a readable JWT. */
+export function tokenClaims(token: string): Record<string, unknown> | null {
+  const parts = token.split('.');
+  if (parts.length !== 3 || !parts[1]) return null;
+  const json = decodeBase64Url(parts[1]);
+  if (!json) return null;
+  try {
+    const claims = JSON.parse(json) as unknown;
+    return claims && typeof claims === 'object' ? (claims as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The access token's `exp` claim as epoch ms, or null when the token isn't a readable JWT. */
+function jwtExpiresAt(token: string): number | null {
+  const exp = tokenClaims(token)?.exp;
+  return typeof exp === 'number' && isFinite(exp) && exp > 0 ? exp * 1000 : null;
+}
+
+// ── Refresh (single-flight) ──────────────────────────────────────────────────
+
+interface RefreshOutcome {
+  /** 'superseded': the user signed out or in while the refresh ran; its tokens were dropped. */
+  outcome: 'refreshed' | 'expired' | 'unavailable' | 'superseded';
+  /** Server reason for an 'expired' outcome. */
+  message?: string;
+}
+
+let refreshInFlight: Promise<RefreshOutcome> | null = null;
+
+/**
+ * Trade the stored refresh token for a new pair. Concurrent callers share one
+ * request: refresh tokens are single use, so two parallel refreshes would make
+ * the second look like token reuse and revoke the whole chain.
+ */
+function refreshSession(): Promise<RefreshOutcome> {
+  if (!refreshInFlight) {
+    refreshInFlight = performRefresh().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+}
+
+async function performRefresh(): Promise<RefreshOutcome> {
+  const generation = sessionGeneration();
+  const session = await getSession();
+  if (!session?.refreshToken) return { outcome: 'expired' };
+
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(`${API_BASE_URL}${AUTH_ENDPOINTS.refresh}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: session.refreshToken }),
+    });
+  } catch {
+    return { outcome: 'unavailable' };
+  }
+
+  const json = (await readJson(response)) as
+    | (Partial<TokenPair> & { success?: boolean; code?: string; error?: string })
+    | null;
+
+  if (response.ok && json?.token) {
+    const stored = await storeTokens(
+      { token: json.token, expiresIn: json.expiresIn, refreshToken: json.refreshToken },
+      generation
+    );
+    return { outcome: stored ? 'refreshed' : 'superseded' };
+  }
+  // A lost or unreadable success body is retried later. The server accepts the spent token
+  // again for a short grace period, so the retry doesn't look like token theft.
+
+  // 401 REFRESH_INVALID / REFRESH_REUSED: the chain is dead (or the account is no longer an
+  // active rep), sign in again.
+  if (response.status === 401) return { outcome: 'expired' };
+  // 429 / 5xx: keep the session and let the caller retry later.
+  return { outcome: 'unavailable' };
+}
+
+function isExpiringSoon(session: StoredSession): boolean {
+  return session.accessExpiresAt !== null && session.accessExpiresAt - EXPIRY_SKEW_MS <= Date.now();
+}
+
+/**
+ * A usable access token for an authenticated call made outside `apiFetch`
+ * (e.g. file downloads). Refreshes first when the stored one is about to expire.
+ */
+export async function getAccessToken(): Promise<string> {
+  const session = await getSession();
+  if (!session) return expireSession();
+  if (session.refreshToken && isExpiringSoon(session)) {
+    const { outcome, message } = await refreshSession();
+    if (outcome === 'expired') return expireSession(message);
+    if (outcome === 'superseded') return currentTokenAfterSupersede();
+    // 'unavailable': try the current token anyway; the server has the final word.
+  }
+  return (await getSession())?.accessToken ?? expireSession();
+}
+
+/**
+ * After a refresh was superseded: the new session's token, or (signed out) a quiet failure.
+ * Not `expireSession`: the user chose to sign out, so there is no "session expired" notice.
+ */
+async function currentTokenAfterSupersede(): Promise<string> {
+  const current = await getSession();
+  if (current) return current.accessToken;
+  throw new ApiError(SESSION_EXPIRED_MESSAGE(), 401, 'SIGNED_OUT');
+}
+
+/**
+ * Called after a request made with `usedToken` came back 401. Returns a token
+ * worth retrying with, or signs the user out when the refresh token is dead.
+ */
+export async function recoverFromUnauthorized(usedToken: string): Promise<string> {
+  const current = await getSession();
+  if (!current) return expireSession();
+  // Another request already refreshed while this one was in flight.
+  if (current.accessToken !== usedToken) return current.accessToken;
+
+  const { outcome, message } = await refreshSession();
+  if (outcome === 'expired') return expireSession(message);
+  if (outcome === 'superseded') return currentTokenAfterSupersede();
+  if (outcome === 'unavailable') throw new ApiError(NETWORK_MESSAGE(), 0, 'NETWORK');
+  const refreshed = await getSession();
+  return refreshed?.accessToken ?? expireSession();
+}
+
+// ── Requests ─────────────────────────────────────────────────────────────────
+
+async function readJson(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    // Non-JSON response (e.g. 204, proxy error page).
+    return null;
+  }
+}
+
+async function send(path: string, options: RequestOptions, token: string | null) {
+  const { method = 'GET', body, bodyFactory } = options;
+  const payload = bodyFactory ? await bodyFactory() : body;
+
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (payload !== undefined) headers['Content-Type'] = 'application/json';
+  if (token) Object.assign(headers, authHeaders(token));
+
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(
+      `${API_BASE_URL}${path}`,
+      { method, headers, body: payload !== undefined ? JSON.stringify(payload) : undefined },
+      options.timeoutMs
+    );
+  } catch {
+    throw new ApiError(NETWORK_MESSAGE(), 0, 'NETWORK');
+  }
+  return { response, json: (await readJson(response)) as Record<string, unknown> | null };
+}
+
+/**
+ * Fetch wrapper for the rep REST API. Returns the
+ * whole JSON envelope (use it when you need `pagination`, or a top-level field like `reference`).
+ *
+ * Authenticated calls send `Authorization: Bearer <token>`. On a 401 the wrapper
+ * refreshes the token once (shared with any concurrent 401s) and retries; if the
+ * refresh token is rejected the session is cleared and the user is sent to sign-in.
+ */
+export async function apiFetch<E = unknown>(path: string, options: RequestOptions = {}): Promise<E> {
+  const auth = options.auth ?? true;
+  let token = auth ? await getAccessToken() : null;
+
+  let { response, json } = await send(path, options, token);
+
+  if (auth && token && response.status === 401) {
+    token = await recoverFromUnauthorized(token);
+    ({ response, json } = await send(path, options, token));
+  }
+
+  if (!response.ok || json?.success === false) {
+    const message =
+      typeof json?.error === 'string'
+        ? json.error
+        : response.status === 429
+          ? t('common.tooManyAttempts')
+          : t('common.requestFailed', { status: response.status });
+    throw new ApiError(message, response.status, typeof json?.code === 'string' ? json.code : undefined, json);
+  }
+
+  return json as E;
+}
+
+/** Like `apiFetch`, but unwraps `data` from the `{ success, data }` envelope. */
+export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const json = await apiFetch<Record<string, unknown> | null>(path, options);
+  return (json && 'data' in json ? json.data : json) as T;
+}
+
+/** Message to show for any error thrown by the api layer. */
+export function errorMessage(error: unknown, fallback = t('common.somethingWrong')): string {
+  return error instanceof ApiError ? error.message : fallback;
+}
+
+/** Build a query string, skipping empty values. */
+export function query(params: Record<string, string | number | boolean | null | undefined>): string {
+  const parts = Object.entries(params)
+    .filter(([, v]) => v !== undefined && v !== null && v !== '')
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`);
+  return parts.length ? `?${parts.join('&')}` : '';
+}
