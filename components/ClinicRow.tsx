@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { parseHours } from '@/lib/clinics';
 import { formatDay } from '@/lib/format';
@@ -20,7 +20,8 @@ export function hoursLines(clinic: Pick<Clinic, 'hours'>): string[] {
 }
 
 export function clinicA11yLabel(t: TFunction, clinic: Clinic): string {
-  return [clinic.name, clinic.location, clinic.linked ? t('clinics.linked') : null, hoursLines(clinic).join('; ')].filter(Boolean).join(', ');
+  const access = clinic.canBook === false ? t(clinic.access === 'requested' ? 'clinics.access.requested' : 'clinics.access.closed') : null;
+  return [clinic.name, clinic.location, clinic.linked ? t('clinics.linked') : null, access, hoursLines(clinic).join('; ')].filter(Boolean).join(', ');
 }
 
 /** "Sunrise Medical Clinic" → "SM": the clinic's monogram tile, since clinics have no logo in the API. */
@@ -33,9 +34,27 @@ function monogram(name: string): string {
     .toUpperCase();
 }
 
-/** A clinic in the directory: monogram, name, place, linked badge, rep hours, instructions, and Book. */
-export function ClinicRow({ clinic, onBook }: { clinic: Clinic; onBook: () => void }) {
+/**
+ * A clinic in the directory: monogram, name, place, linked badge, rep hours, instructions, and
+ * Book. A clinic that hasn't accepted the rep (the "All clinics" list) shows Request access, or
+ * the waiting request with Withdraw, instead of hours and Book.
+ */
+export function ClinicRow({
+  clinic,
+  onBook,
+  onRequest,
+  onWithdraw,
+  busy = false,
+}: {
+  clinic: Clinic;
+  onBook: () => void;
+  onRequest?: () => void;
+  onWithdraw?: () => void;
+  busy?: boolean;
+}) {
   const t = useT();
+  const closed = clinic.canBook === false;
+  const requested = clinic.access === 'requested';
   return (
     <View style={styles.card}>
       <View accessible accessibilityLabel={clinicA11yLabel(t, clinic)}>
@@ -63,16 +82,26 @@ export function ClinicRow({ clinic, onBook }: { clinic: Clinic; onBook: () => vo
             ) : null}
           </View>
         </View>
-        <View style={styles.hours}>
-          <Ionicons name="time-outline" size={16} color={colors.textMuted} />
-          <View style={styles.hoursLines}>
-            {hoursLines(clinic).map((line) => (
-              <Text key={line} style={[type.secondary, mono]}>
-                {line}
-              </Text>
-            ))}
+        {closed ? (
+          <View style={[styles.hours, requested && styles.waiting]}>
+            <Ionicons name={requested ? 'hourglass-outline' : 'lock-closed-outline'} size={16} color={requested ? colors.warning : colors.textMuted} />
+            <View style={styles.hoursLines}>
+              <Text style={[type.label, requested && { color: colors.warning }]}>{t(requested ? 'clinics.access.requested' : 'clinics.access.closed')}</Text>
+              <Text style={type.secondary}>{t(requested ? 'clinics.access.waiting' : 'clinics.access.hint')}</Text>
+            </View>
           </View>
-        </View>
+        ) : (
+          <View style={styles.hours}>
+            <Ionicons name="time-outline" size={16} color={colors.textMuted} />
+            <View style={styles.hoursLines}>
+              {hoursLines(clinic).map((line) => (
+                <Text key={line} style={[type.secondary, mono]}>
+                  {line}
+                </Text>
+              ))}
+            </View>
+          </View>
+        )}
         {clinic.instructions ? (
           <View style={styles.instructions}>
             <Ionicons name="information-circle-outline" size={16} color={colors.textMuted} />
@@ -82,12 +111,16 @@ export function ClinicRow({ clinic, onBook }: { clinic: Clinic; onBook: () => vo
           </View>
         ) : null}
       </View>
-      <Button
-        title={t('clinics.book')}
-        icon="calendar-outline"
-        onPress={onBook}
-        style={styles.book}
-      />
+      {!closed ? (
+        <Button title={t('clinics.book')} icon="calendar-outline" onPress={onBook} style={styles.book} />
+      ) : requested ? (
+        <TouchableOpacity style={styles.withdraw} onPress={onWithdraw} disabled={busy || !onWithdraw} accessibilityRole="button">
+          <Ionicons name="close-circle-outline" size={18} color={colors.textMuted} />
+          <Text style={styles.withdrawText}>{t('clinics.access.withdraw')}</Text>
+        </TouchableOpacity>
+      ) : (
+        <Button title={t('clinics.access.request')} icon="hand-right-outline" variant="secondary" onPress={onRequest ?? (() => {})} loading={busy} style={styles.book} />
+      )}
     </View>
   );
 }
@@ -131,4 +164,7 @@ const styles = StyleSheet.create({
   hoursLines: { gap: 2 },
   instructions: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginTop: spacing.sm },
   book: { marginTop: spacing.md },
+  waiting: { backgroundColor: colors.warningSoft, borderColor: colors.warningSoft },
+  withdraw: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2, minHeight: 48, marginTop: spacing.sm, alignSelf: 'flex-start' },
+  withdrawText: { fontSize: 15, fontWeight: '600', color: colors.textMuted },
 });

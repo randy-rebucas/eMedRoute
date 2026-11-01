@@ -39,18 +39,34 @@ function useDropped(): Set<string> {
   );
 }
 
-/** The bookable clinics, by name; `search` matches the name or city. */
-export function useClinics(search: string) {
-  const list = usePaginatedList<Clinic>(CLINICS_PATH + query({ search: search.trim() || undefined }), {
+/**
+ * The bookable clinics, by name; `search` matches the name or city. `all` also lists clinics that
+ * take rep visits but haven't accepted this rep, to request access to.
+ */
+export function useClinics(search: string, all = false) {
+  const list = usePaginatedList<Clinic>(CLINICS_PATH + query({ search: search.trim() || undefined, scope: all ? 'all' : undefined }), {
     limit: 50,
     refreshOn: ['clinics'],
   });
   const gone = useDropped();
   const items = useMemo(() => {
-    list.items.forEach((c) => known.set(c.id, c));
+    // Only bookable ones feed the booking sheet's cache.
+    list.items.forEach((c) => c.canBook !== false && known.set(c.id, c));
     return list.items.filter((c) => !gone.has(c.id));
   }, [list.items, gone]);
   return { ...list, items };
+}
+
+/** Ask a clinic that hasn't accepted the rep to add them (MOBILE_API.md → clinics/[id]/access). */
+export async function requestClinicAccess(clinicId: string, message?: string): Promise<void> {
+  await apiRequest(`${CLINICS_PATH}/${encodeURIComponent(clinicId)}/access`, { method: 'POST', body: { message: message?.trim() || undefined } });
+  emitRefresh('clinics');
+}
+
+/** Withdraw a waiting access request. */
+export async function withdrawClinicAccess(clinicId: string): Promise<void> {
+  await apiRequest(`${CLINICS_PATH}/${encodeURIComponent(clinicId)}/access`, { method: 'DELETE' });
+  emitRefresh('clinics');
 }
 
 /**
