@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { SkeletonRows, ThinProgress } from '@/components/Loading';
 import { OfflineBanner } from '@/components/OfflineBanner';
-import { ChoiceChips } from '@/components/pickers';
+import { FilterChips } from '@/components/pickers';
 import { ProductRow } from '@/components/ProductCards';
 import { Button, ListFooter, screenStyles } from '@/components/ui';
 
@@ -50,12 +50,13 @@ export default function ProductsScreen() {
                 <Button title={t('products.add')} icon="add-outline" variant="secondary" onPress={() => router.push('/products/new')} style={styles.addButton} />
               </View>
             </View>
-            <ChoiceChips
+            <FilterChips
+              label={t('products.form.status')}
               options={[
-                { value: 'active', label: t('products.status.active') },
-                { value: 'discontinued', label: t('products.status.discontinued') },
-                { value: 'inactive', label: t('products.status.inactive') },
-                { value: 'all', label: t('products.status.all') },
+                { value: 'active', label: t('products.status.active'), icon: 'checkmark-circle-outline' },
+                { value: 'discontinued', label: t('products.status.discontinued'), icon: 'remove-circle-outline' },
+                { value: 'inactive', label: t('products.status.inactive'), icon: 'pause-circle-outline' },
+                { value: 'all', label: t('products.status.all'), icon: 'apps-outline' },
               ]}
               value={filter}
               onChange={setFilter}

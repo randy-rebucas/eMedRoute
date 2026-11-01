@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
@@ -221,6 +221,56 @@ export function ChoiceChips<V extends string | number>({
   );
 }
 
+/**
+ * Pill-shaped filter tags for a list, in one row that scrolls sideways. The selected tag is
+ * filled teal with a check (so it doesn't rely on colour alone). Pills look 36pt tall; the
+ * touch target is 48pt through hitSlop. For choices inside a form, use ChoiceChips.
+ */
+export function FilterChips<V extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  /** What the tags filter, for screen readers ("Status"). */
+  label: string;
+  options: { value: V; label: string; icon?: IconName }[];
+  value: V;
+  onChange: (value: V) => void;
+}) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.filterScroll}
+      contentContainerStyle={styles.filterRow}
+      accessibilityRole="radiogroup"
+      accessibilityLabel={label}
+    >
+      {options.map((o) => {
+        const selected = o.value === value;
+        const icon = selected ? 'checkmark' : o.icon;
+        return (
+          <TouchableOpacity
+            key={o.value}
+            style={[styles.pill, selected && styles.pillSelected]}
+            onPress={() => onChange(o.value)}
+            hitSlop={{ top: 6, bottom: 6 }}
+            accessibilityRole="radio"
+            accessibilityState={{ selected }}
+            accessibilityLabel={o.label}
+          >
+            {icon ? <Ionicons name={icon} size={16} color={selected ? colors.primaryText : colors.textMuted} /> : null}
+            <Text style={[styles.pillText, selected && styles.pillTextSelected]} maxFontSizeMultiplier={1.6}>
+              {o.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
 /** Segments that switch what a screen lists (Upcoming / Past / My log). */
 export function Segmented<V extends string>({
   options,
@@ -293,6 +343,23 @@ const styles = StyleSheet.create({
   chipSelected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   chipText: { fontSize: 15, color: colors.text },
   chipTextSelected: { fontWeight: '600', color: colors.primaryOnSoft },
+  // Bleeds to the screen edges so tags scroll under them, not under the list padding.
+  filterScroll: { marginHorizontal: -spacing.md, flexGrow: 0 },
+  filterRow: { paddingHorizontal: spacing.md, paddingVertical: 6, gap: spacing.sm, alignItems: 'center' },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs + 2,
+    minHeight: 36,
+    paddingHorizontal: spacing.sm + 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  pillSelected: { borderColor: colors.primary, backgroundColor: colors.primary },
+  pillText: { fontSize: 14, fontWeight: '600', color: colors.text },
+  pillTextSelected: { color: colors.primaryText },
   segments: {
     flexDirection: 'row',
     borderWidth: 1,
