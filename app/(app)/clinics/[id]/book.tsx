@@ -105,6 +105,11 @@ function BookingSheet({ clinic }: { clinic: Clinic }) {
         setTime(null);
         slots.reload();
         return setProblem({ message: t('booking.slotUnavailable') });
+      case 'SUBSCRIPTION_REQUIRED':
+        // Plan opens on top, so what the rep typed is still here when they come back.
+        emitRefresh('subscription');
+        router.push('/plan');
+        return setProblem({ message: t('booking.needsPlan') });
       case 'DUPLICATE_REQUEST': {
         const existing = day ? await findOpenBooking(clinic.id, day).catch(() => null) : null;
         return setProblem({ message: t('booking.duplicate'), existing });

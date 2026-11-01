@@ -20,6 +20,7 @@ export default defineStrings({
     purposeHint: 'The clinic sees this, e.g. Detailing the new 10 mg strength',
     purposeRequired: 'Say what the visit is for.',
     send: 'Send request',
+    needsPlan: 'Booking with clinics needs a plan. What you typed is kept.',
 
     sentTitle: 'Request sent',
     sentBody: 'You asked {clinic} for {day} at',
@@ -64,6 +65,7 @@ export default defineStrings({
     purposeHint: 'Nakikita ito ng clinic, hal. Ipapakilala ang bagong 10 mg',
     purposeRequired: 'Sabihin kung para saan ang pagbisita.',
     send: 'Ipadala ang request',
+    needsPlan: 'Kailangan ng plan para mag-book sa mga clinic. Naka-save ang tinype mo.',
 
     sentTitle: 'Naipadala ang request',
     sentBody: 'Humiling ka sa {clinic} para sa {day} nang',

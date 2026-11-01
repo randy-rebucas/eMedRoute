@@ -9,7 +9,7 @@ import { type } from '@/lib/typography';
 import { NavRow, RowGroup } from '@/components/forms';
 import { screenStyles } from '@/components/ui';
 
-/** More: the rep's account (Profile, Settings, Support) and sign out. Team and Plan join in phase 4. */
+/** More: Team and Plan, the rep's account (Profile, Settings, Support) and sign out. */
 export default function MoreScreen() {
   const { rep, signOut } = useAuth();
   const t = useT();
@@ -39,6 +39,11 @@ export default function MoreScreen() {
             <Text style={type.secondary}>{[rep.company, rep.email].filter(Boolean).join(' · ')}</Text>
           </View>
         ) : null}
+
+        <RowGroup title={t('more.work')}>
+          <NavRow icon="people-outline" label={t('more.team')} onPress={() => router.push('/team')} />
+          <NavRow icon="card-outline" label={t('more.plan')} onPress={() => router.push('/plan')} last />
+        </RowGroup>
 
         <RowGroup title={t('more.account')}>
           <NavRow icon="person-outline" label={t('more.profile')} onPress={() => router.push('/profile')} />

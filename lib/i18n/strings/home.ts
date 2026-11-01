@@ -18,6 +18,10 @@ export default defineStrings({
     upcoming: 'Coming up',
     allUpcoming: { one: 'See {count} upcoming visit', other: 'See all {count} upcoming visits' },
     offlineSubject: 'your last-loaded summary',
+    'banner.invite': 'You’re invited to join {team}',
+    'banner.inviteAction': 'Answer',
+    'banner.plan': 'Booking with clinics needs a plan',
+    'banner.planAction': 'See plan',
   },
   fil: {
     greeting: 'Hi, {name}',
@@ -35,5 +39,9 @@ export default defineStrings({
     upcoming: 'Paparating',
     allUpcoming: 'Tingnan ang {count} paparating na pagbisita',
     offlineSubject: 'huling na-load na buod mo',
+    'banner.invite': 'Inimbitahan kang sumali sa {team}',
+    'banner.inviteAction': 'Sagutin',
+    'banner.plan': 'Kailangan ng plan para mag-book sa mga clinic',
+    'banner.planAction': 'Tingnan ang plan',
   },
 });

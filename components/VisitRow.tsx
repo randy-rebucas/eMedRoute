@@ -40,8 +40,11 @@ export function visitA11yLabel(t: TFunction, visit: VisitLike): string {
   return [visit.clinicName, day, formatTime(visit.time), statusWord(t, visit)].join(', ');
 }
 
-/** One visit in a list: day, clinic, time and place, status pill and who acts next. */
-export function VisitRow({ visit }: { visit: VisitLike }) {
+/**
+ * One visit in a list: day, clinic, time and place, status pill and who acts next. A team
+ * member's visit (`member`) is read-only: it isn't the rep's own, so it opens nothing.
+ */
+export function VisitRow({ visit, member }: { visit: VisitLike; member?: string }) {
   const t = useT();
   const day = visitDay(visit);
   const state = visitState(visit);
@@ -53,8 +56,9 @@ export function VisitRow({ visit }: { visit: VisitLike }) {
     <TouchableOpacity
       style={styles.row}
       onPress={() => router.push(`/visits/${visit._id}`)}
-      accessibilityRole="button"
-      accessibilityLabel={visitA11yLabel(t, visit)}
+      disabled={!!member}
+      accessibilityRole={member ? undefined : 'button'}
+      accessibilityLabel={member ? `${member}, ${visitA11yLabel(t, visit)}` : visitA11yLabel(t, visit)}
       accessibilityHint={line ?? undefined}
     >
       <View style={styles.day}>
@@ -69,6 +73,7 @@ export function VisitRow({ visit }: { visit: VisitLike }) {
         </Text>
       </View>
       <View style={styles.body}>
+        {member ? <Text style={[type.label, styles.member]}>{member}</Text> : null}
         <Text style={[type.cardTitle, state === 'cancelled' && styles.struck]} numberOfLines={2}>
           {visit.clinicName}
         </Text>
@@ -104,5 +109,6 @@ const styles = StyleSheet.create({
   time: { color: colors.text, fontWeight: '600' },
   status: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs, flexWrap: 'wrap' },
   line: { marginTop: 2 },
+  member: { color: colors.slate },
   struck: { textDecorationLine: 'line-through', color: colors.textMuted },
 });

@@ -3,8 +3,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { useDashboard } from '@/lib/dashboard';
+import { bookingBlocked, useSubscription } from '@/lib/plan';
+import { useTeam } from '@/lib/team';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { IconName } from '@/components/ui';
 import { mono, type } from '@/lib/typography';
 import { AppHeader } from '@/components/AppHeader';
 import { ErrorState } from '@/components/ErrorState';
@@ -21,6 +25,9 @@ export default function HomeScreen() {
   const { data, loading, refreshing, error, offline, stale, updatedAt, refresh } = useDashboard();
   const firstName = data?.profile.firstName ?? rep?.name.split(/\s+/)[0];
   const [next, ...later] = data?.nextVisits ?? [];
+  const { data: team } = useTeam();
+  const { data: sub } = useSubscription();
+  const invite = team && !team.team ? team.invite : null;
 
   return (
     <SafeAreaView style={screenStyles.container} edges={['top']}>
@@ -34,6 +41,17 @@ export default function HomeScreen() {
         </Text>
         <ThinProgress active={stale && !offline} />
         <OfflineBanner offline={offline} updatedAt={updatedAt} subject={t('home.offlineSubject')} />
+        {invite ? (
+          <Notice
+            icon="people-outline"
+            text={t('home.banner.invite', { team: invite.teamName })}
+            action={t('home.banner.inviteAction')}
+            onPress={() => router.push('/team')}
+          />
+        ) : null}
+        {bookingBlocked(sub) ? (
+          <Notice icon="card-outline" text={t('home.banner.plan')} action={t('home.banner.planAction')} onPress={() => router.push('/plan')} />
+        ) : null}
 
         {!data ? (
           loading ? (
@@ -97,6 +115,17 @@ export default function HomeScreen() {
   );
 }
 
+/** A banner that asks for something: a team invite, or booking that needs a plan. */
+function Notice({ icon, text, action, onPress }: { icon: IconName; text: string; action: string; onPress: () => void }) {
+  return (
+    <TouchableOpacity style={styles.notice} onPress={onPress} accessibilityRole="button" accessibilityLabel={`${text}. ${action}`}>
+      <Ionicons name={icon} size={22} color={colors.warning} />
+      <Text style={[type.body, styles.noticeText]}>{text}</Text>
+      <Text style={styles.noticeAction}>{action}</Text>
+    </TouchableOpacity>
+  );
+}
+
 function Count({ value, label, tone, onPress }: { value: number; label: string; tone?: 'warning'; onPress: () => void }) {
   return (
     <TouchableOpacity style={styles.count} onPress={onPress} accessibilityRole="button" accessibilityLabel={`${value} ${label}`}>
@@ -134,4 +163,16 @@ const styles = StyleSheet.create({
   countValue: { fontSize: 24, fontWeight: '700', color: colors.text },
   countWarning: { color: colors.warning },
   section: { marginBottom: spacing.sm },
+  notice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    minHeight: 56,
+    backgroundColor: colors.warningSoft,
+    borderRadius: radius.md,
+    padding: spacing.sm + 4,
+    marginTop: spacing.sm,
+  },
+  noticeText: { flex: 1 },
+  noticeAction: { fontSize: 15, fontWeight: '700', color: colors.primaryOnSoft },
 });

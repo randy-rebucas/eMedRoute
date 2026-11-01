@@ -196,6 +196,88 @@ export interface ProductInput {
   status?: ProductStatus;
 }
 
+// ── Plan and teams ───────────────────────────────────────────────────────────
+
+export type BillingCycle = 'monthly' | 'yearly';
+
+/** A team's plan (teamCoverage on the server). Members are covered while active and members ≤ seats. */
+export interface TeamCoverage {
+  active: boolean;
+  seats: number;
+  members: number;
+  expiresAt: string | null;
+}
+
+/** GET /subscription. Prices come from the platform; never hard-code them. */
+export interface Subscription {
+  canBookClinics: boolean;
+  coveredBy: 'free' | 'individual' | 'team' | null;
+  prices: { monthly: number; yearly: number; seatMonthly: number; seatYearly: number; currency: 'PHP' };
+  /** The rep fee is ₱0: booking is free for everyone. */
+  free: boolean;
+  /** Online payment is set up on the server. */
+  payable: boolean;
+  individual: { billingCycle: BillingCycle; expiresAt: string; active: boolean } | null;
+  team: TeamCoverage | null;
+}
+
+export interface TeamInvite {
+  teamId: string;
+  teamName: string;
+  invitedBy: string | null;
+  invitedAt: string;
+}
+
+export interface TeamMemberStats {
+  visitsThisMonth: number;
+  completedThisMonth: number;
+  /** Approved visits from today on. */
+  upcoming: number;
+  pendingRequests: number;
+  lastVisitAt: string | null;
+}
+
+/** `members` items (managers only). `id` is the member's rep profile id. */
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  territory: string | null;
+  role: 'manager' | 'member';
+  stats: TeamMemberStats;
+}
+
+export interface PendingTeamInvite {
+  /** The invited rep's profile id (for withdrawing). */
+  id: string;
+  name: string;
+  email: string;
+  invitedAt: string;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  role: 'manager' | 'member';
+  /** Managers' names. */
+  managers: string[];
+  memberCount: number;
+  subscription: TeamCoverage;
+  /** Managers only. */
+  members?: TeamMember[];
+  /** Managers only. */
+  pendingInvites?: PendingTeamInvite[];
+}
+
+/** GET /team */
+export interface TeamState {
+  invite: TeamInvite | null;
+  team: Team | null;
+}
+
+/** GET /team/visits items: a member's visit without private notes. */
+export type TeamVisit = Omit<Visit, 'notes'> & { member: { id: string; name: string } | null };
+
 // ── Home ─────────────────────────────────────────────────────────────────────
 
 /** GET /dashboard. "This month" is the UTC calendar month. */

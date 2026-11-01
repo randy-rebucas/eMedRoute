@@ -36,7 +36,7 @@ EAS project id (`eas init` has not been run for this app yet).
 production while developing.
 
 A local test rep exists in the Docker database (created by hand for phase 1, not by a script):
-`rep1@my-clinic.dev` / `Kestrel-Harbor-42`, company "Dev Pharma Inc.". Booking tests (phase 3)
+`rep1@my-clinic.dev` and `rep2@my-clinic.dev`, both `Kestrel-Harbor-42`, company "Dev Pharma Inc.". Booking tests (phase 3)
 also need a clinic with rep visiting hours on: `/medical-reps` → Visiting hours at
 `my-clinic.localhost:3000` (admin `admin1@my-clinic.dev` / `devpassword`).
 
@@ -52,7 +52,7 @@ cache folder (`rep-offline`) and push registration (`/api/medical-representative
 app/(auth)/        login, two-step (authenticator code), enable-notifications
 app/(app)/(tabs)/  home, visits, clinics, products, more
 app/(app)/         visits/[id] (+ edit, move), visits/log, clinics/[id]/book, products/[id], products/new,
-                   profile, settings,
+                   plan, team (+ visits), profile, settings,
                    change-password, support
 lib/               api (Bearer + single-flight refresh), auth, push, storage, i18n, types,
                    visits (status rules + lists), products, dashboard, undo (delete + Undo)
@@ -66,5 +66,12 @@ scripts/           generate-brand.mjs (npm run brand)
 1. **Foundation** (done): sign-in with two-step code, token refresh, device registration,
    Profile, Settings, Support.
 2. **Own work** (done): Home, Visits with the own log, Products, offline cache, reminder push routing.
-3. **Clinic booking** (built; end-to-end run pending): Clinics, slot sheet, request/move/cancel, visit pushes.
-4. Teams and plan.
+3. **Clinic booking** (done): Clinics, slot sheet, request/move/cancel, visit pushes.
+4. **Teams and plan** (done): Team screens, manager view, Plan status, the paid-booking gate.
+
+## Paying for a plan
+
+The app never sells anything (App Store / Play payment rules): Plan and team seats show status and
+prices from `GET /subscription`, and "Ask for a payment link" opens a prefilled billing support
+request. The backend's checkout endpoints (`/subscription/checkout`, `/team/checkout`) are not
+called. When the web has a page where a rep can pay, point those buttons at it instead.

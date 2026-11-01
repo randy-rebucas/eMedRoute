@@ -39,6 +39,9 @@ export default function AppLayout() {
         <Stack.Screen name="profile/edit" options={{ title: t('profile.editTitle') }} />
         <Stack.Screen name="settings" options={{ title: t('more.settings') }} />
         <Stack.Screen name="change-password" options={{ title: t('settings.changePassword') }} />
+        <Stack.Screen name="plan" options={{ title: t('more.plan') }} />
+        <Stack.Screen name="team/index" options={{ title: t('more.team') }} />
+        <Stack.Screen name="team/visits" options={{ title: t('team.visitsTitle') }} />
         <Stack.Screen name="support/index" options={{ title: t('more.support') }} />
         <Stack.Screen name="support/new" options={{ title: t('support.newTitle'), presentation: 'modal' }} />
       </Stack>

@@ -11,6 +11,8 @@
  *   visits        (tabs)/visits.tsx, visits/*, VisitRow, StatusPill, VisitLogForm, ProductPicker, lib/visits
  *   clinics       (tabs)/clinics.tsx, ClinicRow
  *   booking       clinics/[id]/book, visits/[id]/move, booking.tsx, visit detail Move/Cancel
+ *   plan          plan.tsx, PlanCard, lib/plan
+ *   team          team/*, TeamMemberRow, lib/team
  *   products      (tabs)/products.tsx, products/*, ProductCards, ProductForm, lib/products
  *   more          app/(app)/(tabs)/more.tsx, stack titles in app/(app)/_layout.tsx
  *   profile       app/(app)/profile/*
@@ -28,10 +30,12 @@ import more from './strings/more';
 import nav from './strings/nav';
 import notifications from './strings/notifications';
 import password from './strings/password';
+import plan from './strings/plan';
 import products from './strings/products';
 import profile from './strings/profile';
 import settings from './strings/settings';
 import support from './strings/support';
+import team from './strings/team';
 import visits from './strings/visits';
 import type { Message, ParamsArg } from './types';
 
@@ -45,10 +49,12 @@ export const catalogs = {
   nav,
   notifications,
   password,
+  plan,
   products,
   profile,
   settings,
   support,
+  team,
   visits,
 };
 

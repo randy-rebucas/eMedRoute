@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useClinics } from '@/lib/clinics';
 import { useT } from '@/lib/i18n';
+import { bookingBlocked, useSubscription } from '@/lib/plan';
 import { colors, radius, spacing } from '@/lib/theme';
 import { type } from '@/lib/typography';
 import { ClinicRow } from '@/components/ClinicRow';
@@ -28,6 +29,8 @@ export default function ClinicsScreen() {
   const [search, setSearch] = useState('');
   const query = useDebounced(search);
   const list = useClinics(query);
+  // Book stays visible when booking isn't covered; it opens Plan instead of the sheet.
+  const { data: sub } = useSubscription();
   const { items, loading, refreshing, loadingMore, error, loadMoreError, hasMore } = list;
 
   return (
@@ -72,7 +75,9 @@ export default function ClinicsScreen() {
           )
         }
         ListFooterComponent={<ListFooter loadingMore={loadingMore} error={loadMoreError} onRetry={list.loadMore} />}
-        renderItem={({ item }) => <ClinicRow clinic={item} onBook={() => router.push(`/clinics/${item.id}/book`)} />}
+        renderItem={({ item }) => (
+          <ClinicRow clinic={item} onBook={() => router.push(bookingBlocked(sub) ? '/plan' : `/clinics/${item.id}/book`)} />
+        )}
       />
     </SafeAreaView>
   );

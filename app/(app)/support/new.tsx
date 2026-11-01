@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { errorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { PlainKey, useT } from '@/lib/i18n';
@@ -25,13 +25,19 @@ const CATEGORY_LABEL: Record<SupportCategory, PlainKey> = {
   other: 'support.category.other',
 };
 
-/** A new support request. What the rep typed stays on screen until it is sent. */
+/**
+ * A new support request. What the rep typed stays on screen until it is sent. Plan and Team open
+ * it prefilled (`category`, `subject`, `message`) to ask for a payment link.
+ */
 export default function NewSupportRequestScreen() {
   const t = useT();
   const { rep } = useAuth();
-  const [category, setCategory] = useState<SupportCategory>('general');
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
+  const params = useLocalSearchParams<{ category?: string; subject?: string; message?: string }>();
+  const [category, setCategory] = useState<SupportCategory>(() =>
+    (SUPPORT_CATEGORIES as readonly string[]).includes(params.category ?? '') ? (params.category as SupportCategory) : 'general'
+  );
+  const [subject, setSubject] = useState(params.subject ?? '');
+  const [message, setMessage] = useState(params.message ?? '');
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
