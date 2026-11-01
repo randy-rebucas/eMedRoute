@@ -63,6 +63,17 @@ export async function requestClinicAccess(clinicId: string, message?: string): P
   emitRefresh('clinics');
 }
 
+/**
+ * Leave a clinic's list. True when it stays bookable (it takes any rep). Throws ApiError
+ * ACTIVE_VISITS (with `body.count`) for a clinic that takes only its own reps while visits are
+ * waiting or approved there.
+ */
+export async function leaveClinic(clinicId: string): Promise<boolean> {
+  const result = await apiRequest<{ canBook: boolean }>(`${CLINICS_PATH}/${encodeURIComponent(clinicId)}`, { method: 'DELETE' });
+  emitRefresh('clinics');
+  return !!result?.canBook;
+}
+
 /** Withdraw a waiting access request. */
 export async function withdrawClinicAccess(clinicId: string): Promise<void> {
   await apiRequest(`${CLINICS_PATH}/${encodeURIComponent(clinicId)}/access`, { method: 'DELETE' });

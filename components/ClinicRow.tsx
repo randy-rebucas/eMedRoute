@@ -44,12 +44,15 @@ export function ClinicRow({
   onBook,
   onRequest,
   onWithdraw,
+  onLeave,
   busy = false,
 }: {
   clinic: Clinic;
   onBook: () => void;
   onRequest?: () => void;
   onWithdraw?: () => void;
+  /** Linked clinics only: take it off the rep's list. */
+  onLeave?: () => void;
   busy?: boolean;
 }) {
   const t = useT();
@@ -112,7 +115,15 @@ export function ClinicRow({
         ) : null}
       </View>
       {!closed ? (
-        <Button title={t('clinics.book')} icon="calendar-outline" onPress={onBook} style={styles.book} />
+        <>
+          <Button title={t('clinics.book')} icon="calendar-outline" onPress={onBook} style={styles.book} />
+          {clinic.linked && onLeave ? (
+            <TouchableOpacity style={styles.withdraw} onPress={onLeave} disabled={busy} accessibilityRole="button" accessibilityLabel={`${t('clinics.leave')}, ${clinic.name}`}>
+              <Ionicons name="exit-outline" size={18} color={colors.textMuted} />
+              <Text style={styles.withdrawText}>{t('clinics.leave')}</Text>
+            </TouchableOpacity>
+          ) : null}
+        </>
       ) : requested ? (
         <TouchableOpacity style={styles.withdraw} onPress={onWithdraw} disabled={busy || !onWithdraw} accessibilityRole="button">
           <Ionicons name="close-circle-outline" size={18} color={colors.textMuted} />

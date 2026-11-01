@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ApiError, errorMessage } from '@/lib/api';
-import { requestClinicAccess, useClinics, withdrawClinicAccess } from '@/lib/clinics';
+import { leaveClinic, requestClinicAccess, useClinics, withdrawClinicAccess } from '@/lib/clinics';
 import { useT } from '@/lib/i18n';
 import { bookingBlocked, useSubscription } from '@/lib/plan';
 import { colors, radius, spacing } from '@/lib/theme';
@@ -62,6 +62,34 @@ export default function ClinicsScreen() {
             AccessibilityInfo.announceForAccessibility(t('clinics.access.withdrawn'));
           } catch (err) {
             Alert.alert(isNetworkError(err) ? t('common.needsConnection') : errorMessage(err));
+          } finally {
+            setBusyId(null);
+          }
+        },
+      },
+    ]);
+  }
+
+  function confirmLeave(clinic: Clinic) {
+    Alert.alert(t('clinics.leaveTitle', { clinic: clinic.name }), t(clinic.openToAllReps ? 'clinics.leaveBodyOpen' : 'clinics.leaveBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('clinics.leave'),
+        style: 'destructive',
+        onPress: async () => {
+          setBusyId(clinic.id);
+          try {
+            await leaveClinic(clinic.id);
+            // The row loses its Linked badge (or leaves the list) as it refreshes.
+            AccessibilityInfo.announceForAccessibility(t('clinics.left', { clinic: clinic.name }));
+          } catch (err) {
+            if (err instanceof ApiError && err.code === 'ACTIVE_VISITS') {
+              const count = Number((err.body as { count?: number } | null)?.count) || 1;
+              Alert.alert(t('clinics.leaveTitle', { clinic: clinic.name }), t('clinics.leaveBlocked', { count }), [
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('clinics.seeVisits'), onPress: () => router.push({ pathname: '/visits', params: { segment: 'upcoming' } }) },
+              ]);
+            } else Alert.alert(isNetworkError(err) ? t('common.needsConnection') : errorMessage(err));
           } finally {
             setBusyId(null);
           }
@@ -132,6 +160,7 @@ export default function ClinicsScreen() {
             onBook={() => router.push(bookingBlocked(sub) ? '/plan' : `/clinics/${item.id}/book`)}
             onRequest={() => setAsking(item)}
             onWithdraw={() => confirmWithdraw(item)}
+            onLeave={() => confirmLeave(item)}
           />
         )}
       />

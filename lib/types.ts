@@ -145,6 +145,8 @@ export interface Clinic {
   linked: boolean;
   /** The rep can book it (linked or open). False only in the scope=all directory. */
   canBook?: boolean;
+  /** Takes visits from any rep: still bookable after leaving its list. */
+  openToAllReps?: boolean;
   /** linked / open: bookable; requested: the rep's access request is waiting; none: can ask. */
   access?: 'linked' | 'open' | 'requested' | 'none';
   /** One line per window, from describeWindows: "Tue 15:00–17:00" (English day, clinic time). */
