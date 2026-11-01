@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { useDashboard } from '@/lib/dashboard';
 import { formatDate } from '@/lib/format';
 import { bookingBlocked, useSubscription } from '@/lib/plan';
+import { todaysStops } from '@/lib/route';
 import { useTeam } from '@/lib/team';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
@@ -16,16 +17,18 @@ import { ErrorState } from '@/components/ErrorState';
 import { SkeletonRows, ThinProgress } from '@/components/Loading';
 import { NextVisitCard } from '@/components/NextVisitCard';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { TodayRoute } from '@/components/TodayRoute';
 import { IconName, IconTile, screenStyles, SectionHeader } from '@/components/ui';
 import { VisitRow } from '@/components/VisitRow';
 
-/** Home: the next visit first, then quick actions, this month's counts and the rest of the upcoming visits. */
+/** Home: the next visit first, then today's route, quick actions, this month's counts and the rest of the upcoming visits. */
 export default function HomeScreen() {
   const { rep } = useAuth();
   const t = useT();
   const { data, loading, refreshing, error, offline, stale, updatedAt, refresh } = useDashboard();
   const firstName = data?.profile.firstName ?? rep?.name.split(/\s+/)[0];
   const [next, ...later] = data?.nextVisits ?? [];
+  const stops = todaysStops(data?.nextVisits ?? []);
   const { data: team } = useTeam();
   const { data: sub } = useSubscription();
   const invite = team && !team.team ? team.invite : null;
@@ -71,6 +74,8 @@ export default function HomeScreen() {
                 <EmptyState art="calendar" title={t('home.noNextVisit')} hint={t('home.noNextVisitHint')} />
               </View>
             )}
+
+            {stops.length >= 2 ? <TodayRoute stops={stops} /> : null}
 
             <View style={styles.quick}>
               <QuickAction icon="business-outline" label={t('home.quick.book')} onPress={() => router.push('/clinics')} />
