@@ -5,7 +5,8 @@ import { useApiData } from './useApiData';
 
 /** The signed-in rep's own profile (GET /session). Refetches after any profile or settings save. */
 export function useRepProfile() {
-  return useApiData<RepProfile>(AUTH_ENDPOINTS.session, { refreshOn: ['profile'] });
+  // Kept offline (encrypted, like every saved copy) so the profile still opens without signal.
+  return useApiData<RepProfile>(AUTH_ENDPOINTS.session, { refreshOn: ['profile'], offline: true });
 }
 
 /** PUT /profile. Returns the saved profile. */

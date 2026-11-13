@@ -1,6 +1,7 @@
 import { apiFetch, query } from './api';
 import { emitRefresh } from './events';
-import { TeamState, TeamVisit } from './types';
+import { clinicTodayYmd } from './format';
+import { TeamMember, TeamMemberStats, TeamState, TeamVisit } from './types';
 import { useApiData } from './useApiData';
 import { usePaginatedList } from './usePaginatedList';
 
@@ -45,3 +46,43 @@ export const answerInvite = (accept: boolean) => teamWrite('/invite', 'POST', { 
 
 /** Remove a member (manager). Errors: USE_LEAVE, IS_MANAGER. */
 export const removeMember = (repId: string) => teamWrite(`/members/${encodeURIComponent(repId)}`, 'DELETE');
+
+// ── The manager's month ─────────────────────────────────────────────────────
+
+/** A member with no completed visit for this many days is flagged to the manager. */
+export const QUIET_DAYS = 14;
+
+/**
+ * A member's month as two parts that add up to the bar: visits done, and the rest booked or
+ * logged this month (waiting, approved, missed). Cancelled and declined aren't counted (server).
+ */
+export function memberMonth(s: TeamMemberStats): { done: number; open: number; total: number } {
+  const done = Math.max(0, s.completedThisMonth);
+  const total = Math.max(done, s.visitsThisMonth);
+  return { done, open: total - done, total };
+}
+
+/** Whole days since the member's last completed visit (a UTC-midnight day), or null if none. */
+export function daysSinceDone(lastVisitAt: string | null, today: string = clinicTodayYmd()): number | null {
+  if (!lastVisitAt) return null;
+  const last = Date.parse(`${lastVisitAt.slice(0, 10)}T00:00:00.000Z`);
+  const now = Date.parse(`${today}T00:00:00.000Z`);
+  if (Number.isNaN(last) || Number.isNaN(now)) return null;
+  return Math.max(0, Math.round((now - last) / 86_400_000));
+}
+
+/** Busiest first this month, then by name, so the bars read as a ranking. */
+export function byMonth(members: TeamMember[]): TeamMember[] {
+  return [...members].sort((a, b) => memberMonth(b.stats).total - memberMonth(a.stats).total || a.name.localeCompare(b.name));
+}
+
+/** The whole team's month: visits and how many are done. */
+export function teamMonth(members: TeamMember[]): { total: number; done: number } {
+  return members.reduce(
+    (sum, m) => {
+      const { total, done } = memberMonth(m.stats);
+      return { total: sum.total + total, done: sum.done + done };
+    },
+    { total: 0, done: 0 }
+  );
+}

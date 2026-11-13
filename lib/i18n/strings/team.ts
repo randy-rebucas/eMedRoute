@@ -1,6 +1,6 @@
 import { defineStrings } from '../types';
 
-// Area "team": team/*, TeamMemberRow, lib/team.
+// Area "team": team/*, TeamMonthChart, lib/team.
 export default defineStrings({
   en: {
     offlineSubject: 'your last-loaded team',
@@ -27,20 +27,13 @@ export default defineStrings({
     'invite.withdrawA11y': 'Withdraw the invite to {name}',
 
     'start.title': 'Start a team',
-    'start.body': 'Managers see their members’ visits (never private notes) and can buy seats that cover members’ bookings.',
     'start.name': 'Team name',
     'start.nameHint': 'Usually your company and area, e.g. Dev Pharma QC North',
     'start.nameRequired': 'Give the team a name (at least 2 characters).',
     'start.button': 'Start team',
 
-    managedBy: 'Managed by {names}',
-    membersWord: { one: 'member', other: 'members' },
-    members: { one: '{count} member', other: '{count} members' },
     manager: 'Manager',
     you: 'You',
-    never: 'none yet',
-    lastVisit: 'last completed visit {date}',
-    lastVisitLabel: 'Last completed visit',
     visits: 'Visits',
     visitsOf: 'Visits of {name}',
     remove: 'Remove',
@@ -51,19 +44,11 @@ export default defineStrings({
     'stat.done': { one: '{count} completed', other: '{count} completed' },
     'stat.upcoming': { one: '{count} approved ahead', other: '{count} approved ahead' },
     'stat.waiting': { one: '{count} waiting on a clinic', other: '{count} waiting on a clinic' },
-    'stat.thisMonthShort': 'this month',
-    'stat.doneShort': 'completed',
-    'stat.upcomingShort': 'approved ahead',
-    'stat.waitingShort': 'waiting',
 
     'rename.label': 'Team name',
     'rename.a11y': 'Rename team',
 
-    'plan.title': 'Team plan',
     'plan.none': 'No team plan. Members book on their own plans, or free while booking is free.',
-    'plan.active': 'Active until',
-    'plan.ended': 'Ended',
-    'plan.overFull': 'More members than seats (members: {members}, seats: {seats}): nobody is covered until the seats cover everyone.',
     'plan.seatPrice': 'A seat costs {monthly} a month or {yearly} a year.',
     'plan.seatsRule': 'Seats must cover every member (at least {members} now). Seats aren’t pro-rated.',
     'plan.ask': 'Ask for a seats payment link',
@@ -77,6 +62,48 @@ export default defineStrings({
     'error.full': 'The team has no free seat. Ask the manager to add one.',
     'error.hasMembers': 'You’re the only manager: remove the other members before you leave.',
     'error.inviteChanged': 'That invite changed or was withdrawn. Pull down to reload.',
+
+    // Hero (manager and member)
+    'hero.manage': { one: 'You manage · {count} member', other: 'You manage · {count} members' },
+    'hero.managedBy': { one: 'Managed by {names} · {count} member', other: 'Managed by {names} · {count} members' },
+    'hero.until': 'Team plan until {date}',
+    'hero.ended': 'Team plan ended {date}',
+    'hero.overFull': 'More members than seats',
+    'hero.overFullBody': 'Nobody on the team is covered until the seats cover all {members} members.',
+    'hero.invitesOut': { one: '{count} invite waiting for an answer', other: '{count} invites waiting for an answer' },
+
+    // The manager's month, one bar per member
+    'month.title': 'This month',
+    'month.legendDone': 'Done',
+    'month.legendOpen': 'Booked, not done',
+    'month.team': { one: 'Team: {count} visit this month · {done} done', other: 'Team: {count} visits this month · {done} done' },
+    'month.none': 'No visits yet this month.',
+    'month.hint': 'Tap a bar to read it.',
+    'month.quiet': { one: 'No completed visit in {count} day', other: 'No completed visit in {count} days' },
+    'month.neverDone': 'No completed visit yet',
+    'month.lastDone': 'Last done {date}',
+    'visitsRow.hint': 'Everyone’s visits, newest first',
+
+    'sees.title': 'What your managers see',
+    'sees.visits': 'Your visits and this month’s counts',
+    'sees.notes': 'Never your private notes',
+
+    'invite.chip': 'Invitation',
+    'invite.declineTitle': 'Decline the invite to {team}?',
+    'invite.declineBody': 'To join later you’ll need a new invite.',
+    'seats.title': 'Team seats',
+
+    'start.photoTitle': 'Work as a team',
+    'start.photoBody': 'For a manager and the reps in their area.',
+    'gives.title': 'What a team gives you',
+    'gives.see': 'Managers see members’ visits and monthly counts',
+    'gives.notes': 'Private notes stay private',
+    'gives.seats': 'One plan can cover everyone’s bookings',
+    'gives.invite': 'Invite reps by their email',
+
+    'visits.filter': 'Member',
+    'visits.showAll': 'Show everyone',
+    noVisitsOf: 'No visits from {name} yet.',
   },
   fil: {
     offlineSubject: 'huling na-load na team mo',
@@ -103,20 +130,13 @@ export default defineStrings({
     'invite.withdrawA11y': 'Bawiin ang imbitasyon kay {name}',
 
     'start.title': 'Magsimula ng team',
-    'start.body': 'Nakikita ng mga manager ang pagbisita ng mga miyembro (hindi ang private notes) at puwede silang bumili ng seat para sakupin ang booking ng mga miyembro.',
     'start.name': 'Pangalan ng team',
     'start.nameHint': 'Karaniwang kumpanya at lugar, hal. Dev Pharma QC North',
     'start.nameRequired': 'Bigyan ng pangalan ang team (hindi bababa sa 2 character).',
     'start.button': 'Simulan ang team',
 
-    managedBy: 'Pinamamahalaan ni {names}',
-    membersWord: 'miyembro',
-    members: '{count} miyembro',
     manager: 'Manager',
     you: 'Ikaw',
-    never: 'wala pa',
-    lastVisit: 'huling natapos na pagbisita {date}',
-    lastVisitLabel: 'Huling natapos na pagbisita',
     visits: 'Pagbisita',
     visitsOf: 'Mga pagbisita ni {name}',
     remove: 'Alisin',
@@ -127,19 +147,11 @@ export default defineStrings({
     'stat.done': '{count} natapos',
     'stat.upcoming': '{count} approved na paparating',
     'stat.waiting': '{count} naghihintay sa clinic',
-    'stat.thisMonthShort': 'ngayong buwan',
-    'stat.doneShort': 'natapos',
-    'stat.upcomingShort': 'approved na paparating',
-    'stat.waitingShort': 'naghihintay',
 
     'rename.label': 'Pangalan ng team',
     'rename.a11y': 'Palitan ang pangalan ng team',
 
-    'plan.title': 'Team plan',
     'plan.none': 'Walang team plan. Nagbu-book ang mga miyembro gamit ang sarili nilang plan, o libre habang libre ang booking.',
-    'plan.active': 'Aktibo hanggang',
-    'plan.ended': 'Natapos',
-    'plan.overFull': 'Mas marami ang miyembro kaysa seat (miyembro: {members}, seat: {seats}): walang sakop hangga’t hindi sakop ng seat ang lahat.',
     'plan.seatPrice': 'Ang isang seat ay {monthly} kada buwan o {yearly} kada taon.',
     'plan.seatsRule': 'Dapat sakop ng seat ang bawat miyembro (hindi bababa sa {members} ngayon). Walang pro-rating ang seat.',
     'plan.ask': 'Humingi ng payment link para sa seat',
@@ -153,5 +165,45 @@ export default defineStrings({
     'error.full': 'Wala nang bakanteng seat ang team. Hilingin sa manager na magdagdag.',
     'error.hasMembers': 'Ikaw lang ang manager: alisin muna ang ibang miyembro bago ka umalis.',
     'error.inviteChanged': 'Nagbago o binawi ang imbitasyong iyan. Hilahin pababa para i-reload.',
+
+    'hero.manage': 'Ikaw ang manager · {count} miyembro',
+    'hero.managedBy': 'Pinamamahalaan ni {names} · {count} miyembro',
+    'hero.until': 'Team plan hanggang {date}',
+    'hero.ended': 'Natapos ang team plan noong {date}',
+    'hero.overFull': 'Mas marami ang miyembro kaysa seat',
+    'hero.overFullBody': 'Walang sakop sa team hangga’t hindi sakop ng seat ang lahat ng {members} miyembro.',
+    'hero.invitesOut': '{count} imbitasyong naghihintay ng sagot',
+
+    'month.title': 'Ngayong buwan',
+    'month.legendDone': 'Natapos',
+    'month.legendOpen': 'Naka-book, hindi pa tapos',
+    'month.team': 'Team: {count} pagbisita ngayong buwan · {done} natapos',
+    'month.none': 'Wala pang pagbisita ngayong buwan.',
+    'month.hint': 'I-tap ang bar para mabasa.',
+    'month.quiet': 'Walang natapos na pagbisita sa {count} araw',
+    'month.neverDone': 'Wala pang natapos na pagbisita',
+    'month.lastDone': 'Huling natapos {date}',
+    'visitsRow.hint': 'Pagbisita ng lahat, pinakabago muna',
+
+    'sees.title': 'Ang nakikita ng mga manager mo',
+    'sees.visits': 'Mga pagbisita mo at bilang ngayong buwan',
+    'sees.notes': 'Hindi kailanman ang private notes mo',
+
+    'invite.chip': 'Imbitasyon',
+    'invite.declineTitle': 'Tanggihan ang imbitasyon sa {team}?',
+    'invite.declineBody': 'Para sumali sa ibang pagkakataon, kailangan mo ng bagong imbitasyon.',
+    'seats.title': 'Team seats',
+
+    'start.photoTitle': 'Magtrabaho bilang team',
+    'start.photoBody': 'Para sa manager at mga rep sa lugar niya.',
+    'gives.title': 'Ang makukuha mo sa team',
+    'gives.see': 'Nakikita ng manager ang pagbisita at buwanang bilang ng mga miyembro',
+    'gives.notes': 'Mananatiling pribado ang private notes',
+    'gives.seats': 'Isang plan para sakupin ang booking ng lahat',
+    'gives.invite': 'Mag-imbita ng rep gamit ang email nila',
+
+    'visits.filter': 'Miyembro',
+    'visits.showAll': 'Ipakita lahat',
+    noVisitsOf: 'Wala pang pagbisita si {name}.',
   },
 });

@@ -11,23 +11,16 @@ import { colors, radius, spacing } from '@/lib/theme';
 import { Clinic } from '@/lib/types';
 import { type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
-import { ClinicRow } from '@/components/ClinicRow';
+import { useDebounced } from '@/lib/useDebounced';
+import { clinicHistory, ClinicRow } from '@/components/ClinicRow';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { Field } from '@/components/forms';
-import { SkeletonRows } from '@/components/Loading';
+import { SkeletonRows, ThinProgress } from '@/components/Loading';
+import { OfflineBanner } from '@/components/OfflineBanner';
+import { photos, ScrimPhoto } from '@/components/Photo';
 import { FilterChips } from '@/components/pickers';
 import { Banner, Button, ListFooter, screenStyles } from '@/components/ui';
-
-/** Waits until typing pauses, so a search doesn't fire per keystroke. */
-function useDebounced(value: string, ms = 350): string {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), ms);
-    return () => clearTimeout(timer);
-  }, [value, ms]);
-  return debounced;
-}
 
 type Scope = 'bookable' | 'all';
 
@@ -43,7 +36,10 @@ export default function ClinicsScreen() {
   const list = useClinics(query, scope === 'all');
   // Book stays visible when booking isn't covered; it opens Plan instead of the sheet.
   const { data: sub } = useSubscription();
-  const { items, loading, refreshing, loadingMore, error, loadMoreError, hasMore } = list;
+  const { items, loading, refreshing, loadingMore, error, loadMoreError, hasMore, offline, stale, updatedAt } = list;
+  // The band counts the whole bookable list, so only once every page is in and nothing filters it.
+  const whole = !loading && !error && !hasMore && !query.trim() && scope === 'bookable' && items.length > 0;
+  const due = whole ? items.filter((c) => clinicHistory(t, c)?.tone === 'due').length : 0;
   const [asking, setAsking] = useState<Clinic | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -110,10 +106,25 @@ export default function ClinicsScreen() {
         onEndReachedThreshold={0.4}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={[type.screenTitle, styles.title]} accessibilityRole="header">
-              {t('nav.clinics')}
-            </Text>
-            <Text style={type.secondary}>{t('clinics.intro')}</Text>
+            <ScrimPhoto source={photos.clinicSign} style={styles.band} top={0.55} bottom={0.96}>
+              <View style={styles.bandInner}>
+                <Text style={styles.bandTitle} accessibilityRole="header">
+                  {t('nav.clinics')}
+                </Text>
+                <Text style={styles.bandIntro}>{t('clinics.intro')}</Text>
+                {whole ? (
+                  <View style={styles.bandLine}>
+                    <Text style={styles.bandCount}>{t('clinics.band.count', { count: items.length })}</Text>
+                    {due > 0 ? (
+                      <View style={styles.bandDue}>
+                        <Ionicons name="alert-circle" size={14} color={colors.warning} />
+                        <Text style={styles.bandDueText}>{t('clinics.band.due', { count: due })}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
+              </View>
+            </ScrimPhoto>
             <View style={styles.search}>
               <Ionicons name="search-outline" size={20} color={colors.textMuted} />
               <TextInput
@@ -137,6 +148,12 @@ export default function ClinicsScreen() {
               value={scope}
               onChange={setScope}
             />
+            {stale || offline ? (
+              <View>
+                <ThinProgress active={stale && !offline} />
+                <OfflineBanner offline={offline} updatedAt={updatedAt} subject={t('clinics.offlineSubject')} />
+              </View>
+            ) : null}
           </View>
         }
         ListEmptyComponent={
@@ -238,7 +255,14 @@ function AccessRequestSheet({ clinic, onClose }: { clinic: Clinic | null; onClos
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { gap: spacing.sm, marginBottom: spacing.md },
-  title: { marginTop: spacing.sm },
+  band: { minHeight: 168, borderRadius: radius.lg, marginTop: spacing.sm, marginBottom: spacing.xs },
+  bandInner: { flex: 1, justifyContent: 'flex-end', padding: spacing.md + 4, gap: spacing.xs },
+  bandTitle: { ...type.screenTitle, color: colors.primaryText },
+  bandIntro: { fontSize: 14, lineHeight: 20, color: colors.onNavyMuted },
+  bandLine: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs + 2 },
+  bandCount: { fontSize: 13, fontWeight: '600', color: colors.primaryText, fontVariant: ['tabular-nums'] },
+  bandDue: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.sm, backgroundColor: colors.warningSoft },
+  bandDueText: { fontSize: 12, fontWeight: '700', color: colors.warning, fontVariant: ['tabular-nums'] },
   search: {
     flexDirection: 'row',
     alignItems: 'center',

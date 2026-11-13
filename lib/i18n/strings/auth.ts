@@ -12,6 +12,10 @@ export default defineStrings({
     'otp.hint': 'Double tap to type the code',
     'otp.fieldA11y': '{length}-digit code',
 
+    // Photo bands (AuthBand): the first impression of each screen.
+    'band.login': 'Book clinic visits from the road, and hear back the moment a clinic answers.',
+    'band.register': 'Your clinic visits, products and deliveries, in one app.',
+
     'login.title': 'Sign in',
     'login.subtitle': 'For reps visiting clinics on MyClinicSoft. We’ll text a code to your mobile.',
     'login.email': 'Email',
@@ -43,17 +47,13 @@ export default defineStrings({
     'twoStep.title': 'Enter your code',
     'twoStep.subtitle': 'Open your authenticator app and type the 6-digit code for MyClinicSoft.',
     'twoStep.verify': 'Verify',
-    'twoStep.expiresIn': 'This sign-in expires in',
+    'twoStep.expiresIn': 'This sign-in expires in {time}',
     'twoStep.expiresInA11y': 'This sign-in expires in {minutes} minutes {seconds} seconds',
     'twoStep.expiredTitle': 'Sign-in timed out',
     'twoStep.expired': 'The code has to be entered within 5 minutes. Sign in again to get a new chance.',
 
     'notify.title': 'Know when clinics answer',
     'notify.subtitle': 'Turn on notifications so you never have to call a clinic to ask.',
-    'notify.answers': 'When a clinic approves, declines or cancels your visit',
-    'notify.visitDay': 'When the clinic checks you in, completes your visit or marks you as not arriving',
-    'notify.reminders': 'A reminder before a visit, and when a product is about to expire',
-    'notify.team': 'When a manager invites you to their team',
     'notify.later': 'You can change this anytime in Settings.',
     'notify.allow': 'Turn on notifications',
     'notify.notNow': 'Not now',
@@ -75,6 +75,9 @@ export default defineStrings({
     'otp.a11yIncorrect': '{length}-digit na code, {entered} sa {length} ang nailagay, mali',
     'otp.hint': 'I-double tap para i-type ang code',
     'otp.fieldA11y': '{length}-digit na code',
+
+    'band.login': 'Mag-book ng pagbisita sa clinic habang nasa daan, at malaman agad kapag sumagot ang clinic.',
+    'band.register': 'Ang mga pagbisita mo sa clinic, produkto at deliveries, nasa iisang app.',
 
     'login.title': 'Mag-sign in',
     'login.subtitle': 'Para sa mga rep na bumibisita sa mga clinic sa MyClinicSoft. Magte-text kami ng code sa mobile mo.',
@@ -106,17 +109,13 @@ export default defineStrings({
     'twoStep.title': 'Ilagay ang code mo',
     'twoStep.subtitle': 'Buksan ang authenticator app mo at i-type ang 6-digit na code para sa MyClinicSoft.',
     'twoStep.verify': 'I-verify',
-    'twoStep.expiresIn': 'Mag-e-expire ang sign-in na ito sa loob ng',
+    'twoStep.expiresIn': 'Mag-e-expire ang sign-in na ito sa loob ng {time}',
     'twoStep.expiresInA11y': 'Mag-e-expire ang sign-in na ito sa loob ng {minutes} minuto at {seconds} segundo',
     'twoStep.expiredTitle': 'Nag-time out ang sign-in',
     'twoStep.expired': 'Kailangang ilagay ang code sa loob ng 5 minuto. Mag-sign in ulit para sa bagong pagkakataon.',
 
     'notify.title': 'Malaman agad ang sagot ng clinic',
     'notify.subtitle': 'I-on ang notifications para hindi mo na kailangang tumawag sa clinic para magtanong.',
-    'notify.answers': 'Kapag in-approve, tinanggihan o kinansela ng clinic ang pagbisita mo',
-    'notify.visitDay': 'Kapag na-check in ka ng clinic, natapos ang pagbisita, o minarkahan kang hindi dumating',
-    'notify.reminders': 'Paalala bago ang pagbisita, at kapag malapit nang mag-expire ang isang produkto',
-    'notify.team': 'Kapag inimbitahan ka ng isang manager sa team niya',
     'notify.later': 'Puwede mo itong baguhin kahit kailan sa Settings.',
     'notify.allow': 'I-on ang notifications',
     'notify.notNow': 'Hindi muna',

@@ -38,6 +38,14 @@
       ],
       "expo-font",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "eMedRoute uses your photos so you can choose a profile picture.",
+          "cameraPermission": "eMedRoute uses the camera so you can take a profile picture.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",

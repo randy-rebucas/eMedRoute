@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { File } from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { ApiError, errorMessage } from '@/lib/api';
-import { formatDay } from '@/lib/format';
+import { daysFromToday, formatDay } from '@/lib/format';
 import { PlainKey, TFunction, useT } from '@/lib/i18n';
 import {
   decodeCsvBytes,
@@ -148,6 +148,10 @@ export default function ImportProductsScreen() {
     }
   }
 
+  // Active rows whose expiry has passed: imported as they are, but the rep should know first.
+  const expiredReady =
+    step.kind === 'preview' ? step.ready.filter((r) => (r.input.status ?? 'active') === 'active' && daysFromToday(r.input.expiryDate) < 0).length : 0;
+
   return (
     <ScrollView style={screenStyles.container} contentContainerStyle={[screenStyles.content, { paddingBottom }]}>
       {step.kind === 'pick' ? (
@@ -191,7 +195,7 @@ export default function ImportProductsScreen() {
           {step.problems.length ? (
             <View style={[styles.card, styles.problemCard]}>
               <View style={styles.cardHead}>
-                <Ionicons name="alert-circle-outline" size={20} color={colors.danger} />
+                <Ionicons name="alert-circle-outline" size={20} color={colors.warning} />
                 <Text style={[type.cardTitle, styles.flex]} accessibilityRole="header">
                   {t('products.import.problemRows', { count: step.problems.length })}
                 </Text>
@@ -199,7 +203,7 @@ export default function ImportProductsScreen() {
               <Text style={type.secondary}>{t('products.import.problemsHint')}</Text>
               {step.problems.slice(0, SHOW_ROWS).map((p) => (
                 <View key={p.line} style={styles.line} accessible>
-                  <Text style={[type.label, mono]}>{t('products.import.row', { line: p.line })}</Text>
+                  <Text style={[type.label, styles.tabular]}>{t('products.import.row', { line: p.line })}</Text>
                   {p.texts.map((text) => (
                     <Text key={text} style={type.secondary}>
                       {text}
@@ -228,6 +232,12 @@ export default function ImportProductsScreen() {
                 </View>
               ))}
               <More count={step.ready.length - SHOW_ROWS} />
+              {expiredReady ? (
+                <View style={styles.expiredNote}>
+                  <Ionicons name="time-outline" size={16} color={colors.warning} style={styles.hintIcon} />
+                  <Text style={[type.secondary, styles.flex, { color: colors.warning }]}>{t('products.import.expiredRows', { count: expiredReady })}</Text>
+                </View>
+              ) : null}
             </View>
           ) : null}
 
@@ -309,7 +319,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     gap: spacing.xs,
   },
-  problemCard: { borderColor: colors.danger },
+  // Amber: rows to fix, not something destructive (red is kept for Delete).
+  problemCard: { borderColor: colors.warning, backgroundColor: colors.warningSoft },
+  tabular: { fontVariant: ['tabular-nums'] },
+  expiredNote: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   columns: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs + 2, marginTop: spacing.xs },
   column: { borderRadius: radius.sm, backgroundColor: colors.slateSoft, paddingHorizontal: spacing.sm, paddingVertical: 4 },

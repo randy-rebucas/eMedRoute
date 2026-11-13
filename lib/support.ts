@@ -42,3 +42,31 @@ export async function createSupportRequest(input: {
   emitRefresh('support');
   return result.reference;
 }
+
+/**
+ * Where a request stands from the rep's side: `replied` = support wrote last and it's still
+ * open (the rep should read it); `waiting` = the ball is with support.
+ */
+export type RequestState = 'replied' | 'waiting' | 'resolved' | 'closed';
+
+export function requestState(request: Pick<SupportRequest, 'status' | 'replies'>): RequestState {
+  if (request.status === 'resolved') return 'resolved';
+  if (request.status === 'closed') return 'closed';
+  const replies = request.replies ?? [];
+  return replies[replies.length - 1]?.authorType === 'platform' ? 'replied' : 'waiting';
+}
+
+/** When anything last happened on the request: the newest reply, else when it was sent. */
+export function lastActivity(request: Pick<SupportRequest, 'createdAt' | 'replies'>): string {
+  const replies = request.replies ?? [];
+  return replies[replies.length - 1]?.createdAt ?? request.createdAt;
+}
+
+/**
+ * POST /support/:id/replies: answer support on the rep's own request (the reply email says to
+ * reply from the app). A reply on a resolved or closed request reopens it.
+ */
+export async function replyToSupportRequest(id: string, message: string): Promise<void> {
+  await apiFetch(`${SUPPORT_PATH}/${encodeURIComponent(id)}/replies`, { method: 'POST', body: { message } });
+  emitRefresh('support');
+}

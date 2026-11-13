@@ -1,23 +1,14 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/lib/theme';
+import { Avatar, initialsOf } from './Avatar';
 import { BrandLogo } from './BrandLogo';
 
-/** "Ana Reyes" → "AR", for avatars. */
-export function initialsOf(name: string | null | undefined): string {
-  return name
-    ? name
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0])
-        .join('')
-        .toUpperCase()
-    : '';
-}
+// Kept importable from here for older callers; it lives with Avatar now.
+export { initialsOf } from './Avatar';
 
 /** Logo + profile avatar, for the top of tab screens. */
 export function AppHeader() {
@@ -37,10 +28,8 @@ export function AppHeader() {
         accessibilityRole="button"
         accessibilityLabel={t('common.header.yourProfile')}
       >
-        {initials ? (
-          <Text style={styles.avatarText} maxFontSizeMultiplier={1.4}>
-            {initials}
-          </Text>
+        {rep?.profileImage || initials ? (
+          <Avatar name={rep?.name} image={rep?.profileImage} size={48} />
         ) : (
           <Ionicons name="person-outline" size={22} color={colors.primaryOnSoft} />
         )}
@@ -65,5 +54,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 15, fontWeight: '700', color: colors.primaryOnSoft },
 });

@@ -72,6 +72,7 @@ export function NavRow({
   icon,
   label,
   value,
+  valueTone,
   onPress,
   tone = 'default',
   last = false,
@@ -80,6 +81,8 @@ export function NavRow({
   icon: IconName;
   label: string;
   value?: string;
+  /** `warning`: the line under the label needs the rep (amber, with an icon); `good`: all set (teal). */
+  valueTone?: 'warning' | 'good';
   onPress: () => void;
   tone?: 'default' | 'danger';
   last?: boolean;
@@ -96,7 +99,21 @@ export function NavRow({
       <IconTile icon={icon} tone={tone === 'danger' ? 'danger' : 'slate'} size={36} />
       <View style={styles.rowText}>
         <Text style={[type.body, { color }]}>{label}</Text>
-        {value ? <Text style={type.secondary}>{value}</Text> : null}
+        {value ? (
+          <View style={styles.valueLine}>
+            {valueTone === 'warning' ? <Ionicons name="alert-circle" size={14} color={colors.warning} /> : null}
+            <Text
+              style={[
+                type.secondary,
+                styles.valueText,
+                valueTone === 'warning' && { color: colors.warning, fontWeight: '600' },
+                valueTone === 'good' && { color: colors.primaryOnSoft },
+              ]}
+            >
+              {value}
+            </Text>
+          </View>
+        ) : null}
       </View>
       {chevron ? <Ionicons name="chevron-forward" size={20} color={colors.textMuted} /> : null}
     </TouchableOpacity>
@@ -175,6 +192,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 4, minHeight: 56, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   rowRule: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   rowText: { flex: 1, gap: 2 },
+  valueLine: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  valueText: { flexShrink: 1 },
   switchRow: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 4, gap: spacing.sm },
   switchLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 48 },
 });

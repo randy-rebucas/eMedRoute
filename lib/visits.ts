@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { apiRequest, query } from './api';
 import { emitRefresh } from './events';
-import { addDays, clinicHhmm, clinicTodayYmd } from './format';
-import { PlainKey } from './i18n';
+import { addDays, clinicHhmm, clinicTodayYmd, daysFromToday, formatDay } from './format';
+import { PlainKey, TFunction } from './i18n';
 import { usePendingDeletes } from './undo';
-import { ACTIVE_CLINIC_STATUSES, LogEntryInput, Visit } from './types';
+import { ACTIVE_CLINIC_STATUSES, LogEntryInput, RepVisitStatus, Visit, VisitOutcomes } from './types';
 import { useApiData } from './useApiData';
 import { usePaginatedList } from './usePaginatedList';
 
@@ -14,6 +14,30 @@ const VISITS_PATH = '/api/medical-representatives/visits';
 
 /** The visit's calendar day, "YYYY-MM-DD": the stored date's first 10 characters, never converted. */
 export const visitDay = (visit: Pick<Visit, 'date'>) => visit.date.slice(0, 10);
+
+/** Visits on one calendar day, for a SectionList. */
+export type DaySection<V extends Pick<Visit, 'date'> = Visit> = { day: string; data: V[] };
+
+/** Consecutive visits on the same day, in the list's own order (soonest or newest first). */
+export function byDay<V extends Pick<Visit, 'date'>>(visits: V[]): DaySection<V>[] {
+  const sections: DaySection<V>[] = [];
+  for (const v of visits) {
+    const day = visitDay(v);
+    const last = sections[sections.length - 1];
+    if (last && last.day === day) last.data.push(v);
+    else sections.push({ day, data: [v] });
+  }
+  return sections;
+}
+
+/** "Today", "Tomorrow", "Yesterday", else "Tuesday, Nov 18". */
+export function dayHeading(t: TFunction, day: string): string {
+  const n = daysFromToday(day);
+  if (n === 0) return t('visits.day.today');
+  if (n === 1) return t('visits.day.tomorrow');
+  if (n === -1) return t('visits.day.yesterday');
+  return formatDay(day, { weekday: 'long', month: 'short', day: 'numeric', ...(Math.abs(n) > 300 ? { year: 'numeric' } : {}) });
+}
 
 /** The rep's own log entry (no clinic on MyClinicSoft behind it). */
 export const isOwnLog = (visit: Pick<Visit, 'clinicId'>) => !visit.clinicId;
@@ -98,10 +122,65 @@ export function nextStep(visit: Pick<Visit, 'clinicId' | 'status' | 'checkedInAt
   }
 }
 
+/**
+ * A clinic booking's path so far, for the detail screen's progress line: what happened (with
+ * when, where the API says so), what's happening now, and what's still to come. A visit that
+ * ended early (declined, missed, cancelled) stops at that step. Own log entries have no path.
+ */
+export type ProgressStepId = 'requested' | 'answer' | 'approved' | 'declined' | 'checkIn' | 'checkedIn' | 'finish' | 'done' | 'missed' | 'cancelledByYou' | 'cancelledByClinic';
+export type ProgressMark = 'done' | 'now' | 'todo' | 'stopped';
+export type ProgressStep = { id: ProgressStepId; mark: ProgressMark; at?: string | null };
+
+export function visitProgress(
+  visit: Pick<Visit, 'clinicId' | 'status' | 'checkedInAt' | 'createdAt' | 'respondedAt' | 'cancelledBy'>
+): ProgressStep[] {
+  const state = visitState(visit);
+  if (state === 'log') return [];
+  const steps: ProgressStep[] = [{ id: 'requested', mark: 'done', at: visit.createdAt }];
+  const approved: ProgressStep = { id: 'approved', mark: 'done', at: visit.respondedAt };
+  switch (state) {
+    case 'waiting':
+      steps.push({ id: 'answer', mark: 'now' }, { id: 'checkIn', mark: 'todo' }, { id: 'finish', mark: 'todo' });
+      break;
+    case 'approved':
+      steps.push(approved, { id: 'checkIn', mark: 'now' }, { id: 'finish', mark: 'todo' });
+      break;
+    case 'checkedIn':
+      steps.push(approved, { id: 'checkedIn', mark: 'done', at: visit.checkedInAt }, { id: 'finish', mark: 'now' });
+      break;
+    case 'done':
+      // A clinic may close a visit without checking the rep in first: only a real check-in shows.
+      steps.push(approved, ...(visit.checkedInAt ? [{ id: 'checkedIn', mark: 'done', at: visit.checkedInAt } as ProgressStep] : []), { id: 'done', mark: 'done' });
+      break;
+    case 'declined':
+      steps.push({ id: 'declined', mark: 'stopped', at: visit.respondedAt });
+      break;
+    case 'missed':
+      steps.push(approved, { id: 'missed', mark: 'stopped' });
+      break;
+    case 'cancelled':
+      // Cancelled before the clinic answered: there's no approval to show.
+      if (visit.respondedAt) steps.push(approved);
+      steps.push({ id: visit.cancelledBy === 'clinic' ? 'cancelledByClinic' : 'cancelledByYou', mark: 'stopped' });
+      break;
+  }
+  return steps;
+}
+
 // ── Lists ────────────────────────────────────────────────────────────────────
 
 export type VisitSegment = 'upcoming' | 'past' | 'log';
 export type DateRange = 'any' | 'thisMonth' | 'lastMonth' | 'last90';
+/** Past's outcome filter: one bucket of the server's `summary`, or all of them. */
+export type Outcome = 'all' | keyof VisitOutcomes;
+
+/** The statuses behind each outcome bucket (the server's `summary` counts the same way). */
+export const OUTCOME_STATUSES: Record<keyof VisitOutcomes, RepVisitStatus[]> = {
+  done: ['completed'],
+  notSeen: ['no-show', 'declined'],
+  cancelled: ['cancelled'],
+  open: ['requested', 'scheduled'],
+};
 
 /** `from` / `to` days ("YYYY-MM-DD", inclusive) for a date filter, in the clinic's calendar. */
 export function rangeDays(range: DateRange): { from?: string; to?: string } {
@@ -130,10 +209,11 @@ const byDayThenTime = (a: Visit, b: Visit) => visitDay(a).localeCompare(visitDay
  * One Visits segment. The API filters by one status and a date range, so the segment rules are
  * finished here:
  * - upcoming: requested and approved visits (booked or own) from today on, soonest first
- * - past: everything up to today, except today's still-open visits, newest first
+ * - past: everything up to today, except today's still-open visits, newest first; `outcome`
+ *   narrows it to one bucket, and `summary` (from the first page) counts every bucket
  * - log: the rep's own log entries (asked for with `own=1`), newest first
  */
-export function useVisitList(segment: VisitSegment, range: DateRange) {
+export function useVisitList(segment: VisitSegment, range: DateRange, outcome: Outcome = 'all') {
   const today = clinicTodayYmd();
   const { from, to } = rangeDays(range);
   const path =
@@ -141,16 +221,22 @@ export function useVisitList(segment: VisitSegment, range: DateRange) {
       ? // Soonest first, open visits only: page 1 holds the next ones, not the farthest.
         VISITS_PATH + query({ from: today, status: ACTIVE_CLINIC_STATUSES.join(','), sort: 'asc' })
       : segment === 'past'
-        ? VISITS_PATH + query({ from, to: endOfDay(to && to < today ? to : today) })
+        ? VISITS_PATH +
+          query({
+            from,
+            to: endOfDay(to && to < today ? to : today),
+            status: outcome === 'all' ? undefined : OUTCOME_STATUSES[outcome].join(','),
+            summary: '1',
+          })
         : // `own=1`: the server returns only the rep's own log entries (still checked below).
           VISITS_PATH + query({ own: '1', from, to: to ? endOfDay(to) : undefined });
 
-  const list = usePaginatedList<Visit>(path, {
+  const list = usePaginatedList<Visit, { summary?: VisitOutcomes }>(path, {
     limit: segment === 'upcoming' ? 100 : 50,
     refreshOn: ['visits'],
     offline: true,
     // The URL carries today's date; the saved copy must still open offline tomorrow (filtered below).
-    cacheKey: `visits:${segment}:${segment === 'upcoming' ? '' : range}`,
+    cacheKey: `visits:${segment}:${segment === 'upcoming' ? '' : range}:${segment === 'past' ? outcome : ''}`,
   });
   const pending = usePendingDeletes();
 
@@ -163,7 +249,7 @@ export function useVisitList(segment: VisitSegment, range: DateRange) {
     return shown.filter(isOwnLog);
   }, [list.items, pending, segment, today]);
 
-  return { ...list, items };
+  return { ...list, items, summary: segment === 'past' ? (list.extra?.summary ?? null) : null };
 }
 
 export function useVisit(id: string | undefined) {
@@ -184,6 +270,29 @@ export async function updateLogEntry(id: string, input: LogEntryInput): Promise<
   const visit = await apiRequest<Visit>(`${VISITS_PATH}/${encodeURIComponent(id)}`, { method: 'PUT', body: input });
   emitRefresh('visits', 'dashboard');
   return visit;
+}
+
+/**
+ * Save only the rep's private notes. A clinic booking takes `{ notes }` alone, even once closed
+ * (the clinic never sees them); an own log entry's PUT needs the whole entry, sent back as it is.
+ * Products and the clinic link are left out, so the server keeps them as stored.
+ */
+export async function saveVisitNotes(visit: Visit, notes: string): Promise<Visit> {
+  const body: Partial<LogEntryInput> = isOwnLog(visit)
+    ? {
+        clinicName: visit.clinicName,
+        clinicLocation: visit.clinicLocation,
+        purpose: visit.purpose,
+        date: visitDay(visit),
+        time: visit.time,
+        duration: visit.duration,
+        status: visit.status as LogEntryInput['status'],
+        notes,
+      }
+    : { notes };
+  const saved = await apiRequest<Visit>(`${VISITS_PATH}/${encodeURIComponent(visit._id)}`, { method: 'PUT', body });
+  emitRefresh('visits');
+  return saved;
 }
 
 /** DELETE. An open clinic booking answers 409 VISIT_ACTIVE: cancel it instead. */

@@ -78,6 +78,30 @@ export function holdingsFor(productId: string, deliveries: Delivery[]): ClinicHo
   return [...byClinic.values()].sort((a, b) => b.lastAt.localeCompare(a.lastAt));
 }
 
+/**
+ * Totals across every clinic when all rows share one unit (boxes and packs don't add up); null
+ * when they differ or there are none.
+ */
+export function holdingTotals(rows: ClinicHolding[]): { received: number; waiting: number; unit: string } | null {
+  if (!rows.length) return null;
+  const unit = rows[0].unit;
+  if (rows.some((r) => r.unit.toLowerCase() !== unit.toLowerCase())) return null;
+  return { received: rows.reduce((n, r) => n + r.received, 0), waiting: rows.reduce((n, r) => n + r.pending, 0), unit };
+}
+
+/** Each row's bar length (0–1): its units against the largest row in the same unit. */
+export function holdingShares(rows: ClinicHolding[]): number[] {
+  const max = new Map<string, number>();
+  for (const r of rows) {
+    const key = r.unit.toLowerCase();
+    max.set(key, Math.max(max.get(key) ?? 0, r.received + r.pending));
+  }
+  return rows.map((r) => {
+    const m = max.get(r.unit.toLowerCase()) ?? 0;
+    return m ? (r.received + r.pending) / m : 0;
+  });
+}
+
 export async function createDelivery(input: DeliveryInput): Promise<Delivery> {
   const delivery = await apiRequest<Delivery>(DELIVERIES_PATH, { method: 'POST', body: input });
   emitRefresh('deliveries');

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { apiFetch, ApiError, errorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
-import { spacing } from '@/lib/theme';
+import { colors, radius, spacing } from '@/lib/theme';
 import { ChangePasswordResponse } from '@/lib/types';
 import { type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
@@ -64,7 +65,15 @@ export default function ChangePasswordScreen() {
   if (done) {
     return (
       <ScrollView style={screenStyles.container} contentContainerStyle={screenStyles.content}>
-        <Banner tone="primary" message={t('password.changed')} />
+        <View style={styles.done} accessibilityLiveRegion="polite">
+          <View style={styles.doneIcon}>
+            <Ionicons name="checkmark" size={28} color={colors.primaryText} />
+          </View>
+          <Text style={type.cardTitle} accessibilityRole="header">
+            {t('password.doneTitle')}
+          </Text>
+          <Text style={[type.body, styles.center]}>{t('password.changed')}</Text>
+        </View>
         <Button title={t('common.done')} onPress={() => router.back()} />
       </ScrollView>
     );
@@ -74,7 +83,6 @@ export default function ChangePasswordScreen() {
     <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={96}>
       <ScrollView contentContainerStyle={[screenStyles.content, { paddingBottom }]} keyboardShouldPersistTaps="handled">
         <Text style={[type.secondary, styles.intro]}>{t('password.intro')}</Text>
-        {error ? <Banner message={error} /> : null}
         <Field
           label={t('password.current')}
           value={current}
@@ -108,6 +116,8 @@ export default function ChangePasswordScreen() {
           onSubmitEditing={save}
           error={submitted && !tooShort && mismatch ? t('password.mismatch') : null}
         />
+        {/* Next to the button, where the rep is looking (the keyboard covers the top). */}
+        {error ? <Banner message={error} /> : null}
         <Button title={t('password.save')} onPress={save} loading={saving} />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -116,4 +126,16 @@ export default function ChangePasswordScreen() {
 
 const styles = StyleSheet.create({
   intro: { marginBottom: spacing.md },
+  done: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  doneIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  center: { textAlign: 'center' },
 });

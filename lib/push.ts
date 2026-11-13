@@ -97,6 +97,28 @@ export async function getPushPermission(): Promise<PushPermission> {
   return status === 'undetermined' && canAskAgain ? 'undetermined' : 'denied';
 }
 
+/**
+ * Where push stands, from the account switch (server) and this phone's own permission (OS).
+ * `checking`: on for the account, the phone's answer not read yet.
+ */
+export type PushState = 'off' | 'checking' | 'on' | 'ask' | 'blocked' | 'unavailable';
+
+export function pushState(accountOn: boolean, permission: PushPermission | null): PushState {
+  if (!accountOn) return 'off';
+  switch (permission) {
+    case null:
+      return 'checking';
+    case 'granted':
+      return 'on';
+    case 'undetermined':
+      return 'ask';
+    case 'denied':
+      return 'blocked';
+    case 'unavailable':
+      return 'unavailable';
+  }
+}
+
 /** Re-register when the OS rotates the push token. Returns an unsubscribe function. */
 export function watchPushToken(): () => void {
   if (!Notifications) return () => {};

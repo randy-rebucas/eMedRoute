@@ -3,7 +3,7 @@ import { apiRequest, query } from './api';
 import { emitRefresh } from './events';
 import { daysFromToday } from './format';
 import { usePendingDeletes } from './undo';
-import { Product, ProductInput, ProductStatus } from './types';
+import { Product, ProductExpiry, ProductInput, ProductStatus } from './types';
 import { useApiData } from './useApiData';
 import { usePaginatedList } from './usePaginatedList';
 
@@ -22,12 +22,28 @@ export function expiryState(product: Pick<Product, 'expiryDate' | 'status'>): Ex
   return days <= EXPIRY_WINDOW_DAYS ? 'soon' : 'ok';
 }
 
-/** The catalog, newest first. `status` null = every status. */
-export function useProducts(status: ProductStatus | null) {
-  const list = usePaginatedList<Product>(PRODUCTS_PATH + query({ status }), { limit: 50, refreshOn: ['products'], offline: true });
+/** The Products tab's filter: a status, every status, or active stock expired / expiring in 30 days. */
+export type ProductFilter = ProductStatus | 'all' | 'expiring';
+
+/**
+ * The catalog A–Z (expiring: soonest expiry first), optionally searched by name, manufacturer or
+ * category. `expiry` (from the first page) counts every active product by days left, whatever
+ * the filter; null from an older server.
+ */
+export function useProducts(filter: ProductFilter, search = '') {
+  const path =
+    PRODUCTS_PATH +
+    query({
+      status: filter === 'all' || filter === 'expiring' ? undefined : filter,
+      expiring: filter === 'expiring' ? '1' : undefined,
+      sort: filter === 'expiring' ? 'expiry' : 'name',
+      search: search.trim() || undefined,
+      summary: '1',
+    });
+  const list = usePaginatedList<Product, { expiry?: ProductExpiry }>(path, { limit: 50, refreshOn: ['products'], offline: true });
   const pending = usePendingDeletes();
   const items = useMemo(() => list.items.filter((p) => !pending.has(p._id)), [list.items, pending]);
-  return { ...list, items };
+  return { ...list, items, expiry: list.extra?.expiry ?? null };
 }
 
 /** Every active product of the rep's, for picking (the server allows up to 10 per visit). */

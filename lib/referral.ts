@@ -1,5 +1,6 @@
 import { apiRequest } from './api';
 import { emitRefresh } from './events';
+import { clinicYmd } from './format';
 import { ReferralState } from './types';
 import { useApiData } from './useApiData';
 
@@ -19,4 +20,13 @@ export async function newReferralCode(): Promise<ReferralState> {
   const result = await apiRequest<ReferralState>(PATH, { method: 'POST' });
   emitRefresh('referral');
   return result;
+}
+
+/** How many of the listed clinics joined in the current month, on Manila's calendar. */
+export function joinedThisMonth(clinics: ReferralState['clinics'], now: Date = new Date()): number {
+  const month = clinicYmd(now).slice(0, 7);
+  return clinics.filter((c) => {
+    const at = new Date(c.joinedOn);
+    return !Number.isNaN(at.getTime()) && clinicYmd(at).slice(0, 7) === month;
+  }).length;
 }
