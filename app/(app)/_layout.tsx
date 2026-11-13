@@ -41,6 +41,7 @@ export default function AppLayout() {
         <Stack.Screen name="products/import" options={{ title: t('products.import.title'), presentation: 'modal' }} />
         <Stack.Screen name="profile/index" options={{ title: t('more.profile') }} />
         <Stack.Screen name="profile/edit" options={{ title: t('profile.editTitle') }} />
+        <Stack.Screen name="notifications" options={{ title: t('notifications.title') }} />
         <Stack.Screen name="settings" options={{ title: t('more.settings') }} />
         <Stack.Screen name="change-password" options={{ title: t('settings.changePassword') }} />
         <Stack.Screen name="plan" options={{ title: t('more.plan') }} />
