@@ -231,6 +231,8 @@ export default function LoginScreen() {
         const pass = (err.body as { activationToken?: unknown } | undefined)?.activationToken;
         return { kind: 'inactive', activationToken: typeof pass === 'string' ? pass : undefined };
       }
+      // Paid, then turned off by the platform: paying again can't help (it would loop on ALREADY_ACTIVE).
+      if (err.code === 'MEDREP_DEACTIVATED') return { kind: 'message', message: t('auth.deactivated') };
       if (err.status === 429) return { kind: 'message', message: err.message || t('common.tooManyAttempts') };
       // USER_INACTIVE, CODES_UNAVAILABLE and wrong email or password: the server's own words.
       if (err.code === 'CODES_UNAVAILABLE') return { kind: 'message', message: err.message };

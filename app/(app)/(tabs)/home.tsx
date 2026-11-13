@@ -53,7 +53,7 @@ export default function HomeScreen() {
     .sort((a, b) => a.time.localeCompare(b.time));
   const stops = todaysStops(todays);
   const { data: team } = useTeam();
-  const { data: sub } = useSubscription();
+  const { data: sub, refresh: refreshSub } = useSubscription();
   const invite = team && !team.team ? team.invite : null;
   const seeUpcoming = () => router.push({ pathname: '/visits', params: { segment: 'upcoming' } });
   const weeks = data?.weeklyVisits;
@@ -77,7 +77,17 @@ export default function HomeScreen() {
     <SafeAreaView style={screenStyles.container} edges={['top']}>
       <ScrollView
         contentContainerStyle={screenStyles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              refresh();
+              // A plan paid in the browser clears the "needs a plan" banner.
+              refreshSub();
+            }}
+            tintColor={colors.primary}
+          />
+        }
       >
         <AppHeader />
 

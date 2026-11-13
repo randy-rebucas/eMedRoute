@@ -9,7 +9,7 @@ import { useDashboard } from '@/lib/dashboard';
 import { formatDate } from '@/lib/format';
 import { languageChoiceLabel, TFunction, useLanguage, useT } from '@/lib/i18n';
 import { useSubscription } from '@/lib/plan';
-import { useSponsorships } from '@/lib/sponsorships';
+import { sponsorshipSummary, useSponsorships } from '@/lib/sponsorships';
 import { useTeam } from '@/lib/team';
 import { colors, radius, spacing } from '@/lib/theme';
 import { SponsorshipsState, Subscription, TeamState } from '@/lib/types';
@@ -46,7 +46,7 @@ function sponsorLine(t: TFunction, state: SponsorshipsState | null): Line {
   if (!state) return null;
   const waiting = state.sponsorships.filter((s) => s.status === 'pending' && s.awaitingYou).length;
   if (waiting) return { value: t('more.sponsor.waiting', { count: waiting }), tone: 'warning' };
-  const active = state.sponsorships.filter((s) => s.active).length;
+  const active = sponsorshipSummary(state.sponsorships).paying;
   return active ? { value: t('more.sponsor.active', { count: active }), tone: 'good' } : { value: t('more.sponsor.none') };
 }
 

@@ -5,7 +5,10 @@ jest.mock('@/lib/notifications', () => ({ Notifications: null }));
 
 describe('routeForNotification', () => {
   it('opens the detail when there is an id, else the list, and refreshes what changed', () => {
-    expect(routeForNotification({ screen: 'visits', id: 'v 1' })).toEqual({ href: '/visits/v%201', topics: ['visits', 'deliveries', 'dashboard'] });
+    // A visit change moves the clinic's next/last visit too.
+    expect(routeForNotification({ screen: 'visits', id: 'v 1' })).toEqual({ href: '/visits/v%201', topics: ['visits', 'deliveries', 'dashboard', 'clinics'] });
+    // Support answered: the list and More's open count.
+    expect(routeForNotification({ screen: 'support', id: 'r1' })).toEqual({ href: '/support', topics: ['support', 'dashboard'] });
     expect(routeForNotification({ screen: 'visits' }).href).toBe('/visits');
     expect(routeForNotification({ screen: 'products', id: 'p1' })).toEqual({ href: '/products/p1', topics: ['products', 'dashboard'] });
     expect(routeForNotification({ screen: 'team', id: 'x' })).toEqual({ href: '/team', topics: ['team'] });
@@ -15,7 +18,10 @@ describe('routeForNotification', () => {
 
   it('ignores blank ids and unknown screens (no navigation, broad refresh)', () => {
     expect(routeForNotification({ screen: ' visits ', id: '  ' }).href).toBe('/visits');
-    expect(routeForNotification({ screen: 'billing' })).toEqual({ href: null, topics: ['visits', 'products', 'team', 'dashboard'] });
+    expect(routeForNotification({ screen: 'billing' })).toEqual({
+      href: null,
+      topics: ['visits', 'clinics', 'products', 'team', 'dashboard', 'sponsorships', 'support'],
+    });
     expect(routeForNotification(undefined).href).toBeNull();
     expect(routeForNotification({ screen: 42 }).href).toBeNull();
   });

@@ -4,7 +4,7 @@ import { formatDate } from '@/lib/format';
 import { TFunction, useT } from '@/lib/i18n';
 import { cycleDays, daysLeft } from '@/lib/plan';
 import { colors, radius, spacing } from '@/lib/theme';
-import { Subscription, TeamCoverage } from '@/lib/types';
+import { Subscription } from '@/lib/types';
 import { photos, ScrimPhoto } from './Photo';
 
 const longDate = (iso: string | null | undefined) => formatDate(iso, { month: 'short', day: 'numeric', year: 'numeric' });
@@ -20,11 +20,6 @@ export function notCoveredReason(t: TFunction, sub: Subscription): string {
   if (sub.team && !sub.team.active && sub.team.expiresAt) return t('plan.reason.teamEnded', { date: longDate(sub.team.expiresAt) });
   if (sub.individual && !sub.individual.active) return t('plan.reason.ended', { date: longDate(sub.individual.expiresAt) });
   return t('plan.reason.none');
-}
-
-/** "Seats used: 5/8". */
-export function seatsLine(t: TFunction, team: TeamCoverage): string {
-  return t('plan.seatsUsed', { members: team.members, seats: team.seats });
 }
 
 /**

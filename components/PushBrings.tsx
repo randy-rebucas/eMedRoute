@@ -6,8 +6,9 @@ import { type } from '@/lib/typography';
 import { IconName } from './ui';
 
 /**
- * What push carries to a rep, as ruled rows for a `RowGroup`: the six kinds the server sends
- * (lib/rep-visits, rep-deliveries, medrep-reminders, rep-access, team invites, clinic-sponsorship).
+ * What push carries to a rep, as ruled rows for a `RowGroup`: the kinds the server sends
+ * (lib/rep-visits, rep-deliveries, medrep-reminders, rep-access, team invites, clinic-sponsorship,
+ * support replies).
  * Shared by Settings and the sign-in "turn on notifications" step, so the two never disagree.
  * `muted`: push is off, so the rows read as what the rep is missing.
  */
@@ -20,6 +21,7 @@ export function PushBringsRows({ muted = false }: { muted?: boolean }) {
     { icon: 'hourglass-outline', title: t('settings.brings.expiring'), hint: t('settings.brings.expiringHint') },
     { icon: 'business-outline', title: t('settings.brings.access'), hint: t('settings.brings.accessHint') },
     { icon: 'ribbon-outline', title: t('settings.brings.sponsor'), hint: t('settings.brings.sponsorHint') },
+    { icon: 'help-buoy-outline', title: t('settings.brings.support'), hint: t('settings.brings.supportHint') },
   ];
   return (
     <>

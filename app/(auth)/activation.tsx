@@ -32,6 +32,8 @@ export default function ActivationScreen() {
   const t = useT();
   const [pass, setPass] = useState<ActivationPass | null | undefined>(undefined);
   const [expired, setExpired] = useState(false);
+  // Paid and active, but this pass can't sign in (SIGN_IN_REQUIRED): send them to sign in, not "expired".
+  const [activated, setActivated] = useState(false);
   const [slow, setSlow] = useState(false);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +79,8 @@ export default function ActivationScreen() {
     } catch (err) {
       if (err instanceof ApiError && (err.code === 'ACTIVATION_EXPIRED' || err.code === 'SIGN_IN_REQUIRED')) {
         await setActivationPass(null);
-        setExpired(true);
+        if (err.code === 'SIGN_IN_REQUIRED') setActivated(true);
+        else setExpired(true);
         return;
       }
       // Offline or a server hiccup: keep waiting, the next look may get through.
@@ -165,6 +168,17 @@ export default function ActivationScreen() {
 
   if (auth.signedIn) return <Redirect href="/enable-notifications" />;
   if (pass === undefined) return <LoadingView />;
+
+  if (activated) {
+    return (
+      <StatusScreen
+        art={<IconBadge icon="checkmark-circle-outline" />}
+        title={t('onboarding.activation.activeTitle')}
+        message={t('onboarding.activation.active')}
+        action={{ title: t('auth.backToSignIn'), onPress: backToSignIn }}
+      />
+    );
+  }
 
   if (expired || pass === null) {
     return (

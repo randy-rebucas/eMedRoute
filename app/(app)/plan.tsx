@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { formatDate, formatMoney } from '@/lib/format';
 import { useT } from '@/lib/i18n';
+import { emitRefresh } from '@/lib/events';
 import { daysLeft, openBillingRequest, useSubscription, yearlyMonthsFree } from '@/lib/plan';
 import { openSupportDraft, useSupportRequests } from '@/lib/support';
 import { colors, radius, spacing } from '@/lib/theme';
@@ -58,6 +59,7 @@ export default function PlanScreen() {
           refreshing={refreshing}
           onRefresh={() => {
             refresh();
+            emitRefresh('subscription');
             refreshRequests();
           }}
           tintColor={colors.primary}

@@ -15,7 +15,6 @@ export default defineStrings({
     'cycle.monthly': 'Paid monthly',
     'cycle.yearly': 'Paid yearly',
     until: 'Until {date}',
-    seatsUsed: 'Seats used: {members}/{seats}',
     // The hero: whether booking is covered, until when, and how much is left.
     'hero.covered': 'Covered',
     'hero.notCovered': 'Not covered',
@@ -68,7 +67,6 @@ export default defineStrings({
     'cycle.monthly': 'Buwanang bayad',
     'cycle.yearly': 'Taunang bayad',
     until: 'Hanggang {date}',
-    seatsUsed: 'Gamit na seat: {members}/{seats}',
     'hero.covered': 'Sakop',
     'hero.notCovered': 'Hindi sakop',
     'hero.freeChip': 'Libre',

@@ -55,5 +55,5 @@ const styles = StyleSheet.create({
   },
   text: { ...type.body, flex: 1, color: colors.surface, paddingVertical: spacing.sm },
   action: { minHeight: 48, minWidth: 64, paddingHorizontal: spacing.md, alignItems: 'center', justifyContent: 'center' },
-  actionText: { fontSize: 15, fontWeight: '700', color: '#7FE0DE' },
+  actionText: { fontSize: 15, fontWeight: '700', color: colors.onNavyAction },
 });

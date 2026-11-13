@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useNavigation } from 'expo-router';
 import { usePreventRemove } from 'expo-router/react-navigation';
@@ -48,6 +48,7 @@ export default function NewSupportRequestScreen() {
   const [message, setMessage] = useState(start.message);
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [reference, setReference] = useState<string | null>(null);
   const paddingBottom = useBottomPadding();
@@ -66,16 +67,19 @@ export default function NewSupportRequestScreen() {
   const incomplete = !subject.trim() || !message.trim();
 
   async function send() {
-    if (sending) return;
+    // State lags a frame: two taps in one frame must not send two requests.
+    if (sendingRef.current) return;
     setSubmitted(true);
     setError(null);
     if (incomplete) return;
+    sendingRef.current = true;
     setSending(true);
     try {
       setReference(await createSupportRequest({ subject: subject.trim(), message: message.trim(), category }));
     } catch (err) {
       setError(isNetworkError(err) ? t('common.needsConnection') : errorMessage(err));
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }

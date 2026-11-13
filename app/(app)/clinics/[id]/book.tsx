@@ -100,8 +100,10 @@ function BookingSheet({ clinic }: { clinic: Clinic }) {
   const daySlots = slots.data?.date === day ? slots.data.slots : null;
   const ready = !!day && !!time && !!purpose.trim();
   const dayHours = day ? hoursOn(clinic.hours, day) : '';
-  // The server takes one open booking per clinic per day; `nextVisit` is the soonest one.
-  const bookedThatDay = day && clinic.nextVisit?.date.slice(0, 10) === day ? clinic.nextVisit.time : null;
+  // The server takes one open booking per clinic per day. `nextBooking` is the soonest booking; an
+  // older server only sends `nextVisit`, which also counts log entries linked here.
+  const soonest = clinic.nextBooking !== undefined ? clinic.nextBooking : clinic.nextVisit;
+  const bookedThatDay = day && soonest?.date.slice(0, 10) === day ? soonest.time : null;
   const needsPlan = sub ? !sub.canBookClinics : false;
   const history = clinicHistory(t, clinic);
 

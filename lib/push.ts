@@ -137,7 +137,8 @@ export interface NotificationRoute {
 
 /**
  * Where a tapped push should take the rep. The server sends `data.screen` (`visits`,
- * `products`, `team` or `clinics`) and sometimes `data.id`: the detail when there is an id, else the list.
+ * `products`, `team`, `clinics`, `sponsorships` or `support`) and sometimes `data.id`: the detail when
+ * there is an id, else the list.
  */
 export function routeForNotification(data: Record<string, unknown> | undefined): NotificationRoute {
   const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null);
@@ -146,7 +147,7 @@ export function routeForNotification(data: Record<string, unknown> | undefined):
 
   switch (screen) {
     case 'visits':
-      return { href: id ? `/visits/${encodeURIComponent(id)}` : '/visits', topics: ['visits', 'deliveries', 'dashboard'] };
+      return { href: id ? `/visits/${encodeURIComponent(id)}` : '/visits', topics: ['visits', 'deliveries', 'dashboard', 'clinics'] };
     case 'products':
       return { href: id ? `/products/${encodeURIComponent(id)}` : '/products', topics: ['products', 'dashboard'] };
     case 'team':
@@ -157,7 +158,10 @@ export function routeForNotification(data: Record<string, unknown> | undefined):
     // A clinic asked the rep to sponsor its plan, answered an offer, or a sponsored plan is ending.
     case 'sponsorships':
       return { href: '/sponsorships', topics: ['sponsorships'] };
+    // Support answered or resolved one of the rep's requests.
+    case 'support':
+      return { href: '/support', topics: ['support', 'dashboard'] };
     default:
-      return { href: null, topics: ['visits', 'products', 'team', 'dashboard'] };
+      return { href: null, topics: ['visits', 'clinics', 'products', 'team', 'dashboard', 'sponsorships', 'support'] };
   }
 }

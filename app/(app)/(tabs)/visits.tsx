@@ -157,7 +157,7 @@ export default function VisitsScreen() {
                 <OfflineBanner offline={offline} updatedAt={updatedAt} subject={t('visits.offlineSubject')} />
               </View>
             ) : null}
-            {segment === 'upcoming' && items.length > 0 ? <WeekStrip visits={items} picked={pickedDay} onPick={setPickedDay} /> : null}
+            {segment === 'upcoming' && items.length > 0 ? <WeekStrip visits={items} picked={pickedDay} onPick={setPickedDay} more={hasMore} /> : null}
             {segment === 'past' && summary ? <OutcomeBar summary={summary} value={outcome} onChange={setOutcome} /> : null}
           </View>
         }

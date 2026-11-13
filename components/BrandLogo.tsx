@@ -22,7 +22,7 @@ export function BrandMark({ size = 40 }: { size?: number }) {
       <Polyline
         points="3.5,11.5 8,11.5 9.5,8.5 11.5,15 13.5,7 15,11.5 20.5,11.5"
         fill="none"
-        stroke="#FFFFFF"
+        stroke={colors.primaryText}
         strokeWidth={1.5}
         strokeLinecap="round"
         strokeLinejoin="round"

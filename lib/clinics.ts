@@ -225,7 +225,7 @@ export function useSlots(clinicId: string | null, day: string | null) {
  */
 export async function requestVisit(input: BookingInput): Promise<Visit> {
   const visit = await apiRequest<Visit>(VISITS_PATH, { method: 'POST', body: input });
-  emitRefresh('visits', 'dashboard');
+  emitRefresh('visits', 'dashboard', 'clinics');
   return visit;
 }
 
@@ -235,14 +235,14 @@ export async function requestVisit(input: BookingInput): Promise<Visit> {
  */
 export async function moveVisit(id: string, date: string, time: string): Promise<Visit> {
   const visit = await apiRequest<Visit>(`${VISITS_PATH}/${encodeURIComponent(id)}`, { method: 'PUT', body: { date, time } });
-  emitRefresh('visits', 'dashboard');
+  emitRefresh('visits', 'dashboard', 'clinics');
   return visit;
 }
 
 /** Cancel a booking; the clinic is told. Errors: VISIT_CHANGED, VISIT_CLOSED. */
 export async function cancelVisit(id: string): Promise<Visit> {
   const visit = await apiRequest<Visit>(`${VISITS_PATH}/${encodeURIComponent(id)}`, { method: 'PUT', body: { status: 'cancelled' } });
-  emitRefresh('visits', 'dashboard');
+  emitRefresh('visits', 'dashboard', 'clinics');
   return visit;
 }
 

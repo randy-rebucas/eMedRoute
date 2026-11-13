@@ -309,7 +309,7 @@ export function IconBadge({
       <Ionicons name={icon} size={size * 0.5} color={t.fg} />
       {badge ? (
         <View style={[styles.cornerBadge, { backgroundColor: TONES[badge.tone].fg }]}>
-          <Ionicons name={badge.icon} size={18} color="#FFFFFF" />
+          <Ionicons name={badge.icon} size={18} color={colors.primaryText} />
         </View>
       ) : null}
     </View>

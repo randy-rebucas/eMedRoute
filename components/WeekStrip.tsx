@@ -37,10 +37,13 @@ export function WeekStrip({
   visits,
   picked,
   onPick,
+  more = false,
 }: {
   visits: Pick<Visit, 'date' | 'status'>[];
   picked: string | null;
   onPick: (day: string | null) => void;
+  /** More visits exist than were loaded (the list has further pages): the later count is a floor. */
+  more?: boolean;
 }) {
   const t = useT();
   const days = weekLoad(visits);
@@ -70,7 +73,7 @@ export function WeekStrip({
             <Text style={[type.secondary, styles.tabular]}>{counts(sel)}</Text>
           </>
         ) : (
-          <Text style={type.secondary}>{later > 0 ? t('visits.week.hintLater', { count: later }) : t('visits.week.hint')}</Text>
+          <Text style={type.secondary}>{more ? t('visits.week.hintLaterMore', { count: later }) : later > 0 ? t('visits.week.hintLater', { count: later }) : t('visits.week.hint')}</Text>
         )}
       </View>
 

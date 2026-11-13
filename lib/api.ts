@@ -187,9 +187,33 @@ interface RefreshOutcome {
   outcome: 'refreshed' | 'expired' | 'unavailable' | 'superseded';
   /** Server reason for an 'expired' outcome. */
   message?: string;
+  /** For 'unavailable': the HTTP status when the server answered (429 / 5xx); unset when unreachable. */
+  status?: number;
 }
 
 let refreshInFlight: Promise<RefreshOutcome> | null = null;
+
+/**
+ * Set while a request that rotates the session server-side is in flight (a password change revokes
+ * every refresh token, then hands this device a new pair). A refresh refused in that window waits
+ * for the new pair instead of signing the rep out.
+ */
+let rotation: Promise<void> | null = null;
+/** Longest a refused refresh waits on a rotation (also ends the wait if the rotation's own refresh is the one refused). */
+const ROTATION_WAIT_MS = 15_000;
+
+/** Run `work` (the request and storing its new tokens) as a session rotation; see `rotation`. */
+export async function rotateSession<T>(work: () => Promise<T>): Promise<T> {
+  let finish!: () => void;
+  const gate = new Promise<void>((resolve) => (finish = resolve));
+  rotation = gate;
+  try {
+    return await work();
+  } finally {
+    finish();
+    if (rotation === gate) rotation = null;
+  }
+}
 
 /**
  * Trade the stored refresh token for a new pair. Concurrent callers share one
@@ -238,9 +262,15 @@ async function performRefresh(): Promise<RefreshOutcome> {
   // 401 REFRESH_INVALID / REFRESH_REUSED: the chain is dead (or the account is no longer an
   // active rep), sign in again. Unless a sign-in or password change stored a new session while
   // this ran: that one revoked this old token, and must stay.
-  if (response.status === 401) return { outcome: generation === sessionGeneration() ? 'expired' : 'superseded' };
+  if (response.status === 401) {
+    // A password change on this phone revoked the old token: wait for its new pair to land.
+    if (rotation) await Promise.race([rotation, new Promise((resolve) => setTimeout(resolve, ROTATION_WAIT_MS))]);
+    if (generation !== sessionGeneration()) return { outcome: 'superseded' };
+    // MEDREP_DEACTIVATED carries the reason the sign-in screen should show.
+    return { outcome: 'expired', message: json?.code === 'MEDREP_DEACTIVATED' ? t('auth.deactivated') : undefined };
+  }
   // 429 / 5xx: keep the session and let the caller retry later.
-  return { outcome: 'unavailable' };
+  return { outcome: 'unavailable', status: response.status };
 }
 
 function isExpiringSoon(session: StoredSession): boolean {
@@ -283,10 +313,13 @@ export async function recoverFromUnauthorized(usedToken: string): Promise<string
   // Another request already refreshed while this one was in flight.
   if (current.accessToken !== usedToken) return current.accessToken;
 
-  const { outcome, message } = await refreshSession();
+  const { outcome, message, status } = await refreshSession();
   if (outcome === 'expired') return expireSession(message);
   if (outcome === 'superseded') return currentTokenAfterSupersede();
-  if (outcome === 'unavailable') throw new ApiError(NETWORK_MESSAGE(), 0, 'NETWORK');
+  // Unreachable is offline; a server that answered 429 / 5xx is not (no offline banner for it).
+  if (outcome === 'unavailable') {
+    throw status ? new ApiError(t('common.somethingWrong'), status, 'REFRESH_UNAVAILABLE') : new ApiError(NETWORK_MESSAGE(), 0, 'NETWORK');
+  }
   const refreshed = await getSession();
   return refreshed?.accessToken ?? expireSession();
 }

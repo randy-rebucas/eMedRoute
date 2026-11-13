@@ -9,7 +9,7 @@ const TEAM_PATH = '/api/medical-representatives/team';
 
 /** The rep's team and any pending invite. Managers also get members (with counts) and pending invites. */
 export function useTeam() {
-  return useApiData<TeamState>(TEAM_PATH, { refreshOn: ['team'], offline: true });
+  return useApiData<TeamState>(TEAM_PATH, { refreshOn: ['team', 'visits'], offline: true });
 }
 
 /** Members' visits, newest first (managers). Private notes are never included. */
