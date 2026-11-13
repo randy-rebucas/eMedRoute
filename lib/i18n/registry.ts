@@ -23,7 +23,7 @@
  *   settings      app/(app)/settings.tsx
  *   password      app/(app)/change-password.tsx
  *   support       app/(app)/support/*
- *   notifications lib/push
+ *   notifications lib/push, notifications.tsx (inbox), InboxRow, the AppHeader bell
  */
 import auth from './strings/auth';
 import booking from './strings/booking';

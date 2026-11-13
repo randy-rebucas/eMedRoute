@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { useDashboard } from '@/lib/dashboard';
 import { formatDate } from '@/lib/format';
+import { useUnreadCount } from '@/lib/inbox';
 import { languageChoiceLabel, TFunction, useLanguage, useT } from '@/lib/i18n';
 import { useSubscription } from '@/lib/plan';
 import { sponsorshipSummary, useSponsorships } from '@/lib/sponsorships';
@@ -66,6 +67,7 @@ export default function MoreScreen() {
   const { data: sub } = useSubscription();
   const { data: sponsorships } = useSponsorships();
   const { data: dashboard } = useDashboard();
+  const unread = useUnreadCount();
   const profile = dashboard?.profile;
   const openSupport = dashboard?.stats.openSupportRequests ?? 0;
 
@@ -166,6 +168,15 @@ export default function MoreScreen() {
         </RowGroup>
 
         <RowGroup title={t('more.account')}>
+          {unread.available ? (
+            <NavRow
+              icon="notifications-outline"
+              label={t('notifications.title')}
+              value={unread.count > 0 ? t('notifications.unread', { count: unread.count }) : t('notifications.caughtUp')}
+              valueTone={unread.count > 0 ? 'warning' : undefined}
+              onPress={() => router.push('/notifications')}
+            />
+          ) : null}
           <NavRow
             icon="settings-outline"
             label={t('more.settings')}

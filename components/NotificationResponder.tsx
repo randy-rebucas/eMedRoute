@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { router } from 'expo-router';
 import { emitRefresh } from '@/lib/events';
+import { markInboxRead } from '@/lib/inbox';
 import { Notifications as MaybeNotifications } from '@/lib/notifications';
 import { routeForNotification } from '@/lib/push';
 
@@ -26,7 +27,12 @@ function Responder({ Notifications }: { Notifications: NonNullable<typeof MaybeN
     handled.add(id);
     Notifications.clearLastNotificationResponse();
 
-    const route = routeForNotification(lastResponse.notification.request.content.data ?? undefined);
+    const data = lastResponse.notification.request.content.data ?? undefined;
+    const route = routeForNotification(data);
+    // Opened from the push: it's read in the inbox too (that also refreshes the bell).
+    const notificationId = typeof data?.notificationId === 'string' ? data.notificationId : null;
+    if (notificationId) markInboxRead({ ids: [notificationId] }).catch(() => emitRefresh('inbox'));
+    else emitRefresh('inbox');
     emitRefresh(...route.topics);
     if (route.href) router.push(route.href as never);
   }, [Notifications, lastResponse]);
@@ -34,7 +40,8 @@ function Responder({ Notifications }: { Notifications: NonNullable<typeof MaybeN
   useEffect(() => {
     const subscription = Notifications.addNotificationReceivedListener((notification) => {
       const route = routeForNotification(notification.request.content.data ?? undefined);
-      emitRefresh(...route.topics);
+      // A new one is in the inbox: the bell's count and the list.
+      emitRefresh(...route.topics, 'inbox');
     });
     return () => subscription.remove();
   }, [Notifications]);

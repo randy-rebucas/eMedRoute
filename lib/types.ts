@@ -506,3 +506,22 @@ export interface ReferralState {
   clinics: { name: string; joinedOn: string }[];
   total: number;
 }
+
+// ── Notifications inbox ──────────────────────────────────────────────────────
+
+/** What a notification is about; `system` for older records without one. */
+export type InboxKind = 'visit' | 'delivery' | 'reminder' | 'expiry' | 'clinic' | 'team' | 'sponsorship' | 'support' | 'system';
+
+/** GET /notifications/inbox items: every rep event the server sent, stored even when push is off. */
+export interface InboxItem {
+  id: string;
+  kind: InboxKind;
+  title: string;
+  message: string;
+  /** Where it opens, as a push's `data.screen` (visits, products, team, clinics, sponsorships, support); null opens nothing. */
+  screen: string | null;
+  /** The visit or product it is about, when there is one. */
+  entityId: string | null;
+  read: boolean;
+  createdAt: string;
+}

@@ -9,7 +9,7 @@ export const FOREGROUND_REFRESH_MS = 30_000;
  * Data that changes while the app sits in the background: the clinic answers (visits, clinics),
  * PayMongo confirms a plan paid in the browser (subscription, sponsorships), support replies.
  */
-const TOPICS: RefreshTopic[] = ['visits', 'clinics', 'dashboard', 'deliveries', 'sponsorships', 'subscription', 'support'];
+const TOPICS: RefreshTopic[] = ['visits', 'clinics', 'dashboard', 'deliveries', 'sponsorships', 'subscription', 'support', 'inbox'];
 
 /** When the app comes back to the foreground (at most every 30 s), screens showing live data refetch. */
 export function useForegroundRefresh(enabled: boolean): void {
