@@ -261,14 +261,14 @@ export function useVisit(id: string | undefined) {
 /** Log a visit of the rep's own (no clinic on MyClinicSoft). */
 export async function createLogEntry(input: LogEntryInput): Promise<Visit> {
   const visit = await apiRequest<Visit>(VISITS_PATH, { method: 'POST', body: input });
-  emitRefresh('visits', 'dashboard');
+  emitRefresh('visits', 'dashboard', 'clinics');
   return visit;
 }
 
 /** PUT takes the full object for own log entries. */
 export async function updateLogEntry(id: string, input: LogEntryInput): Promise<Visit> {
   const visit = await apiRequest<Visit>(`${VISITS_PATH}/${encodeURIComponent(id)}`, { method: 'PUT', body: input });
-  emitRefresh('visits', 'dashboard');
+  emitRefresh('visits', 'dashboard', 'clinics');
   return visit;
 }
 
@@ -298,5 +298,5 @@ export async function saveVisitNotes(visit: Visit, notes: string): Promise<Visit
 /** DELETE. An open clinic booking answers 409 VISIT_ACTIVE: cancel it instead. */
 export async function deleteVisit(id: string): Promise<void> {
   await apiRequest(`${VISITS_PATH}/${encodeURIComponent(id)}`, { method: 'DELETE' });
-  emitRefresh('visits', 'dashboard');
+  emitRefresh('visits', 'dashboard', 'clinics');
 }

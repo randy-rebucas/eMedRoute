@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { apiFetch, ApiError, errorMessage } from '@/lib/api';
+import { apiFetch, ApiError, errorMessage, rotateSession } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
@@ -43,11 +43,15 @@ export default function ChangePasswordScreen() {
     if (!current || tooShort || mismatch) return;
     setSaving(true);
     try {
-      const result = await apiFetch<ChangePasswordResponse>('/api/medical-representatives/change-password', {
-        method: 'POST',
-        body: { currentPassword: current, newPassword: next },
+      // The server revokes every refresh token before answering: a refresh racing this one waits
+      // for the new pair instead of signing the rep out.
+      await rotateSession(async () => {
+        const result = await apiFetch<ChangePasswordResponse>('/api/medical-representatives/change-password', {
+          method: 'POST',
+          body: { currentPassword: current, newPassword: next },
+        });
+        await applyRotatedTokens(result);
       });
-      await applyRotatedTokens(result);
       setCurrent('');
       setNext('');
       setConfirm('');

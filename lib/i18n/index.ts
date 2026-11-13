@@ -2,8 +2,8 @@
  * English + Filipino for the app.
  *
  * In components:   const t = useT();  <Text>{t('common.tryAgain')}</Text>
- * Outside React:   import { t } from '@/lib/i18n';  Alert.alert(t('more.signOut.title'))
- * Params / plurals: t('more.unread', { count: 3 }), t('auth.otp.sentTo', { phone })
+ * Outside React:   import { t } from '@/lib/i18n';  Alert.alert(t('more.signOutTitle'))
+ * Params / plurals: t('more.support.open', { count: 3 }), t('visits.week.total', { count })
  *
  * `useT()` re-renders its component when the language changes. Plain `t()` reads the current
  * language at call time, so call it while rendering or handling an event, never at module load
@@ -20,7 +20,6 @@ import { checkCatalogs, lookup, MessageKey, TParams } from './registry';
 import type { ParamValue } from './types';
 
 export type { MessageKey, PlainKey } from './registry';
-export { defineStrings } from './types';
 
 export type Language = 'en' | 'fil';
 /** What the rep picked: a language, or 'system' to follow the phone. */

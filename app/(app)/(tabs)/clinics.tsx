@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ApiError, errorMessage } from '@/lib/api';
 import { leaveClinic, requestClinicAccess, useClinics, withdrawClinicAccess } from '@/lib/clinics';
 import { useT } from '@/lib/i18n';
+import { emitRefresh } from '@/lib/events';
 import { bookingBlocked, useSubscription } from '@/lib/plan';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Clinic } from '@/lib/types';
@@ -35,7 +36,7 @@ export default function ClinicsScreen() {
   const query = useDebounced(search);
   const list = useClinics(query, scope === 'all');
   // Book stays visible when booking isn't covered; it opens Plan instead of the sheet.
-  const { data: sub } = useSubscription();
+  const { data: sub, refresh: refreshSub } = useSubscription();
   const { items, loading, refreshing, loadingMore, error, loadMoreError, hasMore, offline, stale, updatedAt } = list;
   // The band counts the whole bookable list, so only once every page is in and nothing filters it.
   const whole = !loading && !error && !hasMore && !query.trim() && scope === 'bookable' && items.length > 0;
@@ -101,7 +102,17 @@ export default function ClinicsScreen() {
         keyExtractor={(c) => c.id}
         contentContainerStyle={screenStyles.list}
         keyboardShouldPersistTaps="handled"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={list.refresh} tintColor={colors.primary} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              list.refresh();
+              // Book stops sending the rep to Plan once a plan paid in the browser lands.
+              refreshSub();
+            }}
+            tintColor={colors.primary}
+          />
+        }
         onEndReached={hasMore ? list.loadMore : undefined}
         onEndReachedThreshold={0.4}
         ListHeaderComponent={
@@ -215,7 +226,16 @@ function AccessRequestSheet({ clinic, onClose }: { clinic: Clinic | null; onClos
     } catch (err) {
       if (isNetworkError(err)) setProblem(t('common.needsConnection'));
       else if (err instanceof ApiError && err.code === 'RECENTLY_DECLINED') setProblem(t('clinics.access.declinedRecently'));
-      else setProblem(errorMessage(err));
+      else if (err instanceof ApiError && (err.code === 'ALREADY_LINKED' || err.code === 'OPEN_CLINIC' || err.code === 'ALREADY_REQUESTED')) {
+        setProblem(
+          err.code === 'ALREADY_LINKED'
+            ? t('clinics.access.alreadyLinked')
+            : err.code === 'OPEN_CLINIC'
+              ? t('clinics.access.openClinic')
+              : t('clinics.access.alreadyRequested'),
+        );
+        emitRefresh('clinics');
+      } else setProblem(errorMessage(err));
     } finally {
       sendingRef.current = false;
       setSending(false);
@@ -283,7 +303,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     padding: spacing.md,
-    shadowColor: '#000',
+    shadowColor: colors.text,
     shadowOpacity: 0.12,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: -4 },

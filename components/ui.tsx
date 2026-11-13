@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from 'react';
+import { useEffect } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -18,10 +18,6 @@ export type IconName = keyof typeof Ionicons.glyphMap;
 
 // Small shared building blocks so every screen gets the same card, button,
 // field and status-badge look as the original screens.
-
-export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  return <View style={[styles.card, style]}>{children}</View>;
-}
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'dangerOutline';
 
@@ -113,20 +109,6 @@ export function Badge({ label, tone = 'neutral' }: { label: string; tone?: Tone 
   );
 }
 
-export function DetailRow({ label, value }: { label: string; value: ReactNode }) {
-  if (value === null || value === undefined || value === '') return null;
-  return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      {typeof value === 'string' || typeof value === 'number' ? (
-        <Text style={styles.rowValue}>{value}</Text>
-      ) : (
-        value
-      )}
-    </View>
-  );
-}
-
 /**
  * Bottom padding for scroll content on screens with no tab bar under them, so
  * the last row clears the iOS home indicator / Android gesture bar.
@@ -214,14 +196,6 @@ export const screenStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-  },
   button: {
     borderRadius: radius.md,
     paddingVertical: spacing.md - 2,
@@ -243,16 +217,6 @@ const styles = StyleSheet.create({
   tile: { borderRadius: radius.sm + 2, alignItems: 'center', justifyContent: 'center' },
   badge: { borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 4, alignSelf: 'flex-start' },
   badgeText: { fontSize: 12, fontWeight: '600' },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    gap: spacing.md,
-  },
-  rowLabel: { fontSize: 14, color: colors.textMuted },
-  rowValue: { fontSize: 14, color: colors.text, fontWeight: '500', flexShrink: 1, textAlign: 'right' },
   banner: { borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md },
   bannerText: { fontSize: 14, fontWeight: '500' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },

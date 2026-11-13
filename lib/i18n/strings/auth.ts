@@ -36,6 +36,7 @@ export default defineStrings({
     'code.changeNumber': 'Use a different number',
     'code.noText': 'No text? Only numbers verified at sign-up get codes. Use your email and password instead.',
     'inactive.usePassword': 'To pay the activation fee, go back and sign in with your email and password.',
+    deactivated: 'Your account has been deactivated. Contact support to turn it back on.',
 
     // Refusals (sign-in codes in MOBILE_API.md)
     'setup.title': 'Set your password first',
@@ -99,6 +100,7 @@ export default defineStrings({
     'code.changeNumber': 'Gumamit ng ibang number',
     'code.noText': 'Walang text? Ang mga number lang na na-verify sa sign-up ang nakakatanggap ng code. Gamitin na lang ang email at password mo.',
     'inactive.usePassword': 'Para mabayaran ang activation fee, bumalik at mag-sign in gamit ang email at password mo.',
+    deactivated: 'Na-deactivate ang account mo. Kontakin ang support para ma-on ulit ito.',
 
     'setup.title': 'I-set muna ang password mo',
     'setup.message': 'Buksan ang invite email para i-set ang password mo, saka mag-sign in dito.',

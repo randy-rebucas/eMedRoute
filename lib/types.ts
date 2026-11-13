@@ -163,6 +163,11 @@ export interface Clinic {
   lastVisit?: string | null;
   /** The rep's soonest requested or scheduled visit here from today on. Missing from older servers. */
   nextVisit?: { date: string; time: string } | null;
+  /**
+   * Like `nextVisit`, but clinic bookings only (no own log entries linked here): the server's
+   * one-booking-per-day rule counts only these. Missing from older servers.
+   */
+  nextBooking?: { date: string; time: string } | null;
 }
 
 /** GET /products?summary=1: the rep's active products by days left (Manila days). */

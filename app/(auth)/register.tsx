@@ -253,7 +253,9 @@ export default function RegisterScreen() {
           return;
         }
         if (err instanceof ApiError && err.code === 'ALREADY_ACTIVE') {
-          await auth.loginWithPassword(details.email.trim(), password);
+          // Paid already: sign in. With an authenticator on the account, its code is next.
+          const result = await auth.loginWithPassword(details.email.trim(), password);
+          if (result.kind === 'twoFactor') router.push('/two-step');
           return;
         }
         throw err;

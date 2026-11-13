@@ -33,6 +33,8 @@ export default defineStrings({
     edit: 'Edit',
     delete: 'Delete',
     deleted: 'Visit deleted',
+    keptForDeliveries: 'It has deliveries, so it stays on your record.',
+    editOnlyOwn: 'Clinic bookings can’t be edited here. Move or cancel it from the visit.',
     minutes: '{minutes} min',
 
     'segment.upcoming': 'Upcoming',
@@ -55,6 +57,7 @@ export default defineStrings({
     'week.tomorrow': 'Tomorrow',
     'week.counts': '{confirmed} confirmed · {waiting} waiting',
     'week.hint': 'Tap a day to see only its visits',
+    'week.hintLaterMore': 'Tap a day to see only its visits · {count}+ more after this week',
     'week.hintLater': {
       one: 'Tap a day to see only its visits · {count} more after this week',
       other: 'Tap a day to see only its visits · {count} more after this week',
@@ -106,7 +109,6 @@ export default defineStrings({
     'notes.empty': 'Nothing yet. Jot down what the doctor said while it’s fresh.',
     'notes.add': 'Add notes',
     'notes.edit': 'Edit notes',
-    'notes.saving': 'Saving…',
 
     'form.logIntro': 'For visits outside MyClinicSoft booking. Only you and your team see this log.',
     'form.clinicName': 'Clinic or doctor',
@@ -133,7 +135,7 @@ export default defineStrings({
   },
   fil: {
     'state.waiting': 'Naghihintay',
-    'state.approved': 'Approved',
+    'state.approved': 'Inaprubahan',
     'state.checkedIn': 'Naka-check in',
     'state.done': 'Tapos na',
     'state.declined': 'Tinanggihan',
@@ -161,6 +163,8 @@ export default defineStrings({
     edit: 'I-edit',
     delete: 'Burahin',
     deleted: 'Nabura ang pagbisita',
+    keptForDeliveries: 'May deliveries ito, kaya mananatili ito sa record mo.',
+    editOnlyOwn: 'Hindi ma-edit dito ang booking sa clinic. Ilipat o kanselahin ito mula sa pagbisita.',
     minutes: '{minutes} min',
 
     'segment.upcoming': 'Paparating',
@@ -183,6 +187,7 @@ export default defineStrings({
     'week.tomorrow': 'Bukas',
     'week.counts': '{confirmed} kumpirmado · {waiting} naghihintay',
     'week.hint': 'I-tap ang isang araw para makita lang ang mga pagbisita nito',
+    'week.hintLaterMore': 'I-tap ang isang araw para makita lang ang mga pagbisita nito · {count}+ pa pagkatapos ng linggong ito',
     'week.hintLater': 'I-tap ang isang araw para makita lang ang mga pagbisita nito · {count} pa pagkatapos ng linggong ito',
     'week.confirmed': 'Kumpirmado',
     'week.waiting': 'Naghihintay sa clinic',
@@ -230,7 +235,6 @@ export default defineStrings({
     'notes.empty': 'Wala pa. Isulat ang sinabi ng doktor habang sariwa pa.',
     'notes.add': 'Magdagdag ng notes',
     'notes.edit': 'I-edit ang notes',
-    'notes.saving': 'Sine-save…',
 
     'form.logIntro': 'Para sa mga pagbisitang hindi naka-book sa MyClinicSoft. Ikaw at ang team mo lang ang nakakakita ng log na ito.',
     'form.clinicName': 'Clinic o doktor',

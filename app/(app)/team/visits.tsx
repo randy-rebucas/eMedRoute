@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { useAuth } from '@/lib/auth';
 import { daysFromToday } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { useTeam, useTeamVisits } from '@/lib/team';
 import { colors, spacing } from '@/lib/theme';
 import { type } from '@/lib/typography';
+import { usePendingDeletes } from '@/lib/undo';
 import { byDay, dayHeading } from '@/lib/visits';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
@@ -24,10 +26,13 @@ export default function TeamVisitsScreen() {
   const t = useT();
   const params = useLocalSearchParams<{ memberId?: string }>();
   const [memberId, setMemberId] = useState<string>(params.memberId ?? 'all');
+  const { rep } = useAuth();
   const { data: team } = useTeam();
+  // The manager's own visits waiting behind Undo are already gone from their Visits tab.
+  const pendingDeletes = usePendingDeletes();
   const list = useTeamVisits(memberId === 'all' ? null : memberId);
   const members = useMemo(() => team?.team?.members ?? [], [team]);
-  const sections = useMemo(() => byDay(list.items), [list.items]);
+  const sections = useMemo(() => byDay(list.items.filter((v) => !pendingDeletes.has(v._id))), [list.items, pendingDeletes]);
   const picked = members.find((m) => m.id === memberId) ?? null;
 
   const empty = list.loading ? (
@@ -83,7 +88,8 @@ export default function TeamVisitsScreen() {
       renderItem={({ item, index, section }) => (
         <VisitRow
           visit={item}
-          member={item.member?.name ?? t('team.formerMember')}
+          // The manager's own visits open like on their Visits tab; a member's are read-only here.
+          member={item.member && item.member.id === rep?.id ? undefined : (item.member?.name ?? t('team.formerMember'))}
           inDay={{ first: index === 0, last: index === section.data.length - 1 }}
         />
       )}

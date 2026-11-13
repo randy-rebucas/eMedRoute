@@ -1,6 +1,7 @@
 # Photo credits
 
-Stock photos used on Home. All from Unsplash under the Unsplash License (free for commercial use,
+Stock photos used across the app (Home, Visits, Clinics, Products, Plan, Sponsorships, Referral,
+Team, booking and sign-in). All from Unsplash under the Unsplash License (free for commercial use,
 no attribution required). Cropped, resized and desaturated 20% with sharp.
 
 | File | Source |

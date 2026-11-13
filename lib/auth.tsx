@@ -302,10 +302,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
         } catch (error) {
           failure = error;
-          // Offline: try again on the next launch, so the phone stops getting this rep's pushes
-          // and the refresh token dies on the server too.
+          // Offline, or the server failed (429 / 5xx): try again on the next launch, so the phone
+          // stops getting this rep's pushes and the refresh token dies on the server too. A 4xx
+          // answer is final (the token is already dead), nothing to retry.
           const current = await getSession();
-          if (isNetworkError(error) && current?.refreshToken) {
+          const retryable = isNetworkError(error) || (error instanceof ApiError && (error.status === 429 || error.status >= 500));
+          if (retryable && current?.refreshToken) {
             await setPendingSignOut({ deviceId, refreshToken: current.refreshToken }).catch(() => {});
           }
         }

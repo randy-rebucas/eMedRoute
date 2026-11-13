@@ -30,6 +30,8 @@ export const colors = {
   onNavyMuted: '#A9BCCF',
   /** Hairlines and outline buttons on navy. */
   navyLine: '#24405C',
+  /** A text action on the navy snackbar (Undo): a light teal that reads on navy, where `primary` doesn't. */
+  onNavyAction: '#7FE0DE',
 };
 
 export const spacing = {

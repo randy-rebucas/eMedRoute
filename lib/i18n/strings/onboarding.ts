@@ -64,6 +64,8 @@ export default defineStrings({
     'activation.message': "Pay the activation fee on PayMongo's page. As soon as PayMongo confirms it, you'll be signed in here, usually within a minute.",
     'activation.checking': 'Checking your payment…',
     'activation.slow': "Still waiting for PayMongo. If you've paid, it can take a few minutes. You can keep this screen open.",
+    'activation.activeTitle': 'Your account is active',
+    'activation.active': 'Your payment went through. Sign in with your email and password to start.',
     'activation.expiredTitle': 'Payment link expired',
     'activation.expired': 'Sign in again to pay the activation fee or to continue.',
 
@@ -131,6 +133,8 @@ export default defineStrings({
     'activation.message': 'Bayaran ang activation fee sa page ng PayMongo. Kapag nakumpirma na ito ng PayMongo, maisa-sign in ka rito, kadalasan sa loob ng isang minuto.',
     'activation.checking': 'Tinitingnan ang bayad mo…',
     'activation.slow': 'Hinihintay pa ang PayMongo. Kung nakapagbayad ka na, baka umabot ng ilang minuto. Puwede mong iwanang bukas ang screen na ito.',
+    'activation.activeTitle': 'Aktibo na ang account mo',
+    'activation.active': 'Pumasok na ang bayad mo. Mag-sign in gamit ang email at password mo para magsimula.',
     'activation.expiredTitle': 'Nag-expire na ang payment link',
     'activation.expired': 'Mag-sign in ulit para bayaran ang activation fee o para magpatuloy.',
 

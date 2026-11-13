@@ -87,7 +87,7 @@ export default function VisitDetailScreen() {
       id: visit._id,
       message: t('visits.deleted'),
       commit: () => deleteVisit(visit._id),
-      topics: ['visits', 'dashboard'],
+      topics: ['visits', 'dashboard', 'clinics'],
     });
     router.back();
   }
@@ -310,6 +310,8 @@ export default function VisitDetailScreen() {
         ) : null}
         {open ? (
           <Button title={t('booking.cancelVisit')} icon="close-circle-outline" variant="dangerOutline" onPress={confirmCancel} loading={cancelling} disabled={offline} />
+        ) : deliveries?.length ? (
+          <Text style={[type.secondary, styles.kept]}>{t('visits.keptForDeliveries')}</Text>
         ) : (
           <Button title={t('visits.delete')} icon="trash-outline" variant="dangerOutline" onPress={remove} disabled={offline} />
         )}
@@ -486,5 +488,6 @@ const styles = StyleSheet.create({
   error: { fontSize: 13, color: colors.danger, marginTop: spacing.xs },
   notesActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   deliveries: { marginBottom: spacing.sm, gap: spacing.xs },
+  kept: { textAlign: 'center' },
   foot: { gap: spacing.sm, marginTop: spacing.md },
 });
