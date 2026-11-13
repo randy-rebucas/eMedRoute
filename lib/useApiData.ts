@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { apiFetch, ApiError, apiRequest, errorMessage } from './api';
+import { apiFetch, ApiError, apiRequest, apiRequestAllPages, errorMessage } from './api';
 import { RefreshTopic, useRefreshOn } from './events';
 import {
   offlineCacheEpoch,
@@ -25,6 +25,8 @@ interface Options {
    * screen with `offline: true` and `updatedAt` = when it was saved. Only for GET endpoints.
    */
   offline?: boolean;
+  /** A list endpoint read to the end (every page), for lookups that must see every item. */
+  allPages?: boolean;
 }
 
 /** True for the api layer's "couldn't reach the server" (no connection, timeout). */
@@ -33,7 +35,7 @@ export function isNetworkError(err: unknown): boolean {
 }
 
 export function useApiData<T>(path: string | null, options: Options = {}) {
-  const { envelope = false, refreshOn, offline: keepOffline = false } = options;
+  const { envelope = false, refreshOn, offline: keepOffline = false, allPages = false } = options;
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(path !== null);
   const [refreshing, setRefreshing] = useState(false);
@@ -69,7 +71,7 @@ export function useApiData<T>(path: string | null, options: Options = {}) {
       inFlight.current++;
       const seq = ++sequence.current;
       const isLatest = () => mounted.current && seq === sequence.current;
-      const cacheKey = keepOffline ? offlineCacheKey(path, envelope ? 'envelope' : 'data') : null;
+      const cacheKey = keepOffline ? offlineCacheKey(path, envelope ? 'envelope' : allPages ? 'all' : 'data') : null;
       // Read before the request: a response that lands after sign-out must not be saved.
       const cacheEpoch = offlineCacheEpoch();
       const sessionGen = sessionGeneration();
@@ -92,7 +94,11 @@ export function useApiData<T>(path: string | null, options: Options = {}) {
       }
 
       try {
-        const result = envelope ? await apiFetch<T>(path) : await apiRequest<T>(path);
+        const result = allPages
+          ? ((await apiRequestAllPages<unknown>(path)) as T)
+          : envelope
+            ? await apiFetch<T>(path)
+            : await apiRequest<T>(path);
         outcome = 'ok';
         if (cacheKey && sessionGen === sessionGeneration()) writeOffline(cacheKey, result, cacheEpoch);
         if (!isLatest()) return;
@@ -127,7 +133,7 @@ export function useApiData<T>(path: string | null, options: Options = {}) {
         }
       }
     },
-    [path, envelope, keepOffline]
+    [path, envelope, keepOffline, allPages]
   );
 
   useEffect(() => {

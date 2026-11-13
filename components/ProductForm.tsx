@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { errorMessage } from '@/lib/api';
 import { useT } from '@/lib/i18n';
@@ -47,6 +47,8 @@ export function ProductForm({
   const [form, setForm] = useState<FormState>(() => initial(product));
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  // State lags a frame: two taps in one frame must not save twice.
+  const savingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const paddingBottom = useBottomPadding();
 
@@ -61,9 +63,10 @@ export function ProductForm({
   const packError = submitted && packGiven && !packValid ? t('products.form.packSizeInvalid') : null;
 
   async function save() {
-    if (saving) return;
+    if (savingRef.current) return;
     setSubmitted(true);
     if (REQUIRED.some((k) => !form[k].trim()) || !form.expiryDate || (packGiven && !packValid)) return;
+    savingRef.current = true;
     setSaving(true);
     setError(null);
     try {
@@ -83,6 +86,7 @@ export function ProductForm({
     } catch (err) {
       setError(isNetworkError(err) ? t('common.needsConnection') : errorMessage(err));
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -101,7 +105,7 @@ export function ProductForm({
   );
 
   return (
-    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={96}>
+    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={96}>
       <ScrollView contentContainerStyle={[screenStyles.content, { paddingBottom }]} keyboardShouldPersistTaps="handled">
         {error ? <Banner message={error} /> : null}
         {text('name', t('products.form.name'))}
@@ -125,7 +129,7 @@ export function ProductForm({
             />
           </View>
           <View style={styles.packUnit}>
-            <Field label={t('products.form.packUnit')} value={form.packUnit} onChangeText={(v) => set('packUnit', v)} maxLength={50} placeholder="tablets" autoCapitalize="none" />
+            <Field label={t('products.form.packUnit')} value={form.packUnit} onChangeText={(v) => set('packUnit', v)} maxLength={50} placeholder={t('products.form.packUnitPlaceholder')} autoCapitalize="none" />
           </View>
         </View>
         <Text style={[type.secondary, styles.packHint, packError && styles.packError]} accessibilityLiveRegion="polite">

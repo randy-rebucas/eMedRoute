@@ -17,6 +17,9 @@ export default defineStrings({
     signOutHere: 'Sign out on this phone',
     signOutEverywhere: 'Sign out on all devices',
     signOutEverywhereHint: 'Every phone signed in to your account has to sign in again',
+    'signOutEverywhere.title': 'Sign out on all devices?',
+    'signOutEverywhere.body': 'Every phone signed in to your account, this one included, has to sign in again.',
+    'signOutEverywhere.confirm': 'Sign out everywhere',
   },
   fil: {
     notifications: 'Notifications',
@@ -33,5 +36,8 @@ export default defineStrings({
     signOutHere: 'Mag-sign out sa phone na ito',
     signOutEverywhere: 'Mag-sign out sa lahat ng device',
     signOutEverywhereHint: 'Kailangang mag-sign in ulit sa bawat phone na naka-sign in sa account mo',
+    'signOutEverywhere.title': 'Mag-sign out sa lahat ng device?',
+    'signOutEverywhere.body': 'Kailangang mag-sign in ulit sa bawat phone na naka-sign in sa account mo, kasama ang phone na ito.',
+    'signOutEverywhere.confirm': 'Mag-sign out sa lahat',
   },
 });

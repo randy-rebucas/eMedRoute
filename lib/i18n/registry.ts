@@ -6,6 +6,7 @@
  *   common        components/ui, ErrorState, AppHeader, OfflineBanner, LanguagePicker, forms;
  *                 lib/api, useApiData, usePaginatedList
  *   auth          app/(auth)/*, components/auth.tsx, lib/auth.tsx
+ *   onboarding    app/(auth)/register.tsx, lib/onboarding.ts, sign-in "pay activation fee"
  *   nav           app/(app)/(tabs)/_layout.tsx (tab names)
  *   home          app/(app)/(tabs)/home.tsx, NextVisitCard
  *   visits        (tabs)/visits.tsx, visits/*, VisitRow, StatusPill, VisitLogForm, ProductPicker, lib/visits
@@ -13,6 +14,8 @@
  *   booking       clinics/[id]/book, visits/[id]/move, booking.tsx, visit detail Move/Cancel
  *   deliveries    visits/[id]/deliver, DeliveryCard, product "Where it is", log form clinic link
  *   plan          plan.tsx, PlanCard, lib/plan
+ *   sponsorships  sponsorships.tsx, lib/sponsorships
+ *   referral      referral.tsx, lib/referral
  *   team          team/*, TeamMemberRow, lib/team
  *   products      (tabs)/products.tsx, products/*, ProductCards, ProductForm, lib/products
  *   more          app/(app)/(tabs)/more.tsx, stack titles in app/(app)/_layout.tsx
@@ -31,11 +34,14 @@ import home from './strings/home';
 import more from './strings/more';
 import nav from './strings/nav';
 import notifications from './strings/notifications';
+import onboarding from './strings/onboarding';
 import password from './strings/password';
 import plan from './strings/plan';
 import products from './strings/products';
 import profile from './strings/profile';
+import referral from './strings/referral';
 import settings from './strings/settings';
+import sponsorships from './strings/sponsorships';
 import support from './strings/support';
 import team from './strings/team';
 import visits from './strings/visits';
@@ -51,11 +57,14 @@ export const catalogs = {
   more,
   nav,
   notifications,
+  onboarding,
   password,
   plan,
   products,
   profile,
+  referral,
   settings,
+  sponsorships,
   support,
   team,
   visits,

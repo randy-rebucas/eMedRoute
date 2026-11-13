@@ -24,6 +24,14 @@ export function todaysStops(visits: RouteVisit[]): RouteStop[] {
     });
 }
 
+/** Stops Google Maps takes between the start and the destination. */
+export const MAX_WAYPOINTS = 9;
+
+/** How many stops `openRoute` leaves out (those after the 9th, before the last). */
+export function stopsLeftOut(stops: RouteStop[]): number {
+  return Math.max(0, stops.length - 1 - MAX_WAYPOINTS);
+}
+
 /**
  * Open Google Maps with directions from where the rep is, through every stop in order. A Google
  * Maps link on both platforms: Apple Maps links take no stops in between. The Maps apps take up
@@ -32,7 +40,7 @@ export function todaysStops(visits: RouteVisit[]): RouteStop[] {
 export async function openRoute(stops: RouteStop[]): Promise<void> {
   if (!stops.length) return;
   const destination = stops[stops.length - 1].address;
-  const waypoints = stops.slice(0, -1).slice(0, 9).map((s) => s.address);
+  const waypoints = stops.slice(0, -1).slice(0, MAX_WAYPOINTS).map((s) => s.address);
   const params = [`api=1`, `travelmode=driving`, `destination=${encodeURIComponent(destination)}`];
   if (waypoints.length) params.push(`waypoints=${encodeURIComponent(waypoints.join('|'))}`);
   await Linking.openURL(`https://www.google.com/maps/dir/?${params.join('&')}`);

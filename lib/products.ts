@@ -30,9 +30,13 @@ export function useProducts(status: ProductStatus | null) {
   return { ...list, items };
 }
 
-/** The rep's active products for a visit (the server allows up to 10 per visit). */
+/** Every active product of the rep's, for picking (the server allows up to 10 per visit). */
 export function useActiveProducts() {
-  return useApiData<Product[]>(PRODUCTS_PATH + query({ status: 'active', limit: 100 }), { refreshOn: ['products'], offline: true });
+  const result = useApiData<Product[]>(PRODUCTS_PATH + query({ status: 'active' }), { refreshOn: ['products'], offline: true, allPages: true });
+  // A product waiting behind Undo (or deleted since) isn't offered.
+  const pending = usePendingDeletes();
+  const data = useMemo(() => (result.data ? result.data.filter((p) => !pending.has(p._id)) : result.data), [result.data, pending]);
+  return { ...result, data };
 }
 
 export function useProduct(id: string | undefined) {

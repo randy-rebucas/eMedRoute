@@ -131,22 +131,26 @@ const byDayThenTime = (a: Visit, b: Visit) => visitDay(a).localeCompare(visitDay
  * finished here:
  * - upcoming: requested and approved visits (booked or own) from today on, soonest first
  * - past: everything up to today, except today's still-open visits, newest first
- * - log: the rep's own log entries, newest first
+ * - log: the rep's own log entries (asked for with `own=1`), newest first
  */
 export function useVisitList(segment: VisitSegment, range: DateRange) {
   const today = clinicTodayYmd();
   const { from, to } = rangeDays(range);
   const path =
     segment === 'upcoming'
-      ? VISITS_PATH + query({ from: today })
+      ? // Soonest first, open visits only: page 1 holds the next ones, not the farthest.
+        VISITS_PATH + query({ from: today, status: ACTIVE_CLINIC_STATUSES.join(','), sort: 'asc' })
       : segment === 'past'
         ? VISITS_PATH + query({ from, to: endOfDay(to && to < today ? to : today) })
-        : VISITS_PATH + query({ from, to: to ? endOfDay(to) : undefined });
+        : // `own=1`: the server returns only the rep's own log entries (still checked below).
+          VISITS_PATH + query({ own: '1', from, to: to ? endOfDay(to) : undefined });
 
   const list = usePaginatedList<Visit>(path, {
     limit: segment === 'upcoming' ? 100 : 50,
     refreshOn: ['visits'],
     offline: true,
+    // The URL carries today's date; the saved copy must still open offline tomorrow (filtered below).
+    cacheKey: `visits:${segment}:${segment === 'upcoming' ? '' : range}`,
   });
   const pending = usePendingDeletes();
 

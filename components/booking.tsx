@@ -20,6 +20,8 @@ export function DateStrip({ days, value, onChange }: { days: BookingDay[]; value
   useEffect(() => {
     const i = days.findIndex((d) => d.day === value);
     if (i > 2) scroller.current?.scrollTo({ x: (i - 1) * CHIP, animated: false });
+    // Once, when the sheet opens: later picks scroll themselves into view by tap.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

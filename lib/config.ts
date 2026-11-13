@@ -5,11 +5,25 @@ import Constants from 'expo-constants';
  * EXPO_PUBLIC_API_URL in .env (or eas.json per build profile); app.json's
  * extra.apiUrl is the fallback, then localhost for the dev-server case.
  */
-const configuredUrl = (
+const rawUrl = (
   process.env.EXPO_PUBLIC_API_URL ||
   (Constants.expoConfig?.extra?.apiUrl as string | undefined) ||
   'http://localhost:3000'
 ).replace(/\/+$/, '');
+
+/**
+ * In development, "localhost" on an emulator or phone is the device itself, not
+ * the dev machine. Swap it for the host the app loaded its bundle from (Metro's
+ * hostUri, e.g. "192.168.1.20:8081"), which the device can already reach.
+ */
+function resolveDevHost(url: string): string {
+  if (!__DEV__) return url;
+  const metroHost = Constants.expoConfig?.hostUri?.split(':')[0];
+  if (!metroHost || /^(localhost|127\.0\.0\.1)$/i.test(metroHost)) return url;
+  return url.replace(/^(https?:\/\/)(localhost|127\.0\.0\.1)(?=[:/]|$)/i, `$1${metroHost}`);
+}
+
+const configuredUrl = resolveDevHost(rawUrl);
 
 /**
  * Release builds must talk to the real backend over HTTPS. Fail loudly at
@@ -17,6 +31,16 @@ const configuredUrl = (
  */
 function assertReleaseUrl(url: string): void {
   if (__DEV__) return;
+  if (!isReleaseUrl(url)) {
+    throw new Error(
+      `[config] Release build has an invalid API URL "${url}". ` +
+        'Set EXPO_PUBLIC_API_URL to the production https:// origin (see eas.json build profiles).'
+    );
+  }
+}
+
+/** An https:// URL that isn't a local or private-network host (what a release build may use). */
+export function isReleaseUrl(url: string): boolean {
   let host = '';
   try {
     host = new URL(url).hostname.toLowerCase();
@@ -33,12 +57,7 @@ function assertReleaseUrl(url: string): void {
     /^192\.168\./.test(host) ||
     /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
     /localhost|REPLACE_ME/i.test(url);
-  if (insecure || local) {
-    throw new Error(
-      `[config] Release build has an invalid API URL "${url}". ` +
-        'Set EXPO_PUBLIC_API_URL to the production https:// origin (see eas.json build profiles).'
-    );
-  }
+  return !insecure && !local;
 }
 
 assertReleaseUrl(configuredUrl);

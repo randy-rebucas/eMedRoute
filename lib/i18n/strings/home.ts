@@ -17,6 +17,10 @@ export default defineStrings({
     'route.title': 'Today’s route',
     'route.stops': { one: '{count} stop', other: '{count} stops' },
     'route.start': 'Start route',
+    'route.leftOut': {
+      one: 'Google Maps takes up to {max} stops, so {count} of today’s stops isn’t in the route.',
+      other: 'Google Maps takes up to {max} stops, so {count} of today’s stops aren’t in the route.',
+    },
     noNextVisit: 'No visits scheduled',
     noNextVisitHint: 'Approved bookings and planned visits from your log show here.',
     'count.thisMonth': 'visits this month',
@@ -45,6 +49,7 @@ export default defineStrings({
     'route.title': 'Ruta ngayong araw',
     'route.stops': '{count} hinto',
     'route.start': 'Simulan ang ruta',
+    'route.leftOut': 'Hanggang {max} hinto lang ang kaya ng Google Maps, kaya wala sa ruta ang {count} sa mga hinto ngayong araw.',
     noNextVisit: 'Walang naka-schedule na pagbisita',
     noNextVisitHint: 'Dito lalabas ang mga approved na booking at nakaplanong pagbisita mula sa log mo.',
     'count.thisMonth': 'pagbisita ngayong buwan',

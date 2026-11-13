@@ -11,4 +11,6 @@ const unsupported =
 
 export const Notifications: typeof import('expo-notifications') | null = unsupported
   ? null
-  : require('expo-notifications');
+  : // A lazy require: importing expo-notifications at all fails in Expo Go on Android.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('expo-notifications');

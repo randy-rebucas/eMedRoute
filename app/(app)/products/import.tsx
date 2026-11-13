@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { File } from 'expo-file-system';
@@ -7,6 +7,7 @@ import { ApiError, errorMessage } from '@/lib/api';
 import { formatDay } from '@/lib/format';
 import { PlainKey, TFunction, useT } from '@/lib/i18n';
 import {
+  decodeCsvBytes,
   IMPORT_COLUMNS,
   IMPORT_TEMPLATE,
   ImportField,
@@ -84,6 +85,8 @@ export default function ImportProductsScreen() {
   const [step, setStep] = useState<Step>({ kind: 'pick' });
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // State lags a frame: two taps in one frame must not import the rows twice.
+  const busyRef = useRef(false);
 
   async function choose() {
     setProblem(null);
@@ -99,7 +102,7 @@ export default function ImportProductsScreen() {
     let text: string;
     try {
       if (file.size > MAX_FILE_BYTES) throw new Error('too big');
-      text = await file.text();
+      text = decodeCsvBytes(await file.bytes());
     } catch {
       setProblem(t('products.import.error.unreadable'));
       return;
@@ -120,6 +123,8 @@ export default function ImportProductsScreen() {
   }
 
   async function send(ready: ImportRow[]) {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusy(true);
     setProblem(null);
     try {
@@ -138,6 +143,7 @@ export default function ImportProductsScreen() {
         });
       } else setProblem(errorMessage(err));
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }
@@ -316,7 +322,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    minHeight: 40,
+    minHeight: 44,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },

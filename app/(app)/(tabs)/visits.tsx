@@ -24,18 +24,22 @@ export default function VisitsScreen() {
   const [segment, setSegment] = useState<VisitSegment>('upcoming');
   const [range, setRange] = useState<DateRange>('any');
 
-  // Home's counts open a segment (and range) here.
+  // Home's counts open a segment (and range) here. The params are cleared once applied, so the
+  // same jump works again after the rep switched segment by hand.
   useEffect(() => {
+    if (!params.segment && !params.range) return;
     if (params.segment && (SEGMENTS as string[]).includes(params.segment)) setSegment(params.segment as VisitSegment);
     setRange(params.range && (RANGES as string[]).includes(params.range) ? (params.range as DateRange) : 'any');
+    router.setParams({ segment: undefined, range: undefined });
   }, [params.segment, params.range]);
 
-  // After a booking is sent: land on Upcoming, then open the new visit on top of it.
+  // After a booking is sent: land on Upcoming, then open the new visit on top of it. Only a visit
+  // id: a link from outside the app can't use this to open some other screen.
   useEffect(() => {
     if (!params.open) return;
     const id = params.open;
     router.setParams({ open: undefined });
-    router.push(`/visits/${id}`);
+    if (/^[a-f\d]{24}$/i.test(id)) router.push(`/visits/${encodeURIComponent(id)}`);
   }, [params.open]);
 
   const list = useVisitList(segment, segment === 'upcoming' ? 'any' : range);

@@ -298,6 +298,11 @@ export type TeamVisit = Omit<Visit, 'notes'> & { member: { id: string; name: str
 // ── Home ─────────────────────────────────────────────────────────────────────
 
 /** GET /dashboard. "This month" is the UTC calendar month. */
+export type DashboardVisit = Pick<
+  Visit,
+  '_id' | 'clinicId' | 'clinicName' | 'clinicLocation' | 'purpose' | 'date' | 'time' | 'duration' | 'status' | 'checkedInAt'
+>;
+
 export interface Dashboard {
   profile: Pick<RepProfile, 'firstName' | 'lastName' | 'company' | 'title' | 'territory' | 'status'> & { isActivated?: boolean };
   stats: {
@@ -314,10 +319,9 @@ export interface Dashboard {
     openSupportRequests: number;
   };
   /** Up to 5 scheduled visits from today on, soonest first. */
-  nextVisits: Pick<
-    Visit,
-    '_id' | 'clinicId' | 'clinicName' | 'clinicLocation' | 'purpose' | 'date' | 'time' | 'duration' | 'status' | 'checkedInAt'
-  >[];
+  nextVisits: DashboardVisit[];
+  /** Every scheduled visit today (Manila day), by time, for the route. Missing from older servers. */
+  todayVisits?: DashboardVisit[];
 }
 
 /** POST /change-password with Bearer auth: a new token pair for this device. */
@@ -403,4 +407,55 @@ export interface DeliveryInput {
   kind: DeliveryKind;
   lines: { productId: string; quantity: number; unit: string; lotNumber?: string; expiryDate?: string }[];
   note?: string;
+}
+
+/** A clinic sponsorship: the rep pays for a clinic's MyClinicSoft plan (Professional). */
+export interface Sponsorship {
+  id: string;
+  status: 'pending' | 'accepted' | 'declined' | 'cancelled' | 'ended';
+  initiatedBy: 'clinic' | 'rep';
+  /** The rep has to accept or decline it (the clinic asked). */
+  awaitingYou: boolean;
+  message: string | null;
+  clinic: { id: string; name: string };
+  rep: { id: string; name: string; company: string | null };
+  /** The clinic's plan is paid through this date (after the latest payment). */
+  paidThrough: string | null;
+  /** Paid-for time hasn't run out yet. */
+  active: boolean;
+  /** `refunded`: its months came off the clinic's plan. */
+  payments: { months: number; amount: number; paidAt: string; refunded: boolean }[];
+  createdAt: string;
+  respondedAt: string | null;
+  endedAt: string | null;
+  endedBy: 'clinic' | 'rep' | null;
+}
+
+export type SponsorTerm = 1 | 3 | 6 | 12;
+
+export interface SponsorshipQuote {
+  months: SponsorTerm;
+  amount: number;
+  fullPrice: number;
+  percentOff: number;
+  perMonth: number;
+  currency: 'PHP';
+}
+
+export interface SponsorshipsState {
+  sponsorships: Sponsorship[];
+  prices: { quotes: SponsorshipQuote[]; monthly: number; plan: 'professional'; currency: 'PHP'; payable: boolean };
+  /** Linked clinics the rep could offer to sponsor (no open sponsorship yet). */
+  clinics: { id: string; name: string }[];
+}
+
+/** GET /api/medical-representatives/referral-code: the rep's code for signing up clinics. */
+export interface ReferralState {
+  /** e.g. "REP-7K2PQX". A clinic enters it at signup or on its billing page. */
+  code: string;
+  /** Clinic signup page with the code filled in. */
+  link: string;
+  /** Clinics that joined with the rep's codes, newest first (up to 50). */
+  clinics: { name: string; joinedOn: string }[];
+  total: number;
 }

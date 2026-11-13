@@ -43,7 +43,7 @@ export function AuthScreen({
   const onBack = typeof back === 'function' ? back : back ? () => router.back() : null;
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
         {onBack ? (
           <TouchableOpacity
             style={styles.back}
@@ -219,16 +219,6 @@ export function useBlockHardwareBack(onBack?: () => void) {
       });
       return () => sub.remove();
     }, [onBack])
-  );
-}
-
-export function Divider({ label }: { label: string }) {
-  return (
-    <View style={styles.divider}>
-      <View style={styles.dividerLine} />
-      <Text style={styles.dividerText}>{label}</Text>
-      <View style={styles.dividerLine} />
-    </View>
   );
 }
 
@@ -413,9 +403,6 @@ const styles = StyleSheet.create({
   otpBoxActive: { borderColor: colors.primary, borderWidth: 2, backgroundColor: colors.surface },
   otpDigit: { fontSize: 22, fontWeight: '600', color: colors.text },
   otpHidden: { position: 'absolute', width: 1, height: 1, opacity: 0 },
-  divider: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginVertical: spacing.lg },
-  dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
-  dividerText: { fontSize: 13, color: colors.textMuted },
   // 48pt tall so the link meets the minimum touch target on its own.
   linkTarget: { minHeight: 48, justifyContent: 'center' },
   link: { fontSize: 14, fontWeight: '600', color: colors.primary },

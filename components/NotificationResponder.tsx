@@ -29,7 +29,7 @@ function Responder({ Notifications }: { Notifications: NonNullable<typeof MaybeN
     const route = routeForNotification(lastResponse.notification.request.content.data ?? undefined);
     emitRefresh(...route.topics);
     if (route.href) router.push(route.href as never);
-  }, [lastResponse]);
+  }, [Notifications, lastResponse]);
 
   useEffect(() => {
     const subscription = Notifications.addNotificationReceivedListener((notification) => {
@@ -37,7 +37,7 @@ function Responder({ Notifications }: { Notifications: NonNullable<typeof MaybeN
       emitRefresh(...route.topics);
     });
     return () => subscription.remove();
-  }, []);
+  }, [Notifications]);
 
   return null;
 }

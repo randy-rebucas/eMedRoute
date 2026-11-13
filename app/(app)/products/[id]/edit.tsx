@@ -9,11 +9,12 @@ import { LoadingView } from '@/components/ui';
 export default function EditProductScreen() {
   const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: product, loading, error, refresh } = useProduct(id);
+  const { data: product, loading, error, offline, stale, refresh } = useProduct(id);
 
-  if (!product) {
-    if (loading) return <LoadingView />;
-    return <ErrorState message={error ?? t('common.failedToLoad')} onRetry={refresh} />;
+  // Only the server's copy is edited: a saved offline copy could save over newer changes.
+  if (!product || stale) {
+    if (loading || (stale && !offline && !error)) return <LoadingView />;
+    return <ErrorState message={offline ? t('common.editNeedsConnection') : (error ?? t('common.failedToLoad'))} onRetry={refresh} />;
   }
 
   return (

@@ -8,6 +8,7 @@ import { emitRefresh } from '@/lib/events';
 import { formatDay } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { openDirections } from '@/lib/maps';
+import { bookingBlocked, useSubscription } from '@/lib/plan';
 import { useActiveProducts } from '@/lib/products';
 import { colors, radius, spacing } from '@/lib/theme';
 import { mono, type } from '@/lib/typography';
@@ -31,6 +32,7 @@ export default function VisitDetailScreen() {
   const { data: visit, loading, refreshing, error, offline, stale, updatedAt, refresh } = useVisit(id);
   const { data: activeProducts } = useActiveProducts();
   const { data: deliveries } = useVisitDeliveries(id);
+  const { data: sub } = useSubscription();
   const [cancellingDelivery, setCancellingDelivery] = useState<string | null>(null);
   const paddingBottom = useBottomPadding();
   // The clinic's booking instructions go with an approved visit ("Arrive by 15:00" + where to go).
@@ -50,7 +52,8 @@ export default function VisitDetailScreen() {
   const line = nextStepText(t, nextStep(visit));
   const products = (visit.productIds ?? []).map((pid) => activeProducts?.find((p) => p._id === pid));
   const known = products.filter((p) => !!p);
-  const unknownCount = products.length - known.length;
+  // Only once the product list is in: before that every product would count as inactive.
+  const unknownCount = activeProducts ? products.length - known.length : 0;
   const upcoming = state === 'approved' || state === 'waiting' || (own && visit.status === 'scheduled');
 
   function remove() {
@@ -79,7 +82,11 @@ export default function VisitDetailScreen() {
             await cancelDelivery(deliveryId);
           } catch (err) {
             if (isNetworkError(err)) setProblem(t('common.needsConnection'));
-            else if (err instanceof ApiError && err.code === 'DELIVERY_CLOSED') setProblem(t('deliveries.error.closed'));
+            else if (err instanceof ApiError && err.code === 'DELIVERY_CLOSED') {
+              setProblem(t('deliveries.error.closed'));
+              // The clinic answered meanwhile: show its answer instead of a Cancel that can't work.
+              emitRefresh('deliveries');
+            }
             else setProblem(errorMessage(err));
           } finally {
             setCancellingDelivery(null);
@@ -200,11 +207,13 @@ export default function VisitDetailScreen() {
           {canDeliver(visit) ? (
             <>
               {!deliveries?.length ? <Text style={type.secondary}>{t('deliveries.recordHint')}</Text> : null}
+              {bookingBlocked(sub) ? <Text style={type.secondary}>{t('deliveries.needsPlanHint')}</Text> : null}
               <Button
                 title={t('deliveries.record')}
                 icon="cube-outline"
                 variant="secondary"
-                onPress={() => router.push(`/visits/${visit._id}/deliver`)}
+                // Deliveries are part of the rep plan, like booking: without one, Plan opens instead.
+                onPress={() => router.push(bookingBlocked(sub) ? '/plan' : `/visits/${visit._id}/deliver`)}
                 disabled={offline}
               />
             </>

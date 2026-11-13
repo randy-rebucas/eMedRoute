@@ -1,11 +1,13 @@
-import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ApiError, errorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { formatDate, formatMoney } from '@/lib/format';
+import { emitRefresh } from '@/lib/events';
 import { useT } from '@/lib/i18n';
+import { openSupportDraft } from '@/lib/support';
 import { useSubscription } from '@/lib/plan';
 import { answerInvite, inviteRep, leaveTeam, removeMember, renameTeam, startTeam, useTeam, withdrawInvite } from '@/lib/team';
 import { colors, radius, spacing } from '@/lib/theme';
@@ -33,6 +35,8 @@ function useActionError() {
           return t('team.error.hasMembers');
         case 'INVITE_CHANGED':
         case 'NO_INVITE':
+          // The invite on screen is out of date: load the one there is now (or none).
+          emitRefresh('team');
           return t('team.error.inviteChanged');
       }
       return err.message;
@@ -53,7 +57,7 @@ export default function TeamScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={96}>
+    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={96}>
       <ScrollView
         contentContainerStyle={[screenStyles.content, { paddingBottom }]}
         keyboardShouldPersistTaps="handled"
@@ -123,7 +127,8 @@ function StartTeam() {
   const [problem, setProblem] = useState<string | null>(null);
 
   async function start() {
-    if (name.trim().length < 2 || saving) {
+    if (saving) return;
+    if (name.trim().length < 2) {
       setProblem(t('team.start.nameRequired'));
       return;
     }
@@ -231,8 +236,12 @@ function ManagerView({ team }: { team: Team }) {
   const [inviteNote, setInviteNote] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  // State lags a frame: two taps in one frame must not run an action twice.
+  const busyRef = useRef(false);
 
   async function run(key: string, action: () => Promise<unknown>, after?: () => void) {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusy(key);
     setProblem(null);
     try {
@@ -241,8 +250,15 @@ function ManagerView({ team }: { team: Team }) {
     } catch (err) {
       setProblem(describe(err));
     } finally {
+      busyRef.current = false;
       setBusy(null);
     }
+  }
+
+  function startRename() {
+    setName(team.name);
+    setProblem(null);
+    setRenaming(true);
   }
 
   function invite() {
@@ -279,15 +295,16 @@ function ManagerView({ team }: { team: Team }) {
             title={t('common.save')}
             onPress={() => run('rename', () => renameTeam(name.trim()), () => setRenaming(false))}
             loading={busy === 'rename'}
-            disabled={name.trim().length < 2}
+            disabled={name.trim().length < 2 || (!!busy && busy !== 'rename')}
           />
+          <Button title={t('common.cancel')} variant="secondary" onPress={() => setRenaming(false)} disabled={busy === 'rename'} />
         </View>
       ) : (
         <View style={styles.titleRow}>
           <Text style={[type.screenTitle, styles.flex]} accessibilityRole="header">
             {team.name}
           </Text>
-          <TouchableOpacity style={styles.iconButton} onPress={() => setRenaming(true)} accessibilityRole="button" accessibilityLabel={t('team.rename.a11y')}>
+          <TouchableOpacity style={styles.iconButton} onPress={startRename} accessibilityRole="button" accessibilityLabel={t('team.rename.a11y')}>
             <Ionicons name="create-outline" size={22} color={colors.primary} />
           </TouchableOpacity>
         </View>
@@ -307,14 +324,11 @@ function ManagerView({ team }: { team: Team }) {
               icon="mail-outline"
               variant="secondary"
               onPress={() =>
-                router.push({
-                  pathname: '/support/new',
-                  params: {
+                openSupportDraft({
                     category: 'billing',
                     subject: t('team.plan.askSubject', { team: team.name }),
                     message: t('team.plan.askMessage', { members: team.memberCount }),
-                  },
-                })
+                  })
               }
             />
           </>
@@ -367,10 +381,16 @@ function ManagerView({ team }: { team: Team }) {
               <TouchableOpacity
                 style={styles.withdraw}
                 onPress={() => run(`withdraw-${p.id}`, () => withdrawInvite(p.id))}
+                disabled={!!busy}
                 accessibilityRole="button"
                 accessibilityLabel={t('team.invite.withdrawA11y', { name: p.name })}
+                accessibilityState={{ disabled: !!busy, busy: busy === `withdraw-${p.id}` }}
               >
-                <Text style={styles.withdrawText}>{t('team.invite.withdraw')}</Text>
+                {busy === `withdraw-${p.id}` ? (
+                  <ActivityIndicator color={colors.danger} />
+                ) : (
+                  <Text style={[styles.withdrawText, !!busy && styles.dimmed]}>{t('team.invite.withdraw')}</Text>
+                )}
               </TouchableOpacity>
             </View>
           ))}
@@ -406,5 +426,6 @@ const styles = StyleSheet.create({
   pendingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 56 },
   withdraw: { minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.sm },
   withdrawText: { fontSize: 15, fontWeight: '600', color: colors.danger },
+  dimmed: { opacity: 0.5 },
   leave: { marginTop: spacing.lg },
 });

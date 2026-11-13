@@ -31,17 +31,17 @@ export function BrandMark({ size = 40 }: { size?: number }) {
   );
 }
 
-/** Mark + "MyClinicSoft" wordmark + "Rep", as on the sign-in screen and the tab headers. */
+/** Mark + "eMedRoute" wordmark + "by MyClinicSoft", as on the sign-in screen and the tab headers. */
 export function BrandLogo({ size = 'md', align = 'center' }: { size?: 'sm' | 'md'; align?: 'center' | 'left' }) {
   const s = SIZES[size];
   return (
-    <View style={[styles.row, align === 'left' && styles.left]} accessible accessibilityRole="header" accessibilityLabel="MyClinicSoft Rep">
+    <View style={[styles.row, align === 'left' && styles.left]} accessible accessibilityRole="header" accessibilityLabel="eMedRoute">
       <BrandMark size={s.mark} />
       <View>
         <Text style={[styles.word, { fontSize: s.word, lineHeight: s.word * 1.1 }]}>
-          MyClinic<Text style={styles.wordAccent}>Soft</Text>
+          eMed<Text style={styles.wordAccent}>Route</Text>
         </Text>
-        <Text style={[styles.sub, { fontSize: s.sub }]}>Rep</Text>
+        <Text style={[styles.sub, { fontSize: s.sub }]}>by MyClinicSoft</Text>
       </View>
     </View>
   );

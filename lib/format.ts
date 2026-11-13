@@ -98,22 +98,6 @@ export function clinicTodayYmd(): string {
   return clinicYmd(new Date());
 }
 
-/**
- * Epoch ms of a clinic wall-clock moment: `ymd` (YYYY-MM-DD) at `hhmm` (HH:mm,
- * default 00:00) in the clinic timezone. NaN when the inputs are malformed.
- */
-export function clinicEpoch(ymd: string, hhmm = '00:00'): number {
-  const dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd);
-  const tm = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim());
-  if (!dm || !tm) return NaN;
-  const wall = Date.UTC(Number(dm[1]), Number(dm[2]) - 1, Number(dm[3]), Number(tm[1]), Number(tm[2]));
-  // Offset of the zone at (about) that instant: wall-clock-as-UTC minus the instant.
-  const guess = wall - CLINIC_FALLBACK_OFFSET_MS;
-  const p = clinicParts(new Date(guess));
-  const offset = Date.UTC(p.y, p.m - 1, p.d, p.h, p.min) - guess;
-  return wall - offset;
-}
-
 export interface FormatDateOptions
   extends Pick<Intl.DateTimeFormatOptions, 'weekday' | 'month' | 'day' | 'year'> {
   /** For date-only values stored as UTC midnight (e.g. product expiry dates). */
@@ -135,13 +119,6 @@ export function formatDate(value: DateInput, options: FormatDateOptions = {}): s
   } catch {
     return d.toLocaleDateString(undefined, fields);
   }
-}
-
-/** "Oct 18, 2026 · 2:30 PM" in the clinic timezone. */
-export function formatDateTime(value: DateInput): string {
-  const d = toDate(value);
-  if (!d) return '—';
-  return `${formatDate(d)} · ${formatTime(d)}`;
 }
 
 /**
@@ -197,20 +174,6 @@ export function formatMoney(amount: number | null | undefined): string {
     body = `₱${abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
   return rounded < 0 ? `−${body}` : body;
-}
-
-export function formatFileSize(bytes: number | null | undefined): string {
-  if (!bytes || bytes <= 0) return '';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-/** "in-progress" / "lab_result" → "In progress" / "Lab result" */
-export function humanize(value: string | null | undefined): string {
-  if (!value) return '';
-  const text = value.replace(/[-_]+/g, ' ').trim();
-  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 /**

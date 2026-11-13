@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -44,6 +44,7 @@ function MoveSheet({ visit, clinic }: { visit: Visit; clinic: Clinic }) {
   const slots = useSlots(clinic.id, day);
   const [time, setTime] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [problem, setProblem] = useState<string | null>(null);
 
   const daySlots = slots.data?.date === day ? slots.data.slots : null;
@@ -64,6 +65,8 @@ function MoveSheet({ visit, clinic }: { visit: Visit; clinic: Clinic }) {
   }
 
   async function save(newDay: string, newTime: string) {
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     setProblem(null);
     try {
@@ -81,8 +84,12 @@ function MoveSheet({ visit, clinic }: { visit: Visit; clinic: Clinic }) {
       } else if (err instanceof ApiError && err.code === 'VISIT_CLOSED') {
         emitRefresh('visits');
         setProblem(t('booking.closedCantMove'));
+      } else if (err instanceof ApiError && err.code === 'DUPLICATE_REQUEST') {
+        setTime(null);
+        setProblem(t('booking.duplicate'));
       } else setProblem(errorMessage(err));
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }

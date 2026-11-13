@@ -24,6 +24,11 @@ interface Options {
    * screen with `offline: true` and `updatedAt` = when it was saved.
    */
   offline?: boolean;
+  /**
+   * What the offline copy is saved under, instead of the request URL. For lists whose URL carries
+   * today's date: the copy must still be found offline tomorrow (the screen filters it again).
+   */
+  cacheKey?: string;
 }
 
 type Envelope<T> = { data?: T[]; pagination?: Pagination } & Record<string, unknown>;
@@ -31,25 +36,24 @@ type Envelope<T> = { data?: T[]; pagination?: Pagination } & Record<string, unkn
 const keyOf = (item: { _id?: string; id?: string }) => item._id ?? item.id;
 
 /**
- * Fold a fresh first page into the loaded list: matching ids are replaced in
- * place, new ones are prepended (in server order), later pages are kept.
+ * Put a fresh first page in place of the loaded one, keeping later pages the user scrolled
+ * through. What page 1 used to hold and no longer does was deleted or no longer matches the
+ * filter (a product made inactive under "Active"), so it goes; a later-page item that moved up
+ * into page 1 isn't shown twice.
  */
-function mergeFirstPage<T extends { _id?: string; id?: string }>(prev: T[], fresh: T[]): T[] {
-  const freshById = new Map<string, T>();
-  for (const item of fresh) {
+export function mergeFirstPage<T extends { _id?: string; id?: string }>(prev: T[], fresh: T[], pageSize: number): T[] {
+  const freshKeys = new Set(fresh.map(keyOf));
+  const later = prev.slice(pageSize).filter((item) => {
     const k = keyOf(item);
-    if (k !== undefined) freshById.set(k, item);
-  }
-  const prevKeys = new Set(prev.map(keyOf));
-  const added = fresh.filter((item) => {
-    const k = keyOf(item);
-    return k === undefined || !prevKeys.has(k);
+    return k === undefined || !freshKeys.has(k);
   });
-  const updated = prev.map((item) => {
-    const k = keyOf(item);
-    return (k !== undefined && freshById.get(k)) || item;
-  });
-  return [...added, ...updated];
+  return [...fresh, ...later];
+}
+
+/** Add a fetched page after the loaded items, skipping any already there (records shift between pages). */
+export function appendPage<T extends { _id?: string; id?: string }>(prev: T[], next: T[]): T[] {
+  const seen = new Set(prev.map(keyOf));
+  return [...prev, ...next.filter((item) => !seen.has(keyOf(item)))];
 }
 
 /**
@@ -61,7 +65,7 @@ export function usePaginatedList<T extends { _id?: string; id?: string }, X = Re
   basePath: string | null,
   options: Options = {}
 ) {
-  const { limit = 20, refreshOn, offline: keepOffline = false } = options;
+  const { limit = 20, refreshOn, offline: keepOffline = false, cacheKey: offlineKey } = options;
   const [items, setItems] = useState<T[]>([]);
   const [extra, setExtra] = useState<X | null>(null);
   const [page, setPage] = useState(1);
@@ -87,6 +91,10 @@ export function usePaginatedList<T extends { _id?: string; id?: string }, X = Re
   const firstPageInFlight = useRef(0);
   // Synchronous guard: two onEndReached calls in one frame must not fetch the same page twice.
   const loadingMoreRef = useRef(false);
+  // Set when page 1 was merged silently or items were removed: records moved up across page
+  // boundaries, so the next loadMore fetches the current last page again before the next one
+  // (otherwise the items that slid into it are never shown).
+  const resync = useRef(false);
 
   useEffect(() => {
     mounted.current = true;
@@ -111,7 +119,7 @@ export function usePaginatedList<T extends { _id?: string; id?: string }, X = Re
       if (mode === 'silent' && firstPageInFlight.current > 0) return;
       const gen = mode === 'silent' ? generation.current : ++generation.current;
       const current = () => mounted.current && gen === generation.current;
-      const cacheKey = keepOffline ? offlineCacheKey(url, 'list') : null;
+      const cacheKey = keepOffline ? offlineCacheKey(offlineKey ?? url, 'list') : null;
       // Read before the request: a response that lands after sign-out must not be saved.
       const cacheEpoch = offlineCacheEpoch();
       const sessionGen = sessionGeneration();
@@ -122,7 +130,8 @@ export function usePaginatedList<T extends { _id?: string; id?: string }, X = Re
       if (mode !== 'silent') setError(null);
 
       // Stale-while-revalidate: show the saved first page while the request runs (or after it failed offline).
-      if (cacheKey && mode === 'initial') {
+      // Not over a list already on screen (Retry): an older copy would replace fresher data.
+      if (cacheKey && mode === 'initial' && itemCount.current === 0) {
         readOffline<Envelope<T>>(cacheKey).then((hit) => {
           if (!hit || !current() || outcome === 'ok' || outcome === 'failed') return;
           fromCache.current = true;
@@ -150,9 +159,11 @@ export function usePaginatedList<T extends { _id?: string; id?: string }, X = Re
         const total = json.pagination?.totalPages ?? 1;
         if (mode === 'silent') {
           // Keep what the user has scrolled through; just refresh the top.
-          setItems((prev) => mergeFirstPage(prev, json.data ?? []));
+          setItems((prev) => mergeFirstPage(prev, json.data ?? [], limit));
           setTotalPages((prev) => Math.max(prev, total));
+          resync.current = true;
         } else {
+          resync.current = false;
           setItems(json.data ?? []);
           setPage(1);
           setTotalPages(total);
@@ -184,7 +195,7 @@ export function usePaginatedList<T extends { _id?: string; id?: string }, X = Re
         }
       }
     },
-    [urlFor, keepOffline]
+    [urlFor, keepOffline, offlineKey, limit]
   );
 
   useEffect(() => {
@@ -193,6 +204,7 @@ export function usePaginatedList<T extends { _id?: string; id?: string }, X = Re
       return;
     }
     setItems([]);
+    itemCount.current = 0;
     fromCache.current = false;
     setOffline(false);
     setStale(false);
@@ -205,23 +217,27 @@ export function usePaginatedList<T extends { _id?: string; id?: string }, X = Re
   const loadMore = useCallback(async () => {
     if (!hasMore || loadingMoreRef.current || loading || refreshing) return;
     const url = urlFor(page + 1);
-    if (!url) return;
+    const againUrl = urlFor(page);
+    if (!url || !againUrl) return;
     const gen = generation.current;
+    // Taken now: a silent refresh landing mid-request sets it again for the next loadMore.
+    const again = resync.current && page > 1;
+    resync.current = false;
     loadingMoreRef.current = true;
     setLoadingMore(true);
     setLoadMoreError(null);
     try {
+      const refetched = again ? await apiFetch<Envelope<T>>(againUrl) : null;
+      if (!mounted.current || gen !== generation.current) return;
       const json = await apiFetch<Envelope<T>>(url);
       if (!mounted.current || gen !== generation.current) return;
-      setItems((prev) => {
-        // Records created since page 1 shift later pages; drop duplicates.
-        const seen = new Set(prev.map(keyOf));
-        return [...prev, ...(json.data ?? []).filter((item) => !seen.has(keyOf(item)))];
-      });
+      // Records created or deleted since page 1 shift later pages; drop duplicates.
+      setItems((prev) => appendPage(refetched ? appendPage(prev, refetched.data ?? []) : prev, json.data ?? []));
       setPage(page + 1);
       setTotalPages(json.pagination?.totalPages ?? page + 1);
     } catch (err) {
-      if (mounted.current && gen === generation.current) setLoadMoreError(errorMessage(err, "Couldn't load more."));
+      if (again) resync.current = true;
+      if (mounted.current && gen === generation.current) setLoadMoreError(errorMessage(err, t('common.loadMoreFailed')));
     } finally {
       loadingMoreRef.current = false;
       if (mounted.current) setLoadingMore(false);
@@ -234,9 +250,15 @@ export function usePaginatedList<T extends { _id?: string; id?: string }, X = Re
 
   useRefreshOn(refreshOn, poll);
 
+  // Items taken out by the screen shift later pages too.
+  const replaceItems = useCallback((next: T[] | ((prev: T[]) => T[])) => {
+    resync.current = true;
+    setItems(next);
+  }, []);
+
   return {
     items,
-    setItems,
+    setItems: replaceItems,
     extra,
     loading,
     refreshing,

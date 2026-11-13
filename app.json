@@ -1,22 +1,23 @@
 {
   "expo": {
-    "name": "MyClinicSoft Rep",
-    "slug": "myclinicsoft-rep",
-    "description": "MyClinicSoft Rep — book visits in a clinic's rep hours, keep your visit log and carry your product sheets.",
-    "scheme": "myclinicsoft-rep",
+    "name": "eMedRoute",
+    "slug": "emedroute",
+    "description": "eMedRoute by MyClinicSoft — book visits in a clinic's rep hours, keep your visit log and carry your product sheets.",
+    "scheme": "emedroute",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "solutions.myclinicsoft.rep",
+      "requireFullScreen": true,
+      "bundleIdentifier": "solutions.myclinicsoft.emedroute",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "solutions.myclinicsoft.rep",
+      "package": "solutions.myclinicsoft.emedroute",
       "adaptiveIcon": {
         "backgroundColor": "#0B2136",
         "foregroundImage": "./assets/android-icon-foreground.png",

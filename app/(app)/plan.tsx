@@ -2,6 +2,7 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native
 import { router } from 'expo-router';
 import { formatMoney } from '@/lib/format';
 import { useT } from '@/lib/i18n';
+import { openSupportDraft } from '@/lib/support';
 import { useSubscription } from '@/lib/plan';
 import { colors, radius, spacing } from '@/lib/theme';
 import { mono, type } from '@/lib/typography';
@@ -56,10 +57,7 @@ export default function PlanScreen() {
             title={t('plan.ask')}
             icon="mail-outline"
             onPress={() =>
-              router.push({
-                pathname: '/support/new',
-                params: { category: 'billing', subject: t('plan.askSubject'), message: t('plan.askMessage') },
-              })
+              openSupportDraft({ category: 'billing', subject: t('plan.askSubject'), message: t('plan.askMessage') })
             }
           />
         </>
@@ -73,10 +71,7 @@ export default function PlanScreen() {
             icon="mail-outline"
             variant="secondary"
             onPress={() =>
-              router.push({
-                pathname: '/support/new',
-                params: { category: 'billing', subject: t('plan.askRenewSubject'), message: t('plan.askMessage') },
-              })
+              openSupportDraft({ category: 'billing', subject: t('plan.askRenewSubject'), message: t('plan.askMessage') })
             }
           />
         </>

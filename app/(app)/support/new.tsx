@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { errorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { PlainKey, useT } from '@/lib/i18n';
-import { createSupportRequest } from '@/lib/support';
+import { createSupportRequest, takeSupportDraft } from '@/lib/support';
 import { colors, radius, spacing } from '@/lib/theme';
 import { SUPPORT_CATEGORIES, SupportCategory } from '@/lib/types';
 import { mono, type } from '@/lib/typography';
@@ -27,17 +27,15 @@ const CATEGORY_LABEL: Record<SupportCategory, PlainKey> = {
 
 /**
  * A new support request. What the rep typed stays on screen until it is sent. Plan and Team open
- * it prefilled (`category`, `subject`, `message`) to ask for a payment link.
+ * it prefilled (openSupportDraft) to ask for a payment link.
  */
 export default function NewSupportRequestScreen() {
   const t = useT();
   const { rep } = useAuth();
-  const params = useLocalSearchParams<{ category?: string; subject?: string; message?: string }>();
-  const [category, setCategory] = useState<SupportCategory>(() =>
-    (SUPPORT_CATEGORIES as readonly string[]).includes(params.category ?? '') ? (params.category as SupportCategory) : 'general'
-  );
-  const [subject, setSubject] = useState(params.subject ?? '');
-  const [message, setMessage] = useState(params.message ?? '');
+  const [prefill] = useState(takeSupportDraft);
+  const [category, setCategory] = useState<SupportCategory>(prefill?.category ?? 'general');
+  const [subject, setSubject] = useState(prefill?.subject ?? '');
+  const [message, setMessage] = useState(prefill?.message ?? '');
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +75,7 @@ export default function NewSupportRequestScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={96}>
+    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={96}>
       <ScrollView contentContainerStyle={[screenStyles.content, { paddingBottom }]} keyboardShouldPersistTaps="handled">
         {error ? <Banner message={error} /> : null}
 
@@ -91,7 +89,7 @@ export default function NewSupportRequestScreen() {
                 style={[styles.chip, selected && styles.chipSelected]}
                 onPress={() => setCategory(c)}
                 accessibilityRole="radio"
-                accessibilityState={{ selected }}
+                accessibilityState={{ checked: selected }}
               >
                 <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{t(CATEGORY_LABEL[c])}</Text>
               </TouchableOpacity>

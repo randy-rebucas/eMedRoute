@@ -2,6 +2,7 @@ import { Redirect, Stack } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
 import { colors } from '@/lib/theme';
+import { useForegroundRefresh } from '@/lib/useForegroundRefresh';
 import { NotificationResponder } from '@/components/NotificationResponder';
 import { SnackbarHost } from '@/components/Snackbar';
 
@@ -9,6 +10,7 @@ import { SnackbarHost } from '@/components/Snackbar';
 export default function AppLayout() {
   const { signedIn, loading } = useAuth();
   const t = useT();
+  useForegroundRefresh(signedIn);
 
   if (loading) return null;
   if (!signedIn) return <Redirect href="/" />;
@@ -42,6 +44,8 @@ export default function AppLayout() {
         <Stack.Screen name="settings" options={{ title: t('more.settings') }} />
         <Stack.Screen name="change-password" options={{ title: t('settings.changePassword') }} />
         <Stack.Screen name="plan" options={{ title: t('more.plan') }} />
+        <Stack.Screen name="sponsorships" options={{ title: t('more.sponsorships') }} />
+        <Stack.Screen name="referral" options={{ title: t('more.referral') }} />
         <Stack.Screen name="team/index" options={{ title: t('more.team') }} />
         <Stack.Screen name="team/visits" options={{ title: t('team.visitsTitle') }} />
         <Stack.Screen name="support/index" options={{ title: t('more.support') }} />

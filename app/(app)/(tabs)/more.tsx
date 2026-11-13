@@ -11,7 +11,7 @@ import { initialsOf } from '@/components/AppHeader';
 import { NavRow, RowGroup } from '@/components/forms';
 import { screenStyles } from '@/components/ui';
 
-/** More: Team and Plan, the rep's account (Profile, Settings, Support) and sign out. */
+/** More: Team, Plan, clinic sponsorships and referrals, the rep's account (Profile, Settings, Support) and sign out. */
 export default function MoreScreen() {
   const { rep, signOut } = useAuth();
   const t = useT();
@@ -57,7 +57,9 @@ export default function MoreScreen() {
 
         <RowGroup title={t('more.work')}>
           <NavRow icon="people-outline" label={t('more.team')} onPress={() => router.push('/team')} />
-          <NavRow icon="card-outline" label={t('more.plan')} onPress={() => router.push('/plan')} last />
+          <NavRow icon="card-outline" label={t('more.plan')} onPress={() => router.push('/plan')} />
+          <NavRow icon="ribbon-outline" label={t('more.sponsorships')} onPress={() => router.push('/sponsorships')} />
+          <NavRow icon="share-social-outline" label={t('more.referral')} onPress={() => router.push('/referral')} last />
         </RowGroup>
 
         <RowGroup title={t('more.account')}>

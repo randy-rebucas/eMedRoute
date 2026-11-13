@@ -1,5 +1,6 @@
 import { apiRequest } from './api';
 import { emitRefresh } from './events';
+import { utf8Decode } from './offlineCache';
 import { PRODUCT_STATUSES, ProductInput, ProductStatus } from './types';
 
 const IMPORT_PATH = '/api/medical-representatives/products/import';
@@ -77,19 +78,51 @@ export type ParsedImport =
   | { ok: true; rows: ImportRow[] }
   | { ok: false; error: 'empty' | 'notCsv' | 'missingColumns' | 'tooManyRows'; columns?: ImportField[] };
 
+/** Windows-1252's 0x80–0x9F; the rest of the byte range is Latin-1. */
+const CP1252_HIGH = '€\u0081‚ƒ„…†‡ˆ‰Š‹Œ\u008DŽ\u008F\u0090‘’“”•–—˜™š›œ\u009DžŸ';
+
+function isUtf8(bytes: Uint8Array): boolean {
+  for (let i = 0; i < bytes.length; ) {
+    const b = bytes[i];
+    const extra = b < 0x80 ? 0 : b >= 0xc2 && b <= 0xdf ? 1 : b >= 0xe0 && b <= 0xef ? 2 : b >= 0xf0 && b <= 0xf4 ? 3 : -1;
+    if (extra < 0 || i + extra >= bytes.length) return false;
+    for (let k = 1; k <= extra; k++) if ((bytes[i + k] & 0xc0) !== 0x80) return false;
+    i += extra + 1;
+  }
+  return true;
+}
+
+/**
+ * A CSV file's text: UTF-8 (Excel's "CSV UTF-8", Google Sheets, Numbers), else Windows-1252,
+ * Excel's plain "CSV" on Windows, so "Parañaque" doesn't arrive as "Para�aque".
+ */
+export function decodeCsvBytes(bytes: Uint8Array): string {
+  if (isUtf8(bytes)) return utf8Decode(bytes);
+  let out = '';
+  for (let i = 0; i < bytes.length; i++) {
+    const b = bytes[i];
+    out += b >= 0x80 && b <= 0x9f ? CP1252_HIGH[b - 0x80] : String.fromCharCode(b);
+  }
+  return out;
+}
+
 /**
  * Split CSV text into rows of cells (RFC 4180: quoted cells may hold commas, quotes as "" and
- * line breaks). Takes a comma or semicolon, whichever the header line uses (Excel writes
- * semicolons where the comma is the decimal mark).
+ * line breaks; spaces before an opening quote are ignored). Takes a comma or semicolon, whichever
+ * the header line uses (Excel writes semicolons where the comma is the decimal mark). With
+ * `maxRows`, stops once more than that many non-blank rows are read, so an oversized file isn't
+ * parsed to the end only to be refused.
  */
-export function splitCsv(text: string): string[][] {
+export function splitCsv(text: string, maxRows = Infinity): string[][] {
   const src = text.replace(/^﻿/, '');
-  const firstLine = src.split(/\r?\n/, 1)[0] ?? '';
+  // The header is the first non-blank line: a file may start with empty lines.
+  const firstLine = src.split(/\r\n|\r|\n/).find((line) => line.trim() !== '') ?? '';
   const delimiter = (firstLine.match(/;/g)?.length ?? 0) > (firstLine.match(/,/g)?.length ?? 0) ? ';' : ',';
   const rows: string[][] = [];
   let row: string[] = [];
   let cell = '';
   let quoted = false;
+  let filled = 0;
   for (let i = 0; i < src.length; i++) {
     const ch = src[i];
     if (quoted) {
@@ -98,14 +131,17 @@ export function splitCsv(text: string): string[][] {
         i++;
       } else if (ch === '"') quoted = false;
       else cell += ch;
-    } else if (ch === '"' && cell === '') quoted = true;
-    else if (ch === delimiter) {
+    } else if (ch === '"' && cell.trim() === '') {
+      quoted = true;
+      cell = '';
+    } else if (ch === delimiter) {
       row.push(cell);
       cell = '';
     } else if (ch === '\n' || ch === '\r') {
       if (ch === '\r' && src[i + 1] === '\n') i++;
       row.push(cell);
       rows.push(row);
+      if (row.some((c) => c.trim() !== '') && ++filled > maxRows) return rows;
       row = [];
       cell = '';
     } else cell += ch;
@@ -133,8 +169,13 @@ export function normalizeDate(value: string): string | null {
  */
 export function parseProductCsv(text: string, fileName?: string): ParsedImport {
   if (fileName && /\.(xlsx?|numbers|ods)$/i.test(fileName)) return { ok: false, error: 'notCsv' };
-  const table = splitCsv(text).filter((r) => r.some((c) => c.trim() !== ''));
+  // The header plus one row too many is enough to refuse an oversized file.
+  const all = splitCsv(text, MAX_IMPORT_ROWS + 1);
+  const filled = (r: string[]) => r.some((c) => c.trim() !== '');
+  const table = all.filter(filled);
   if (table.length < 2) return { ok: false, error: 'empty' };
+  // Blank lines before the header are skipped, but still counted in row numbers.
+  const headerAt = all.findIndex(filled);
 
   const normalized = table[0].map((h) => h.toLowerCase().replace(/[^a-z]/g, ''));
   const header = normalized.map((h) => HEADER_ALIASES[h]);
@@ -145,10 +186,9 @@ export function parseProductCsv(text: string, fileName?: string): ParsedImport {
   if (table.length - 1 > MAX_IMPORT_ROWS) return { ok: false, error: 'tooManyRows' };
 
   // Data rows keep their spreadsheet numbers: blank rows still count, so "row 7" matches the file.
-  const all = splitCsv(text);
   const rows: ImportRow[] = [];
   all.forEach((cells, index) => {
-    if (index === 0 || !cells.some((c) => c.trim() !== '')) return;
+    if (index <= headerAt || !filled(cells)) return;
     const value = (field: ImportField) => {
       const at = header.indexOf(field);
       return at >= 0 ? (cells[at] ?? '').trim() : '';

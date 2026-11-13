@@ -17,6 +17,8 @@ function useSecondsLeft(startedAt: number | null): number {
     if (startedAt === null) return;
     const timer = setInterval(() => setSeconds(left()), 1000);
     return () => clearInterval(timer);
+    // `left` is rebuilt from `startedAt` on every render; the timer restarts only when that changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startedAt]);
   return seconds;
 }

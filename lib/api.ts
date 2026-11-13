@@ -20,6 +20,9 @@ export class ApiError extends Error {
 export const AUTH_ENDPOINTS = {
   token: '/api/medical-representatives/auth/token',
   twoFactor: '/api/medical-representatives/auth/2fa',
+  /** Sign-in by a code texted to the rep's verified mobile. */
+  otpRequest: '/api/medical-representatives/auth/otp/request',
+  otpVerify: '/api/medical-representatives/auth/otp/verify',
   refresh: '/api/medical-representatives/auth/refresh',
   session: '/api/medical-representatives/session',
   devices: '/api/medical-representatives/devices',
@@ -77,8 +80,10 @@ const EXPIRY_SKEW_MS = 60_000;
 /**
  * React Native's fetch never times out on its own: on a dead connection a request can hang for
  * minutes, and screens that poll skip polls while one is still in flight.
+ * In development `next dev` builds each route on its first request, which can take longer than
+ * 20 s; giving up then shows "Can't reach the server" (and the server logs ECONNRESET).
  */
-const REQUEST_TIMEOUT_MS = 20_000;
+const REQUEST_TIMEOUT_MS = __DEV__ ? 90_000 : 20_000;
 
 /** `fetch` that rejects (with an AbortError) after `timeoutMs`. */
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = REQUEST_TIMEOUT_MS): Promise<Response> {
@@ -231,8 +236,9 @@ async function performRefresh(): Promise<RefreshOutcome> {
   // again for a short grace period, so the retry doesn't look like token theft.
 
   // 401 REFRESH_INVALID / REFRESH_REUSED: the chain is dead (or the account is no longer an
-  // active rep), sign in again.
-  if (response.status === 401) return { outcome: 'expired' };
+  // active rep), sign in again. Unless a sign-in or password change stored a new session while
+  // this ran: that one revoked this old token, and must stay.
+  if (response.status === 401) return { outcome: generation === sessionGeneration() ? 'expired' : 'superseded' };
   // 429 / 5xx: keep the session and let the caller retry later.
   return { outcome: 'unavailable' };
 }
@@ -337,10 +343,16 @@ export async function apiFetch<E = unknown>(path: string, options: RequestOption
   }
 
   if (!response.ok || json?.success === false) {
+    // A schema refusal says only "Validation failed"; the first issue says what to fix.
+    const issue = Array.isArray(json?.issues) ? (json.issues[0] as { path?: unknown; message?: unknown } | undefined) : undefined;
     const message =
-      typeof json?.error === 'string'
-        ? json.error
-        : response.status === 429
+      typeof issue?.message === 'string'
+        ? typeof issue.path === 'string' && issue.path
+          ? `${issue.path}: ${issue.message}`
+          : issue.message
+        : typeof json?.error === 'string'
+          ? json.error
+          : response.status === 429
           ? t('common.tooManyAttempts')
           : t('common.requestFailed', { status: response.status });
     throw new ApiError(message, response.status, typeof json?.code === 'string' ? json.code : undefined, json);
@@ -353,6 +365,21 @@ export async function apiFetch<E = unknown>(path: string, options: RequestOption
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const json = await apiFetch<Record<string, unknown> | null>(path, options);
   return (json && 'data' in json ? json.data : json) as T;
+}
+
+/**
+ * Every page of a list endpoint (`{ data, pagination }`, 100 a page), as one array. Stops after
+ * `maxPages` so a runaway list can't hold the screen forever.
+ */
+export async function apiRequestAllPages<T>(path: string, maxPages = 20): Promise<T[]> {
+  const sep = path.includes('?') ? '&' : '?';
+  const items: T[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const json = await apiFetch<Partial<ListEnvelope<T>> | null>(`${path}${sep}page=${page}&limit=100`);
+    items.push(...(json?.data ?? []));
+    if (page >= (json?.pagination?.totalPages ?? 1)) break;
+  }
+  return items;
 }
 
 /** Message to show for any error thrown by the api layer. */

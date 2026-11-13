@@ -8,7 +8,6 @@ export default defineStrings({
     tryAgainTitle: 'Try Again',
     back: 'Back',
     goBack: 'Go back',
-    next: 'Next',
     done: 'Done',
     save: 'Save',
     ok: 'OK',
@@ -24,11 +23,14 @@ export default defineStrings({
     // lib/api, useApiData, usePaginatedList (shown only when the server sent no message)
     somethingWrong: 'Something went wrong. Please try again.',
     failedToLoad: 'Failed to load. Pull to retry.',
+    loadMoreFailed: "Couldn't load more.",
     sessionExpired: 'Your session has expired. Please sign in again.',
     network: "Can't reach the server. Check your connection and try again.",
     tooManyAttempts: 'Too many tries. Wait a few minutes.',
     requestFailed: 'Request failed ({status})',
     needsConnection: "You're offline. This needs a connection; what you typed is still here.",
+    // Edit screens wait for the server's copy: editing a saved one could undo newer changes.
+    editNeedsConnection: "You're offline. Connect to edit this, so newer changes aren't saved over.",
 
     // AppHeader
     'header.yourProfile': 'Your profile',
@@ -52,7 +54,6 @@ export default defineStrings({
     tryAgainTitle: 'Subukan Ulit',
     back: 'Bumalik',
     goBack: 'Bumalik',
-    next: 'Susunod',
     done: 'Tapos na',
     save: 'I-save',
     ok: 'OK',
@@ -67,11 +68,13 @@ export default defineStrings({
 
     somethingWrong: 'May nangyaring mali. Pakisubukan ulit.',
     failedToLoad: 'Hindi ma-load. Hilahin pababa para subukan ulit.',
+    loadMoreFailed: 'Hindi ma-load ang iba pa.',
     sessionExpired: 'Nag-expire na ang session mo. Mag-sign in ulit.',
     network: 'Hindi maabot ang server. Tingnan ang internet connection mo at subukan ulit.',
     tooManyAttempts: 'Masyadong maraming subok. Maghintay ng ilang minuto.',
     requestFailed: 'Hindi natuloy ang request ({status})',
     needsConnection: 'Offline ka. Kailangan nito ng connection; nandito pa rin ang tinype mo.',
+    editNeedsConnection: 'Offline ka. Kumonekta para ma-edit ito, para hindi mapalitan ang mas bagong pagbabago.',
 
     'header.yourProfile': 'Ang profile mo',
 

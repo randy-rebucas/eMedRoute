@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useT } from '@/lib/i18n';
-import { openRoute, RouteStop } from '@/lib/route';
+import { openRoute, RouteStop, stopsLeftOut } from '@/lib/route';
 import { colors, radius, spacing } from '@/lib/theme';
 import { mono, type } from '@/lib/typography';
 import { Button, IconTile } from './ui';
@@ -11,6 +11,7 @@ import { Button, IconTile } from './ui';
  */
 export function TodayRoute({ stops }: { stops: RouteStop[] }) {
   const t = useT();
+  const leftOut = stopsLeftOut(stops);
   return (
     <View style={styles.card}>
       <View style={styles.head}>
@@ -40,6 +41,9 @@ export function TodayRoute({ stops }: { stops: RouteStop[] }) {
         ))}
       </View>
 
+      {leftOut > 0 ? (
+        <Text style={[type.secondary, styles.leftOut]}>{t('home.route.leftOut', { count: leftOut, max: stops.length - leftOut })}</Text>
+      ) : null}
       <Button
         title={t('home.route.start')}
         icon="navigate-outline"
@@ -62,7 +66,7 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 4 },
   headText: { flex: 1 },
   stops: { marginTop: spacing.md },
-  stop: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm + 4, minHeight: 32 },
+  stop: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm + 4, minHeight: 44 },
   // A dot per stop joined by a line: the order the rep drives them in.
   rail: { width: 12, alignItems: 'center', alignSelf: 'stretch' },
   dot: { width: 10, height: 10, borderRadius: 5, marginTop: 6, borderWidth: 2, borderColor: colors.slate, backgroundColor: colors.surface },
@@ -71,4 +75,5 @@ const styles = StyleSheet.create({
   time: { fontSize: 15, lineHeight: 21, fontWeight: '600', color: colors.text, minWidth: 48 },
   name: { flex: 1 },
   button: { marginTop: spacing.sm },
+  leftOut: { marginTop: spacing.sm },
 });

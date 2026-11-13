@@ -9,11 +9,12 @@ import { VisitLogForm } from '@/components/VisitLogForm';
 export default function EditVisitScreen() {
   const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: visit, loading, error, refresh } = useVisit(id);
+  const { data: visit, loading, error, offline, stale, refresh } = useVisit(id);
 
-  if (!visit) {
-    if (loading) return <LoadingView />;
-    return <ErrorState message={error ?? t('common.failedToLoad')} onRetry={refresh} />;
+  // Only the server's copy is edited: a saved offline copy could save over newer changes.
+  if (!visit || stale) {
+    if (loading || (stale && !offline && !error)) return <LoadingView />;
+    return <ErrorState message={offline ? t('common.editNeedsConnection') : (error ?? t('common.failedToLoad'))} onRetry={refresh} />;
   }
 
   return (

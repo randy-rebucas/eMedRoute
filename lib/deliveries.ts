@@ -8,6 +8,8 @@ const DELIVERIES_PATH = '/api/medical-representatives/deliveries';
 
 /** Most lines one delivery may carry (server: MAX_DELIVERY_LINES). */
 export const MAX_DELIVERY_LINES = 20;
+/** Longest unit a line may carry (server rule; same as a product's pack-size unit). */
+export const MAX_DELIVERY_UNIT = 50;
 
 export const DELIVERY_STATUS_LABEL: Record<DeliveryStatus, PlainKey> = {
   pending: 'deliveries.status.pending',
@@ -27,17 +29,19 @@ export function canDeliver(visit: Pick<Visit, 'clinicId' | 'linkedClinicId' | 's
 
 /** The deliveries recorded on one visit, newest first. */
 export function useVisitDeliveries(visitId: string | undefined | null) {
-  return useApiData<Delivery[]>(visitId ? DELIVERIES_PATH + query({ visitId, limit: 100 }) : null, {
+  return useApiData<Delivery[]>(visitId ? DELIVERIES_PATH + query({ visitId }) : null, {
     refreshOn: ['deliveries'],
     offline: true,
+    allPages: true,
   });
 }
 
 /** Every delivery that carried a product, for its "where it is". */
 export function useProductDeliveries(productId: string | undefined | null) {
-  return useApiData<Delivery[]>(productId ? DELIVERIES_PATH + query({ productId, limit: 100 }) : null, {
+  return useApiData<Delivery[]>(productId ? DELIVERIES_PATH + query({ productId }) : null, {
     refreshOn: ['deliveries'],
     offline: true,
+    allPages: true,
   });
 }
 

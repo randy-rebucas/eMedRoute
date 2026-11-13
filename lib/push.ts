@@ -132,6 +132,9 @@ export function routeForNotification(data: Record<string, unknown> | undefined):
     // A clinic added the rep, or answered their access request.
     case 'clinics':
       return { href: '/clinics', topics: ['clinics'] };
+    // A clinic asked the rep to sponsor its plan, answered an offer, or a sponsored plan is ending.
+    case 'sponsorships':
+      return { href: '/sponsorships', topics: ['sponsorships'] };
     default:
       return { href: null, topics: ['visits', 'products', 'team', 'dashboard'] };
   }

@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
-import { AppState, Linking, ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, AppState, Linking, ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { errorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
 import { updateNotificationSettings, useRepProfile } from '@/lib/profile';
 import { getPushPermission, PushPermission, registerForPushNotifications } from '@/lib/push';
-import { colors, spacing } from '@/lib/theme';
+import { colors } from '@/lib/theme';
 import { type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { NavRow, RowGroup, SwitchRow } from '@/components/forms';
@@ -25,6 +25,8 @@ export default function SettingsScreen() {
   const [languageOpen, setLanguageOpen] = useState(false);
   // Optimistic values while a save is in flight; null = show the server's.
   const [pending, setPending] = useState<Partial<Record<Toggle, boolean>>>({});
+  // Per switch: only the latest tap's answer may land (two quick taps race otherwise).
+  const latestTap = useRef<Partial<Record<Toggle, number>>>({});
   const [error, setError] = useState<string | null>(null);
   const [permission, setPermission] = useState<PushPermission | null>(null);
   const [signingOut, setSigningOut] = useState<'here' | 'everywhere' | null>(null);
@@ -47,23 +49,29 @@ export default function SettingsScreen() {
   const value = (key: Toggle) => pending[key] ?? profile?.[key] ?? true;
 
   async function toggle(key: Toggle, next: boolean) {
+    const tap = (latestTap.current[key] ?? 0) + 1;
+    latestTap.current[key] = tap;
+    const latest = () => latestTap.current[key] === tap;
     setError(null);
     setPending((p) => ({ ...p, [key]: next }));
     try {
       // Show the saved value straight away, so the switch doesn't flick back before the refetch.
-      setProfile(await updateNotificationSettings({ [key]: next }));
+      const saved = await updateNotificationSettings({ [key]: next });
+      if (latest()) setProfile(saved);
       // Turning push on on a phone that hasn't been asked yet: ask now, and register the token.
       if (key === 'notificationsEnabled' && next && permission === 'undetermined') {
         await registerForPushNotifications().catch(() => {});
         readPermission();
       }
     } catch (err) {
-      setError(isNetworkError(err) ? t('common.needsConnection') : errorMessage(err));
+      if (latest()) setError(isNetworkError(err) ? t('common.needsConnection') : errorMessage(err));
     } finally {
-      setPending((p) => {
-        const { [key]: _done, ...rest } = p;
-        return rest;
-      });
+      if (latest()) {
+        setPending((p) => {
+          const { [key]: _done, ...rest } = p;
+          return rest;
+        });
+      }
     }
   }
 
@@ -77,6 +85,15 @@ export default function SettingsScreen() {
     } finally {
       setSigningOut(null);
     }
+  }
+
+  // Signs out every phone on the account (this one too): confirmed first.
+  function confirmSignOutEverywhere() {
+    if (signingOut) return;
+    Alert.alert(t('settings.signOutEverywhere.title'), t('settings.signOutEverywhere.body'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('settings.signOutEverywhere.confirm'), style: 'destructive', onPress: () => void handleSignOut(true) },
+    ]);
   }
 
   const pushOn = value('notificationsEnabled');
@@ -128,7 +145,7 @@ export default function SettingsScreen() {
           icon="phone-portrait-outline"
           label={signingOut === 'everywhere' ? t('more.signingOut') : t('settings.signOutEverywhere')}
           value={t('settings.signOutEverywhereHint')}
-          onPress={() => handleSignOut(true)}
+          onPress={confirmSignOutEverywhere}
           tone="danger"
           chevron={false}
           last

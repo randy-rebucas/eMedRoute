@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -59,6 +59,8 @@ function BookingSheet({ clinic }: { clinic: Clinic }) {
   const [notes, setNotes] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
+  // State lags a frame: two taps in one frame must not send two requests.
+  const sendingRef = useRef(false);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [sent, setSent] = useState<Visit | null>(null);
 
@@ -69,9 +71,10 @@ function BookingSheet({ clinic }: { clinic: Clinic }) {
   const ready = !!day && !!time && !!purpose.trim();
 
   async function send() {
-    if (sending) return;
+    if (sendingRef.current) return;
     setSubmitted(true);
     if (!ready || !day || !time) return;
+    sendingRef.current = true;
     setSending(true);
     setProblem(null);
     try {
@@ -88,6 +91,7 @@ function BookingSheet({ clinic }: { clinic: Clinic }) {
     } catch (err) {
       await handleError(err);
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }
@@ -127,7 +131,7 @@ function BookingSheet({ clinic }: { clinic: Clinic }) {
   const summary = day && time ? `${formatDay(day, { weekday: 'short', month: 'short', day: 'numeric' })} · ${time}` : null;
 
   return (
-    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={56}>
+    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={56}>
       <Stack.Screen options={{ title: t('booking.title') }} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={type.cardTitle} accessibilityRole="header">

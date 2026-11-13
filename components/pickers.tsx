@@ -109,6 +109,14 @@ export function DateField({
         onValueChange: (_e, date) => onChange(toYmd(date)),
       });
     } else {
+      // The wheel shows today (kept within the allowed days) when nothing is set: Done without
+      // scrolling must save that day, not leave the field empty.
+      if (!value) {
+        let shownDay = new Date();
+        if (minimumDate && shownDay < minimumDate) shownDay = minimumDate;
+        if (maximumDate && shownDay > maximumDate) shownDay = maximumDate;
+        onChange(toYmd(shownDay));
+      }
       setOpen(true);
     }
   }
@@ -154,6 +162,8 @@ export function TimeField({
     if (Platform.OS === 'android') {
       DateTimePickerAndroid.open({ value: timeToDate(value), mode: 'time', is24Hour: true, onValueChange: (_e, date) => set(date) });
     } else {
+      // The wheel shows 09:00 when nothing is set: Done without scrolling must save it.
+      if (!value) set(timeToDate(''));
       setOpen(true);
     }
   }
@@ -350,7 +360,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs + 2,
-    minHeight: 36,
+    minHeight: 44,
     paddingHorizontal: spacing.sm + 6,
     borderRadius: 999,
     borderWidth: 1,

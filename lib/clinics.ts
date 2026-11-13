@@ -28,6 +28,13 @@ export function dropClinic(id: string): void {
   droppedListeners.forEach((l) => l());
 }
 
+/** Sign-out: the next account starts with no clinics remembered from this one. */
+export function resetClinicCaches(): void {
+  known.clear();
+  dropped = new Set();
+  droppedListeners.forEach((l) => l());
+}
+
 function useDropped(): Set<string> {
   return useSyncExternalStore(
     (l) => {
@@ -81,13 +88,13 @@ export async function withdrawClinicAccess(clinicId: string): Promise<void> {
 }
 
 /**
- * One clinic: from this session's list loads, else the first 100 bookable clinics (the API has
- * no single-clinic endpoint). Null once loaded and not found: the rep can't book it any more.
+ * One clinic: from this session's list loads, else the directory filtered to that id. Null once
+ * loaded and not found: the rep can't book it any more.
  */
 export function useClinic(id: string | null | undefined): { clinic: Clinic | null; loading: boolean } {
   const cached = id ? known.get(id) : undefined;
   const gone = useDropped();
-  const { data, loading } = useApiData<Clinic[]>(id && !cached ? CLINICS_PATH + query({ limit: 100 }) : null);
+  const { data, loading } = useApiData<Clinic[]>(id && !cached ? CLINICS_PATH + query({ id, limit: 1 }) : null);
   useEffect(() => {
     data?.forEach((c) => known.set(c.id, c));
   }, [data]);

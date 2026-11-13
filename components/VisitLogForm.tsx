@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { errorMessage } from '@/lib/api';
 import { clinicTodayYmd } from '@/lib/format';
@@ -81,6 +81,8 @@ export function VisitLogForm({
   const [statusTouched, setStatusTouched] = useState(!!visit);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  // State lags a frame: two taps in one frame must not save twice.
+  const savingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const paddingBottom = useBottomPadding();
 
@@ -92,11 +94,12 @@ export function VisitLogForm({
     submitted && !String(form[key]).trim() ? t('profile.required') : null;
 
   async function save() {
-    if (saving) return;
+    if (savingRef.current) return;
     setSubmitted(true);
     const name = form.linked ? form.linked.name : form.clinicName.trim();
     const location = form.linked ? form.linked.location || form.clinicLocation.trim() || form.linked.name : form.clinicLocation.trim();
     if (!name || !location || !form.purpose.trim() || !form.date || !form.time) return;
+    savingRef.current = true;
     setSaving(true);
     setError(null);
     try {
@@ -115,12 +118,13 @@ export function VisitLogForm({
     } catch (err) {
       setError(isNetworkError(err) ? t('common.needsConnection') : errorMessage(err));
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
 
   return (
-    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={96}>
+    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={96}>
       <ScrollView contentContainerStyle={[screenStyles.content, { paddingBottom }]} keyboardShouldPersistTaps="handled">
         {!visit ? <Text style={[type.secondary, styles.intro]}>{t('visits.form.logIntro')}</Text> : null}
         {error ? <Banner message={error} /> : null}

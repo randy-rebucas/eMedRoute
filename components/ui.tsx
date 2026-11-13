@@ -1,9 +1,7 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
-  Keyboard,
-  Platform,
   StyleProp,
   StyleSheet,
   Text,
@@ -135,21 +133,6 @@ export function DetailRow({ label, value }: { label: string; value: ReactNode })
  */
 export function useBottomPadding(base: number = spacing.xl) {
   return useSafeAreaInsets().bottom + base;
-}
-
-/** True while the on-screen keyboard is up (so a pinned footer can drop its home-indicator inset). */
-export function useKeyboardVisible() {
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    // iOS has the earlier will* events, so the footer moves with the keyboard rather than after it.
-    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setVisible(true));
-    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setVisible(false));
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
-  return visible;
 }
 
 /** Call when an error/status message appears or changes, so screen readers hear it without moving focus. */

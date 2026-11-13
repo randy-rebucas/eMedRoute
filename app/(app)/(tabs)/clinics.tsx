@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Alert, FlatList, KeyboardAvoidingView, Modal, Platform, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -174,6 +174,8 @@ function AccessRequestSheet({ clinic, onClose }: { clinic: Clinic | null; onClos
   const t = useT();
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  // State lags a frame: two taps in one frame must not send two requests.
+  const sendingRef = useRef(false);
   const [problem, setProblem] = useState<string | null>(null);
 
   useEffect(() => {
@@ -184,7 +186,8 @@ function AccessRequestSheet({ clinic, onClose }: { clinic: Clinic | null; onClos
   }, [clinic]);
 
   async function send() {
-    if (!clinic || sending) return;
+    if (!clinic || sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true);
     setProblem(null);
     try {
@@ -197,13 +200,14 @@ function AccessRequestSheet({ clinic, onClose }: { clinic: Clinic | null; onClos
       else if (err instanceof ApiError && err.code === 'RECENTLY_DECLINED') setProblem(t('clinics.access.declinedRecently'));
       else setProblem(errorMessage(err));
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }
 
   return (
     <Modal visible={!!clinic} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView style={styles.backdrop} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={styles.backdrop} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <SafeAreaView style={styles.sheet} edges={['bottom']}>
           <View style={styles.sheetHead}>
             <Text style={[type.cardTitle, styles.flex]} accessibilityRole="header">

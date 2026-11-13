@@ -1,5 +1,5 @@
 /**
- * Generates every icon, splash and store asset for MyClinicSoft Rep from the MyClinicSoft mark
+ * Generates every icon, splash and store asset for eMedRoute from the MyClinicSoft mark
  * (heart + pulse, same geometry as components/BrandLogo.tsx). The rep app puts the mark on solid
  * brand navy so it is told apart from eMCR (teal) on the same phone.
  *
@@ -98,9 +98,9 @@ const notificationSvg = svg(96, 96, knockoutMark(48, 49, 3.4));
 
 const wordmark = (x, y, size, { dark = true } = {}) => `
   <text x="${x}" y="${y}" font-family="${FONT}" font-weight="800" font-size="${size}"
-    letter-spacing="${-size * 0.015}" fill="${dark ? C.text : '#FFFFFF'}">MyClinic<tspan fill="${dark ? C.primary : '#B9F2EF'}">Soft</tspan></text>
+    letter-spacing="${-size * 0.015}" fill="${dark ? C.text : '#FFFFFF'}">eMed<tspan fill="${dark ? C.primary : '#B9F2EF'}">Route</tspan></text>
   <text x="${x + size * 0.04}" y="${y + size * 0.5}" font-family="${FONT}" font-weight="700"
-    font-size="${size * 0.3}" letter-spacing="${size * 0.03}" fill="${dark ? C.textMuted : '#D8F5F3'}">REP</text>`;
+    font-size="${size * 0.3}" letter-spacing="${size * 0.03}" fill="${dark ? C.textMuted : '#D8F5F3'}">BY MYCLINICSOFT</text>`;
 
 /** Horizontal lockup for docs, web, press. */
 const logoSvg = (dark) => svg(1500, 360, `
@@ -118,8 +118,8 @@ const featureSvg = svg(1024, 500, `
   <rect width="1024" height="500" fill="${C.navy}"/>
   <rect x="96" y="130" width="240" height="240" rx="56" fill="#FFFFFF"/>
   ${colorMark(216, 252, 8.6)}
-  <text x="392" y="222" font-family="${FONT}" font-weight="800" font-size="84" letter-spacing="-1" fill="#FFFFFF">MyClinic<tspan fill="#B9F2EF">Soft</tspan></text>
-  <text x="396" y="272" font-family="${FONT}" font-weight="700" font-size="30" letter-spacing="3" fill="#D8F5F3">REP</text>
+  <text x="392" y="222" font-family="${FONT}" font-weight="800" font-size="84" letter-spacing="-1" fill="#FFFFFF">eMed<tspan fill="#B9F2EF">Route</tspan></text>
+  <text x="396" y="272" font-family="${FONT}" font-weight="700" font-size="30" letter-spacing="3" fill="#D8F5F3">BY MYCLINICSOFT</text>
   <text x="396" y="340" font-family="${FONT}" font-weight="400" font-size="30" fill="#FFFFFF">Book clinic visits in their rep hours,</text>
   <text x="396" y="380" font-family="${FONT}" font-weight="400" font-size="30" fill="#FFFFFF">and carry your product sheets.</text>`);
 

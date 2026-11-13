@@ -3,10 +3,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { useDashboard } from '@/lib/dashboard';
-import { formatDate } from '@/lib/format';
+import { clinicTodayYmd, formatDate } from '@/lib/format';
 import { bookingBlocked, useSubscription } from '@/lib/plan';
 import { todaysStops } from '@/lib/route';
 import { useTeam } from '@/lib/team';
+import { DashboardVisit } from '@/lib/types';
+import { usePendingDeletes } from '@/lib/undo';
+import { visitDay } from '@/lib/visits';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,8 +30,13 @@ export default function HomeScreen() {
   const t = useT();
   const { data, loading, refreshing, error, offline, stale, updatedAt, refresh } = useDashboard();
   const firstName = data?.profile.firstName ?? rep?.name.split(/\s+/)[0];
-  const [next, ...later] = data?.nextVisits ?? [];
-  const stops = todaysStops(data?.nextVisits ?? []);
+  // A saved copy from an earlier day still lists that day's visits: they aren't next any more.
+  const today = clinicTodayYmd();
+  // A visit waiting behind Undo (or deleted since) isn't shown either.
+  const pending = usePendingDeletes();
+  const shown = (visits: DashboardVisit[]) => visits.filter((v) => !pending.has(v._id));
+  const [next, ...later] = shown(data?.nextVisits ?? []).filter((v) => visitDay(v) >= today);
+  const stops = todaysStops(shown(data?.todayVisits ?? data?.nextVisits ?? []));
   const { data: team } = useTeam();
   const { data: sub } = useSubscription();
   const invite = team && !team.team ? team.invite : null;

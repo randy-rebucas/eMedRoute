@@ -7,7 +7,8 @@ import { useT } from '@/lib/i18n';
 
 /** Outline icons in both states (one icon per meaning); the tint and label mark the selected tab. */
 function tabIcon(name: IconName) {
-  return ({ color, size }: { color: ColorValue; size: number }) => <Ionicons name={name} size={size} color={color} />;
+  const TabIcon = ({ color, size }: { color: ColorValue; size: number }) => <Ionicons name={name} size={size} color={color} />;
+  return TabIcon;
 }
 
 /**
