@@ -252,15 +252,64 @@ export interface TeamCoverage {
 }
 
 /** GET /subscription. Prices come from the platform; never hard-code them. */
+/** Standard covers booking and deliveries; Pro adds the AI assistant's full monthly allowance. */
+export type RepPlan = 'standard' | 'pro';
+
+/** GET /ai: the AI assistant's allowance this month (Manila months). */
+export interface AiStatus {
+  /** The server has the AI assistant set up. */
+  available: boolean;
+  plan: RepPlan;
+  limit: number;
+  used: number;
+  remaining: number;
+  /** "YYYY-MM-DD" the count starts over. */
+  resetsOn: string;
+  /** 0 when Pro isn't sold. */
+  proMonthly: number;
+  proYearly: number;
+  proActions: number;
+}
+
+/** POST /ai/visit-note: a draft of the visit's notes, for the rep to edit. */
+export interface AiVisitNote {
+  notes: string;
+  productIds: string[];
+  interest: 'high' | 'medium' | 'low' | 'unclear';
+  followUp: { inDays: number | null; action: string };
+  /** Words the rep should check (a product name, a quantity). */
+  warnings: string[];
+  remaining: number;
+}
+
+export interface AiBrief {
+  headline: string;
+  lastTime: string;
+  openItems: string[];
+  focus: string[];
+  cautions: string[];
+}
+
+/** POST /ai/visit-brief. `brief` is null when there's no history with the clinic yet. */
+export interface AiBriefResult {
+  brief: AiBrief | null;
+  reason?: 'noHistory';
+  generatedAt?: string;
+  /** A saved brief shown again (no AI action used). */
+  cached?: boolean;
+  remaining?: number;
+}
+
 export interface Subscription {
   canBookClinics: boolean;
   coveredBy: 'free' | 'individual' | 'team' | null;
-  prices: { monthly: number; yearly: number; seatMonthly: number; seatYearly: number; currency: 'PHP' };
+  /** proMonthly / proYearly are 0 when Pro isn't sold. */
+  prices: { monthly: number; yearly: number; proMonthly: number; proYearly: number; seatMonthly: number; seatYearly: number; currency: 'PHP' };
   /** The rep fee is ₱0: booking is free for everyone. */
   free: boolean;
   /** Online payment is set up on the server. */
   payable: boolean;
-  individual: { billingCycle: BillingCycle; expiresAt: string; active: boolean } | null;
+  individual: { billingCycle: BillingCycle; plan: RepPlan; expiresAt: string; active: boolean } | null;
   team: TeamCoverage | null;
 }
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { aiOffered, useAiStatus } from '@/lib/ai';
 import { ApiError, errorMessage } from '@/lib/api';
 import { cancelVisit, useClinic } from '@/lib/clinics';
 import { emitRefresh } from '@/lib/events';
@@ -32,6 +33,7 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { productLabel } from '@/components/ProductPicker';
 import { StatusPill } from '@/components/StatusPill';
 import { Banner, Button, LoadingView, screenStyles, SectionHeader, useBottomPadding } from '@/components/ui';
+import { AiBriefCard } from '@/components/AiBriefCard';
 import { DeliveryCard } from '@/components/DeliveryCard';
 import { VisitProgress } from '@/components/VisitProgress';
 import { canDeliver, cancelDelivery, useVisitDeliveries } from '@/lib/deliveries';
@@ -53,6 +55,7 @@ export default function VisitDetailScreen() {
   const { data: activeProducts } = useActiveProducts();
   const { data: deliveries } = useVisitDeliveries(id);
   const { data: sub } = useSubscription();
+  const { data: ai } = useAiStatus();
   const [cancellingDelivery, setCancellingDelivery] = useState<string | null>(null);
   const paddingBottom = useBottomPadding();
   // The clinic's booking instructions go with an approved visit ("Arrive by 15:00" + where to go).
@@ -233,6 +236,8 @@ export default function VisitDetailScreen() {
 
       {problem ? <Banner message={problem} /> : null}
 
+      {ahead && state !== 'cancelled' && aiOffered(ai) ? <AiBriefCard visitId={visit._id} ai={ai!} offline={offline} /> : null}
+
       {instructions ? (
         <Quote label={t('booking.fromClinic', { clinic: visit.clinicName })} text={instructions} />
       ) : null}
@@ -271,7 +276,12 @@ export default function VisitDetailScreen() {
             <Text style={type.secondary}>{t('visits.detail.productsInactive', { count: unknownCount })}</Text>
           </View>
         ) : null}
-        <NotesBlock visit={visit} offline={offline} onSaved={(saved) => setVisit(saved)} />
+        <NotesBlock
+          visit={visit}
+          offline={offline}
+          onSaved={(saved) => setVisit(saved)}
+          onDraftWithAi={aiOffered(ai) && state !== 'cancelled' ? () => router.push(`/visits/${visit._id}/ai-notes`) : undefined}
+        />
       </View>
 
       {showDeliveries ? (
@@ -332,8 +342,19 @@ function Quote({ label, text, italic = false }: { label: string; text: string; i
 /**
  * The rep's private notes, written in place: after a call is when they're worth writing, and a
  * closed booking still takes notes (the server allows notes alone). Kept as typed if saving fails.
+ * With the AI assistant on, "Draft with AI" sits beside Add/Edit.
  */
-function NotesBlock({ visit, offline, onSaved }: { visit: Visit; offline: boolean; onSaved: (saved: Visit) => void }) {
+function NotesBlock({
+  visit,
+  offline,
+  onSaved,
+  onDraftWithAi,
+}: {
+  visit: Visit;
+  offline: boolean;
+  onSaved: (saved: Visit) => void;
+  onDraftWithAi?: () => void;
+}) {
   const t = useT();
   const [draft, setDraft] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -388,16 +409,30 @@ function NotesBlock({ visit, offline, onSaved }: { visit: Visit; offline: boolea
       ) : (
         <>
           <Text style={[type.body, !notes && styles.mutedText]}>{notes || t('visits.notes.empty')}</Text>
-          <TouchableOpacity
-            style={[styles.link, offline && styles.disabled]}
-            onPress={() => setDraft(visit.notes ?? '')}
-            disabled={offline}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: offline }}
-          >
-            <Ionicons name={notes ? 'create-outline' : 'add-circle-outline'} size={18} color={colors.primaryOnSoft} />
-            <Text style={styles.linkText}>{notes ? t('visits.notes.edit') : t('visits.notes.add')}</Text>
-          </TouchableOpacity>
+          <View style={styles.notesLinks}>
+            <TouchableOpacity
+              style={[styles.link, offline && styles.disabled]}
+              onPress={() => setDraft(visit.notes ?? '')}
+              disabled={offline}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: offline }}
+            >
+              <Ionicons name={notes ? 'create-outline' : 'add-circle-outline'} size={18} color={colors.primaryOnSoft} />
+              <Text style={styles.linkText}>{notes ? t('visits.notes.edit') : t('visits.notes.add')}</Text>
+            </TouchableOpacity>
+            {onDraftWithAi ? (
+              <TouchableOpacity
+                style={[styles.link, offline && styles.disabled]}
+                onPress={onDraftWithAi}
+                disabled={offline}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: offline }}
+              >
+                <Ionicons name="sparkles-outline" size={18} color={colors.primaryOnSoft} />
+                <Text style={styles.linkText}>{t('ai.notes.cta')}</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </>
       )}
     </View>
@@ -471,6 +506,7 @@ const styles = StyleSheet.create({
   notesHead: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' },
   mutedText: { color: colors.textMuted },
   link: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2, minHeight: 44, alignSelf: 'flex-start' },
+  notesLinks: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.lg },
   linkText: { fontSize: 15, fontWeight: '600', color: colors.primaryOnSoft },
   input: {
     minHeight: 112,

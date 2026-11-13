@@ -16,7 +16,8 @@ export type RefreshTopic =
   | 'deliveries'
   | 'sponsorships'
   | 'referral'
-  | 'inbox';
+  | 'inbox'
+  | 'ai';
 
 type Listener = () => void;
 const listeners = new Map<RefreshTopic, Set<Listener>>();

@@ -3,6 +3,7 @@
  * Add strings to the area that owns the screen; reuse `common.*` for shared words (Cancel, Try
  * again, …). If you need a new area, add it here.
  *
+ *   ai            visits/[id]/ai-notes, AiBriefCard, AiPlanSection, lib/ai
  *   common        components/ui, ErrorState, AppHeader, OfflineBanner, LanguagePicker, forms;
  *                 lib/api, useApiData, usePaginatedList
  *   auth          app/(auth)/*, components/auth.tsx, lib/auth.tsx
@@ -25,6 +26,7 @@
  *   support       app/(app)/support/*
  *   notifications lib/push, notifications.tsx (inbox), InboxRow, the AppHeader bell
  */
+import ai from './strings/ai';
 import auth from './strings/auth';
 import booking from './strings/booking';
 import clinics from './strings/clinics';
@@ -48,6 +50,7 @@ import visits from './strings/visits';
 import type { Message, ParamsArg } from './types';
 
 export const catalogs = {
+  ai,
   auth,
   booking,
   clinics,
