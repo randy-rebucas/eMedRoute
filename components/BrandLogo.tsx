@@ -32,16 +32,26 @@ export function BrandMark({ size = 40 }: { size?: number }) {
 }
 
 /** Mark + "eMedRoute" wordmark + "by MyClinicSoft", as on the sign-in screen and the tab headers. */
-export function BrandLogo({ size = 'md', align = 'center' }: { size?: 'sm' | 'md'; align?: 'center' | 'left' }) {
+export function BrandLogo({
+  size = 'md',
+  align = 'center',
+  tone = 'default',
+}: {
+  size?: 'sm' | 'md';
+  align?: 'center' | 'left';
+  /** `onNavy`: over the sign-in photo bands (white word, bright teal accent). */
+  tone?: 'default' | 'onNavy';
+}) {
   const s = SIZES[size];
+  const onNavy = tone === 'onNavy';
   return (
     <View style={[styles.row, align === 'left' && styles.left]} accessible accessibilityRole="header" accessibilityLabel="eMedRoute">
       <BrandMark size={s.mark} />
       <View>
-        <Text style={[styles.word, { fontSize: s.word, lineHeight: s.word * 1.1 }]}>
-          eMed<Text style={styles.wordAccent}>Route</Text>
+        <Text style={[styles.word, onNavy && styles.wordOnNavy, { fontSize: s.word, lineHeight: s.word * 1.1 }]}>
+          eMed<Text style={[styles.wordAccent, onNavy && styles.wordAccentOnNavy]}>Route</Text>
         </Text>
-        <Text style={[styles.sub, { fontSize: s.sub }]}>by MyClinicSoft</Text>
+        <Text style={[styles.sub, onNavy && styles.subOnNavy, { fontSize: s.sub }]}>by MyClinicSoft</Text>
       </View>
     </View>
   );
@@ -58,4 +68,7 @@ const styles = StyleSheet.create({
   word: { fontWeight: '800', color: colors.text, letterSpacing: -0.4 },
   wordAccent: { color: colors.primary },
   sub: { color: colors.textMuted, fontWeight: '600', letterSpacing: 0.4, textTransform: 'uppercase' },
+  wordOnNavy: { color: colors.primaryText },
+  wordAccentOnNavy: { color: colors.accent },
+  subOnNavy: { color: colors.onNavyMuted },
 });

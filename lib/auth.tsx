@@ -84,6 +84,7 @@ export function summaryFromProfile(p: RepProfile): RepSummary {
     name: `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim(),
     company: p.company,
     email: p.email,
+    profileImage: p.profileImage ?? null,
   };
 }
 
@@ -191,6 +192,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setNotice(null);
     setState({ status: 'signedIn', rep: result.medicalRepresentative });
     registerForPushNotifications({ prompt: false }).catch(() => {});
+    // The sign-in reply has no picture: fill it (and anything else newer) from the profile, quietly.
+    apiRequest<RepProfile>(AUTH_ENDPOINTS.session)
+      .then((profile) => setState((prev) => (prev.status === 'signedIn' ? { status: 'signedIn', rep: summaryFromProfile(profile) } : prev)))
+      .catch(() => {});
   }, []);
 
 

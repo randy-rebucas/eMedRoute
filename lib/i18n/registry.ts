@@ -16,7 +16,7 @@
  *   plan          plan.tsx, PlanCard, lib/plan
  *   sponsorships  sponsorships.tsx, lib/sponsorships
  *   referral      referral.tsx, lib/referral
- *   team          team/*, TeamMemberRow, lib/team
+ *   team          team/*, TeamMonthChart, lib/team
  *   products      (tabs)/products.tsx, products/*, ProductCards, ProductForm, lib/products
  *   more          app/(app)/(tabs)/more.tsx, stack titles in app/(app)/_layout.tsx
  *   profile       app/(app)/profile/*

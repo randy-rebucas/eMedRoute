@@ -23,8 +23,10 @@ import {
 import { colors, spacing } from '@/lib/theme';
 import { useCooldown } from '@/lib/useCooldown';
 import { type } from '@/lib/typography';
+import { photos } from '@/components/Photo';
 import { Banner, Button } from '@/components/ui';
 import {
+  AuthBand,
   AuthHeader,
   AuthScreen,
   classifyAuthError,
@@ -390,9 +392,9 @@ export default function RegisterScreen() {
         </View>
       }
     >
+      <AuthBand source={photos.onTheRoad} line={t('auth.band.register')} height={160} />
       <Text style={[type.secondary, styles.step]}>{stepLabel}</Text>
       <AuthHeader title={t('onboarding.details.title')} subtitle={t('onboarding.details.subtitle')} />
-      {error ? <Banner message={error} /> : null}
 
       <View style={styles.row}>
         <View style={styles.half}>
@@ -480,6 +482,8 @@ export default function RegisterScreen() {
         </Text>
         .
       </Text>
+      {/* Beside the button, not at the top: the form is long, and an "email in use" from the server lands here. */}
+      {error ? <Banner message={error} /> : null}
       <Button title={t('onboarding.details.continue')} onPress={submitDetails} loading={busy} />
     </AuthScreen>
   );

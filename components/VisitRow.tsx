@@ -10,7 +10,7 @@ import { isOwnLog, LOG_STATUS_LABEL, nextStep, NextStep, VISIT_STATE_LABEL, visi
 import { StatusPill } from './StatusPill';
 
 type VisitLike = Pick<Visit, '_id' | 'clinicId' | 'clinicName' | 'clinicLocation' | 'date' | 'time' | 'status' | 'checkedInAt'> &
-  Partial<Pick<Visit, 'cancelledBy' | 'clinicNote'>>;
+  Partial<Pick<Visit, 'cancelledBy' | 'clinicNote' | 'duration'>>;
 
 /** The next-step line in words; null for own log entries. */
 export function nextStepText(t: TFunction, step: NextStep): string | null {
@@ -44,8 +44,11 @@ export function visitA11yLabel(t: TFunction, visit: VisitLike): string {
 /**
  * One visit in a list: day, clinic, time and place, status pill and who acts next. A team
  * member's visit (`member`) is read-only: it isn't the rep's own, so it opens nothing.
+ *
+ * `inDay`: the row sits under a day heading (the Visits tab), so it leads with the time instead of
+ * a date tile, and the day's rows join into one ruled card (`first`/`last` round its ends).
  */
-export function VisitRow({ visit, member }: { visit: VisitLike; member?: string }) {
+export function VisitRow({ visit, member, inDay }: { visit: VisitLike; member?: string; inDay?: { first: boolean; last: boolean } }) {
   const t = useT();
   const day = visitDay(visit);
   const state = visitState(visit);
@@ -56,38 +59,60 @@ export function VisitRow({ visit, member }: { visit: VisitLike; member?: string 
 
   return (
     <TouchableOpacity
-      style={styles.row}
+      style={inDay ? [styles.row, styles.inDay, inDay.first && styles.inDayFirst, inDay.last && styles.inDayLast, !inDay.first && styles.inDayRule] : styles.row}
       onPress={() => router.push(`/visits/${visit._id}`)}
       disabled={!!member}
       accessibilityRole={member ? undefined : 'button'}
       accessibilityLabel={member ? `${member}, ${visitA11yLabel(t, visit)}` : visitA11yLabel(t, visit)}
-      accessibilityHint={line ?? undefined}
+      accessibilityHint={member ? undefined : (line ?? undefined)}
     >
-      <View style={[styles.day, today && styles.dayToday]}>
-        <Text style={[type.secondary, styles.dayWeek, today && styles.onNavyMuted]} maxFontSizeMultiplier={1.4}>
-          {formatDay(day, { weekday: 'short' })}
-        </Text>
-        <Text style={[mono, styles.dayNumber, today && styles.onNavy]} maxFontSizeMultiplier={1.4}>
-          {day.slice(8, 10)}
-        </Text>
-        <Text style={[type.secondary, styles.dayWeek, today && styles.onNavyMuted]} maxFontSizeMultiplier={1.4}>
-          {formatDay(day, { month: 'short' })}
-        </Text>
-      </View>
+      {inDay ? (
+        <View style={styles.clock}>
+          <Text style={[styles.clockTime, state === 'cancelled' && styles.struck]} maxFontSizeMultiplier={1.4}>
+            {visit.time}
+          </Text>
+          {visit.duration ? (
+            <Text style={[type.secondary, styles.clockLength]} maxFontSizeMultiplier={1.4}>
+              {t('visits.minutes', { minutes: visit.duration })}
+            </Text>
+          ) : null}
+        </View>
+      ) : (
+        <View style={[styles.day, today && styles.dayToday]}>
+          <Text style={[type.secondary, styles.dayWeek, today && styles.onNavyMuted]} maxFontSizeMultiplier={1.4}>
+            {formatDay(day, { weekday: 'short' })}
+          </Text>
+          <Text style={[mono, styles.dayNumber, today && styles.onNavy]} maxFontSizeMultiplier={1.4}>
+            {day.slice(8, 10)}
+          </Text>
+          <Text style={[type.secondary, styles.dayWeek, today && styles.onNavyMuted]} maxFontSizeMultiplier={1.4}>
+            {formatDay(day, { month: 'short' })}
+          </Text>
+        </View>
+      )}
       <View style={styles.body}>
         {member ? <Text style={[type.label, styles.member]}>{member}</Text> : null}
         <Text style={[type.cardTitle, state === 'cancelled' && styles.struck]} numberOfLines={2}>
           {visit.clinicName}
         </Text>
-        <Text style={type.secondary} numberOfLines={1}>
-          <Text style={[mono, styles.time]}>{visit.time}</Text>
-          {visit.clinicLocation ? ` · ${visit.clinicLocation}` : ''}
-        </Text>
+        {inDay ? (
+          visit.clinicLocation ? (
+            <Text style={type.secondary} numberOfLines={1}>
+              {visit.clinicLocation}
+            </Text>
+          ) : null
+        ) : (
+          <Text style={type.secondary} numberOfLines={1}>
+            <Text style={[mono, styles.time]}>{visit.time}</Text>
+            {visit.clinicLocation ? ` · ${visit.clinicLocation}` : ''}
+          </Text>
+        )}
         <View style={styles.status}>
           <StatusPill state={state} />
           {logWord ? <Text style={type.secondary}>{t(logWord)}</Text> : null}
         </View>
-        {line ? <Text style={[type.secondary, styles.line]}>{line}</Text> : null}
+        {/* The next step speaks to the rep ("Arrive by 15:30"): not shown on a member's row to their manager. */}
+        {line && !member ? <Text style={[type.secondary, styles.line]}>{line}</Text> : null}
       </View>
       {member ? null : <Ionicons name="chevron-forward" size={20} color={colors.textMuted} style={styles.chevron} />}
     </TouchableOpacity>
@@ -113,6 +138,15 @@ const styles = StyleSheet.create({
   onNavy: { color: colors.primaryText },
   onNavyMuted: { color: colors.onNavyMuted },
   chevron: { alignSelf: 'center' },
+  // In-day rows: one card per day, rows ruled by a hairline.
+  inDay: { borderRadius: 0, borderTopWidth: 0, borderBottomWidth: 0, marginBottom: 0 },
+  inDayFirst: { borderTopWidth: 1, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg },
+  inDayLast: { borderBottomWidth: 1, borderBottomLeftRadius: radius.lg, borderBottomRightRadius: radius.lg, marginBottom: spacing.md },
+  inDayRule: { borderTopWidth: StyleSheet.hairlineWidth },
+  clock: { width: 56, alignSelf: 'flex-start', paddingTop: 1 },
+  // Normal face with tabular figures: Android's monospace spaces out the colon ("14 : 30").
+  clockTime: { fontSize: 17, lineHeight: 22, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
+  clockLength: { fontSize: 12, marginTop: 2 },
   body: { flex: 1, gap: 2 },
   time: { color: colors.text, fontWeight: '600' },
   status: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs, flexWrap: 'wrap' },

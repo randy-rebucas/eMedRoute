@@ -1,35 +1,55 @@
 import { useState } from 'react';
-import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ApiError, errorMessage } from '@/lib/api';
 import { cancelVisit, useClinic } from '@/lib/clinics';
 import { emitRefresh } from '@/lib/events';
-import { formatDay } from '@/lib/format';
+import { clinicTodayYmd, formatDay } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { openDirections } from '@/lib/maps';
 import { bookingBlocked, useSubscription } from '@/lib/plan';
 import { useActiveProducts } from '@/lib/products';
 import { colors, radius, spacing } from '@/lib/theme';
-import { mono, type } from '@/lib/typography';
+import { Visit } from '@/lib/types';
+import { type } from '@/lib/typography';
 import { scheduleDelete } from '@/lib/undo';
-import { deleteVisit, isOpenBooking, isOwnLog, LOG_STATUS_LABEL, nextStep, useVisit, visitDay, visitState } from '@/lib/visits';
+import {
+  deleteVisit,
+  isOpenBooking,
+  isOwnLog,
+  LOG_STATUS_LABEL,
+  nextStep,
+  saveVisitNotes,
+  useVisit,
+  visitDay,
+  visitProgress,
+  visitState,
+} from '@/lib/visits';
 import { ErrorState } from '@/components/ErrorState';
 import { ThinProgress } from '@/components/Loading';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { productLabel } from '@/components/ProductPicker';
 import { StatusPill } from '@/components/StatusPill';
-import { Banner, Button, IconName, LoadingView, screenStyles, SectionHeader, useBottomPadding } from '@/components/ui';
+import { Banner, Button, LoadingView, screenStyles, SectionHeader, useBottomPadding } from '@/components/ui';
 import { DeliveryCard } from '@/components/DeliveryCard';
+import { VisitProgress } from '@/components/VisitProgress';
 import { canDeliver, cancelDelivery, useVisitDeliveries } from '@/lib/deliveries';
 import { isNetworkError } from '@/lib/useApiData';
 import { nextStepText, visitA11yLabel } from '@/components/VisitRow';
 
-/** One visit: status and who acts next, the clinic's words, the details, and what the rep can do. */
+const MAX_NOTES = 2000;
+
+/**
+ * One visit, in the order a rep needs it in the field: the navy card (clinic, when, where, what
+ * happens next, Directions and Move), the clinic's own words, where the booking stands, the
+ * rep's private notes (writable after the visit, bookings included), what was delivered, then
+ * the rarer actions (edit, cancel, delete) at the foot.
+ */
 export default function VisitDetailScreen() {
   const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: visit, loading, refreshing, error, offline, stale, updatedAt, refresh } = useVisit(id);
+  const { data: visit, setData: setVisit, loading, refreshing, error, offline, stale, updatedAt, refresh } = useVisit(id);
   const { data: activeProducts } = useActiveProducts();
   const { data: deliveries } = useVisitDeliveries(id);
   const { data: sub } = useSubscription();
@@ -54,7 +74,12 @@ export default function VisitDetailScreen() {
   const known = products.filter((p) => !!p);
   // Only once the product list is in: before that every product would count as inactive.
   const unknownCount = activeProducts ? products.length - known.length : 0;
-  const upcoming = state === 'approved' || state === 'waiting' || (own && visit.status === 'scheduled');
+  // Directions only for a visit still ahead: an approved visit left open from last week isn't a trip.
+  const ahead = (state === 'approved' || state === 'waiting' || state === 'checkedIn' || (own && visit.status === 'scheduled')) && day >= clinicTodayYmd();
+  // Checked in means the rep is at the desk: moving it then would undo the check-in.
+  const canMove = open && !visit.checkedInAt;
+  const instructions = state === 'approved' ? clinic?.instructions : null;
+  const whoNext = state === 'waiting' ? t('visits.whoNext.clinic') : state === 'approved' ? t('visits.whoNext.you') : null;
 
   function remove() {
     if (!visit) return;
@@ -86,8 +111,7 @@ export default function VisitDetailScreen() {
               setProblem(t('deliveries.error.closed'));
               // The clinic answered meanwhile: show its answer instead of a Cancel that can't work.
               emitRefresh('deliveries');
-            }
-            else setProblem(errorMessage(err));
+            } else setProblem(errorMessage(err));
           } finally {
             setCancellingDelivery(null);
           }
@@ -125,75 +149,132 @@ export default function VisitDetailScreen() {
     }
   }
 
+  const showDeliveries = !!deliveries?.length || canDeliver(visit) || (own && visit.status !== 'cancelled');
+
   return (
     <ScrollView
       style={screenStyles.container}
       contentContainerStyle={[screenStyles.content, { paddingBottom }]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />}
+      keyboardShouldPersistTaps="handled"
     >
       <Stack.Screen options={{ title: own ? t('visits.title.log') : t('visits.title.booking') }} />
-      <ThinProgress active={stale && !offline} />
-      <OfflineBanner offline={offline} updatedAt={updatedAt} subject={t('visits.offlineSubjectOne')} />
-
-      <View style={styles.head} accessible accessibilityLabel={visitA11yLabel(t, visit)}>
-        <Text style={[type.screenTitle, state === 'cancelled' && styles.struck]}>{visit.clinicName}</Text>
-        <Text style={type.body}>
-          {formatDay(day, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} ·{' '}
-          <Text style={[mono, styles.strong]}>{visit.time}</Text>
-        </Text>
-        <View style={styles.pillRow}>
-          <StatusPill state={state} />
-          {own && LOG_STATUS_LABEL[visit.status] ? <Text style={type.secondary}>{t(LOG_STATUS_LABEL[visit.status])}</Text> : null}
+      {stale || offline ? (
+        <View style={styles.status}>
+          <ThinProgress active={stale && !offline} />
+          <OfflineBanner offline={offline} updatedAt={updatedAt} subject={t('visits.offlineSubjectOne')} />
         </View>
-      </View>
+      ) : null}
 
-      {line && !(state === 'declined' && visit.clinicNote) ? (
-        <View style={styles.next}>
-          <Text style={[type.body, styles.strong]}>{line}</Text>
-          {state === 'waiting' ? <Text style={type.secondary}>{t('visits.whoNext.clinic')}</Text> : null}
-          {state === 'approved' ? <Text style={type.secondary}>{t('visits.whoNext.you')}</Text> : null}
-          {state === 'approved' && clinic?.instructions ? (
-            <View style={styles.quote}>
-              <Text style={type.label}>{t('booking.fromClinic', { clinic: visit.clinicName })}</Text>
-              <Text style={type.body}>{clinic.instructions}</Text>
+      {/* The visit on the app's navy: who, when, where, and what happens next. */}
+      <View style={styles.hero}>
+        <View accessible accessibilityLabel={[visitA11yLabel(t, visit), line, whoNext].filter(Boolean).join('. ')}>
+          <View style={styles.top}>
+            <StatusPill state={state} onDark />
+            {own && LOG_STATUS_LABEL[visit.status] ? <Text style={styles.muted}>{t(LOG_STATUS_LABEL[visit.status])}</Text> : null}
+          </View>
+          <Text style={[styles.clinic, state === 'cancelled' && styles.struck]}>{visit.clinicName}</Text>
+          <View style={styles.whenRow}>
+            <View style={styles.whenBox}>
+              <Ionicons name="calendar-outline" size={18} color={colors.onNavyMuted} />
+              <Text style={styles.when}>{formatDay(day, { weekday: 'long', month: 'long', day: 'numeric' })}</Text>
+            </View>
+            <View style={styles.whenBox}>
+              <Ionicons name="time-outline" size={18} color={colors.onNavyMuted} />
+              <Text style={styles.time}>{visit.time}</Text>
+              <Text style={styles.muted}>· {t('visits.minutes', { minutes: visit.duration })}</Text>
+            </View>
+          </View>
+          {visit.clinicLocation ? (
+            <View style={styles.place}>
+              <Ionicons name="location-outline" size={18} color={colors.onNavyMuted} />
+              <Text style={[styles.muted, styles.placeText]}>{visit.clinicLocation}</Text>
+            </View>
+          ) : null}
+          {line && !(state === 'declined' && visit.clinicNote) ? (
+            <View style={styles.next}>
+              <Ionicons name="arrow-forward-circle-outline" size={20} color={colors.accent} />
+              <View style={styles.flex}>
+                <Text style={styles.nextText}>{line}</Text>
+                {whoNext ? <Text style={styles.muted}>{whoNext}</Text> : null}
+              </View>
             </View>
           ) : null}
         </View>
-      ) : null}
 
-      {visit.clinicNote ? (
-        <View style={styles.quote} accessible accessibilityLabel={`${t('visits.clinicWrote', { clinic: visit.clinicName })}: ${visit.clinicNote}`}>
-          <Text style={type.label}>{t('visits.clinicWrote', { clinic: visit.clinicName })}</Text>
-          <Text style={[type.body, styles.quoteText]}>“{visit.clinicNote}”</Text>
-        </View>
-      ) : null}
-
-      <View style={styles.facts}>
-        <Fact icon="location-outline" label={t('visits.detail.place')}>
-          <Text style={type.body}>{visit.clinicLocation}</Text>
-        </Fact>
-        <Fact icon="time-outline" label={t('visits.detail.length')}>
-          <Text style={[type.body, mono]}>{t('visits.minutes', { minutes: visit.duration })}</Text>
-        </Fact>
-        <Fact icon="flag-outline" label={own ? t('visits.form.purpose') : t('visits.form.purposeShared')}>
-          <Text style={type.body}>{visit.purpose}</Text>
-        </Fact>
-        {products.length ? (
-          <Fact icon="medkit-outline" label={t('visits.form.products')}>
-            {known.map((p) => (
-              <Text key={p!._id} style={type.body} onPress={() => router.push(`/products/${p!._id}`)} accessibilityRole="link">
-                {productLabel(p!)}
-              </Text>
-            ))}
-            {unknownCount ? <Text style={type.secondary}>{t('visits.detail.productsInactive', { count: unknownCount })}</Text> : null}
-          </Fact>
+        {(ahead && visit.clinicLocation) || canMove ? (
+          <View style={styles.actions}>
+            {ahead && visit.clinicLocation ? (
+              <TouchableOpacity
+                style={[styles.action, styles.actionPrimary]}
+                onPress={() => openDirections(`${visit.clinicName}, ${visit.clinicLocation}`).catch(() => {})}
+                accessibilityRole="button"
+                accessibilityLabel={t('home.directionsA11y', { clinic: visit.clinicName })}
+              >
+                <Ionicons name="navigate-outline" size={20} color={colors.primaryText} />
+                <Text style={styles.actionText}>{t('home.directions')}</Text>
+              </TouchableOpacity>
+            ) : null}
+            {canMove ? (
+              <TouchableOpacity
+                style={[styles.action, styles.actionGhost, offline && styles.disabled]}
+                onPress={() => router.push(`/visits/${visit._id}/move`)}
+                disabled={offline}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: offline }}
+              >
+                <Ionicons name="swap-horizontal-outline" size={20} color={colors.primaryText} />
+                <Text style={styles.actionText}>{t('booking.move')}</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         ) : null}
-        <Fact icon="document-text-outline" label={t('visits.form.notes')} hint={t('visits.form.notesHint')} last>
-          <Text style={[type.body, !visit.notes && styles.muted]}>{visit.notes || t('visits.detail.noNotes')}</Text>
-        </Fact>
       </View>
 
-      {deliveries?.length || canDeliver(visit) || (own && visit.status !== 'cancelled') ? (
+      {problem ? <Banner message={problem} /> : null}
+
+      {instructions ? (
+        <Quote label={t('booking.fromClinic', { clinic: visit.clinicName })} text={instructions} />
+      ) : null}
+      {visit.clinicNote ? <Quote label={t('visits.clinicWrote', { clinic: visit.clinicName })} text={`“${visit.clinicNote}”`} italic /> : null}
+
+      {!own ? (
+        <>
+          <SectionHeader title={t('visits.progress.title')} />
+          <View style={[styles.card, styles.padded]}>
+            <VisitProgress steps={visitProgress(visit)} />
+          </View>
+        </>
+      ) : null}
+
+      <SectionHeader title={t('visits.detail.about')} />
+      <View style={styles.card}>
+        <View style={[styles.fact, styles.rule]}>
+          <Text style={type.secondary}>{own ? t('visits.form.purpose') : t('visits.form.purposeShared')}</Text>
+          <Text style={type.body}>{visit.purpose}</Text>
+        </View>
+        {known.map((p) => (
+          <TouchableOpacity
+            key={p!._id}
+            style={[styles.product, styles.rule]}
+            onPress={() => router.push(`/products/${p!._id}`)}
+            accessibilityRole="link"
+            accessibilityLabel={t('visits.detail.openProduct', { name: productLabel(p!) })}
+          >
+            <Ionicons name="medkit-outline" size={20} color={colors.slate} />
+            <Text style={[type.body, styles.flex]}>{productLabel(p!)}</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        ))}
+        {unknownCount ? (
+          <View style={[styles.fact, styles.rule]}>
+            <Text style={type.secondary}>{t('visits.detail.productsInactive', { count: unknownCount })}</Text>
+          </View>
+        ) : null}
+        <NotesBlock visit={visit} offline={offline} onSaved={(saved) => setVisit(saved)} />
+      </View>
+
+      {showDeliveries ? (
         <View style={styles.deliveries}>
           <SectionHeader title={t('deliveries.section')} />
           {(deliveries ?? []).map((d) => (
@@ -223,77 +304,146 @@ export default function VisitDetailScreen() {
         </View>
       ) : null}
 
-      {upcoming && visit.clinicLocation ? (
-        <Button
-          title={t('home.directions')}
-          icon="navigate-outline"
-          variant="secondary"
-          onPress={() => openDirections(`${visit.clinicName}, ${visit.clinicLocation}`).catch(() => {})}
-        />
-      ) : null}
-      {problem ? <Banner message={problem} /> : null}
-      {open ? (
-        <>
-          <Button title={t('booking.move')} icon="swap-horizontal-outline" variant="secondary" onPress={() => router.push(`/visits/${visit._id}/move`)} disabled={offline} />
+      <View style={styles.foot}>
+        {own ? (
+          <Button title={t('visits.edit')} icon="create-outline" variant="secondary" onPress={() => router.push(`/visits/${visit._id}/edit`)} disabled={offline} />
+        ) : null}
+        {open ? (
           <Button title={t('booking.cancelVisit')} icon="close-circle-outline" variant="dangerOutline" onPress={confirmCancel} loading={cancelling} disabled={offline} />
-        </>
-      ) : null}
-      {own ? (
-        <Button title={t('visits.edit')} icon="create-outline" variant="secondary" onPress={() => router.push(`/visits/${visit._id}/edit`)} />
-      ) : null}
-      {!open ? (
-        <Button title={t('visits.delete')} icon="trash-outline" variant="dangerOutline" onPress={remove} disabled={offline} />
-      ) : null}
+        ) : (
+          <Button title={t('visits.delete')} icon="trash-outline" variant="dangerOutline" onPress={remove} disabled={offline} />
+        )}
+      </View>
     </ScrollView>
   );
 }
 
-function Fact({
-  icon,
-  label,
-  hint,
-  last = false,
-  children,
-}: {
-  icon: IconName;
-  label: string;
-  hint?: string;
-  last?: boolean;
-  children: React.ReactNode;
-}) {
+function Quote({ label, text, italic = false }: { label: string; text: string; italic?: boolean }) {
   return (
-    <View style={[styles.fact, last && styles.factLast]}>
-      <Ionicons name={icon} size={20} color={colors.slate} style={styles.factIcon} />
-      <View style={styles.factBody}>
-        <Text style={type.secondary}>
-          {label}
-          {hint ? (
-            <Text>
-              {' · '}
-              <Ionicons name="lock-closed-outline" size={12} color={colors.textMuted} /> {hint}
-            </Text>
-          ) : null}
-        </Text>
-        {children}
+    <View style={styles.quote} accessible accessibilityLabel={`${label}: ${text}`}>
+      <Text style={type.label}>{label}</Text>
+      <Text style={[type.body, italic && styles.italic]}>{text}</Text>
+    </View>
+  );
+}
+
+/**
+ * The rep's private notes, written in place: after a call is when they're worth writing, and a
+ * closed booking still takes notes (the server allows notes alone). Kept as typed if saving fails.
+ */
+function NotesBlock({ visit, offline, onSaved }: { visit: Visit; offline: boolean; onSaved: (saved: Visit) => void }) {
+  const t = useT();
+  const [draft, setDraft] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const notes = visit.notes?.trim() ?? '';
+  const editing = draft !== null;
+
+  async function save() {
+    if (draft === null || saving) return;
+    setSaving(true);
+    setProblem(null);
+    try {
+      const saved = await saveVisitNotes(visit, draft.trim());
+      onSaved(saved);
+      setDraft(null);
+    } catch (err) {
+      setProblem(isNetworkError(err) ? t('common.needsConnection') : errorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <View style={styles.fact}>
+      <View style={styles.notesHead}>
+        <Text style={type.secondary}>{t('visits.form.notes')}</Text>
+        <Ionicons name="lock-closed-outline" size={12} color={colors.textMuted} />
+        <Text style={type.secondary}>{t('visits.form.notesHint')}</Text>
       </View>
+      {editing ? (
+        <>
+          <TextInput
+            value={draft}
+            onChangeText={(v) => {
+              setDraft(v);
+              setProblem(null);
+            }}
+            multiline
+            autoFocus
+            maxLength={MAX_NOTES}
+            style={styles.input}
+            placeholder={t('visits.notes.empty')}
+            placeholderTextColor={colors.textMuted}
+            accessibilityLabel={t('visits.form.notes')}
+          />
+          {problem ? <Text style={styles.error}>{problem}</Text> : null}
+          <View style={styles.notesActions}>
+            <Button title={t('common.cancel')} variant="secondary" onPress={() => setDraft(null)} disabled={saving} style={styles.flex} />
+            <Button title={t('common.save')} onPress={save} loading={saving} disabled={draft.trim() === notes} style={styles.flex} />
+          </View>
+        </>
+      ) : (
+        <>
+          <Text style={[type.body, !notes && styles.mutedText]}>{notes || t('visits.notes.empty')}</Text>
+          <TouchableOpacity
+            style={[styles.link, offline && styles.disabled]}
+            onPress={() => setDraft(visit.notes ?? '')}
+            disabled={offline}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: offline }}
+          >
+            <Ionicons name={notes ? 'create-outline' : 'add-circle-outline'} size={18} color={colors.primaryOnSoft} />
+            <Text style={styles.linkText}>{notes ? t('visits.notes.edit') : t('visits.notes.add')}</Text>
+          </TouchableOpacity>
+        </>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  head: {
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
+  status: { gap: spacing.sm, marginBottom: spacing.md },
+  flex: { flex: 1 },
+  // Same navy as Home's next visit: solid fill, no shadow.
+  hero: { backgroundColor: colors.navy, borderRadius: radius.lg, padding: spacing.md + 4, marginBottom: spacing.md },
+  top: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
+  clinic: { fontSize: 22, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.2, marginTop: spacing.sm },
+  struck: { textDecorationLine: 'line-through', color: colors.onNavyMuted },
+  whenRow: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.md, rowGap: spacing.xs, marginTop: spacing.sm + 4 },
+  whenBox: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2 },
+  when: { fontSize: 15, fontWeight: '600', color: colors.primaryText },
+  // A clock time: tabular figures on the normal face (monospace spreads "14 : 30" on Android).
+  time: { fontSize: 17, fontWeight: '700', color: colors.primaryText, fontVariant: ['tabular-nums'] },
+  muted: { fontSize: 13, lineHeight: 18, color: colors.onNavyMuted },
+  place: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs + 2, marginTop: spacing.sm },
+  placeText: { flex: 1, fontSize: 14, lineHeight: 20 },
+  next: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    paddingTop: spacing.md - 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.navyLine,
   },
-  strong: { fontWeight: '600' },
-  struck: { textDecorationLine: 'line-through', color: colors.textMuted },
-  pillRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
-  next: { marginBottom: spacing.md, gap: 2 },
+  nextText: { fontSize: 15, lineHeight: 21, fontWeight: '600', color: colors.primaryText },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
+  action: {
+    flexGrow: 1,
+    flexBasis: 128,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    minHeight: 48,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+  },
+  actionPrimary: { backgroundColor: colors.primary },
+  actionGhost: { borderWidth: 1, borderColor: colors.navyLine },
+  actionText: { fontSize: 15, fontWeight: '600', color: colors.primaryText },
+  disabled: { opacity: 0.5 },
   quote: {
     borderLeftWidth: 3,
     borderLeftColor: colors.slate,
@@ -303,25 +453,38 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     gap: spacing.xs,
   },
-  quoteText: { fontStyle: 'italic' },
-  facts: {
+  italic: { fontStyle: 'italic' },
+  card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
+    overflow: 'hidden',
   },
-  fact: {
-    flexDirection: 'row',
-    gap: spacing.sm + 4,
-    paddingVertical: spacing.sm + 4,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+  padded: { padding: spacing.md },
+  rule: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  fact: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 4, gap: 2 },
+  product: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 4, minHeight: 48, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  notesHead: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' },
+  mutedText: { color: colors.textMuted },
+  link: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2, minHeight: 44, alignSelf: 'flex-start' },
+  linkText: { fontSize: 15, fontWeight: '600', color: colors.primaryOnSoft },
+  input: {
+    minHeight: 112,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md - 4,
+    paddingVertical: spacing.sm + 2,
+    fontSize: 15,
+    color: colors.text,
+    textAlignVertical: 'top',
+    marginTop: spacing.xs,
   },
-  factIcon: { marginTop: 1 },
-  factBody: { flex: 1, gap: 2 },
-  factLast: { borderBottomWidth: 0 },
-  muted: { color: colors.textMuted },
-  deliveries: { marginTop: spacing.md, marginBottom: spacing.sm, gap: spacing.xs },
+  error: { fontSize: 13, color: colors.danger, marginTop: spacing.xs },
+  notesActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  deliveries: { marginBottom: spacing.sm, gap: spacing.xs },
+  foot: { gap: spacing.sm, marginTop: spacing.md },
 });

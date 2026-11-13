@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from 'expo-router';
+import { usePreventRemove } from 'expo-router/react-navigation';
 import { errorMessage } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/lib/theme';
@@ -44,7 +46,9 @@ export function ProductForm({
   onSubmit: (input: ProductInput) => Promise<void>;
 }) {
   const t = useT();
-  const [form, setForm] = useState<FormState>(() => initial(product));
+  const navigation = useNavigation();
+  const [start] = useState<FormState>(() => initial(product));
+  const [form, setForm] = useState<FormState>(start);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   // State lags a frame: two taps in one frame must not save twice.
@@ -61,11 +65,21 @@ export function ProductForm({
   const packGiven = !!(form.packCount.trim() || form.packUnit.trim());
   const packValid = /^\d+$/.test(form.packCount.trim()) && Number(form.packCount) >= 1 && Number(form.packCount) <= 10000 && !!form.packUnit.trim();
   const packError = submitted && packGiven && !packValid ? t('products.form.packSizeInvalid') : null;
+  const incomplete = REQUIRED.some((k) => !form[k].trim()) || !form.expiryDate || (packGiven && !packValid);
+
+  // Back or a swipe shouldn't silently drop typed changes. Off while saving: the screen leaves on success.
+  const dirty = (Object.keys(form) as (keyof FormState)[]).some((k) => form[k] !== start[k]);
+  usePreventRemove(dirty && !saving, ({ data }) => {
+    Alert.alert(t('products.form.discardTitle'), t('products.form.discardBody'), [
+      { text: t('products.form.keepEditing'), style: 'cancel' },
+      { text: t('products.form.discard'), style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+    ]);
+  });
 
   async function save() {
     if (savingRef.current) return;
     setSubmitted(true);
-    if (REQUIRED.some((k) => !form[k].trim()) || !form.expiryDate || (packGiven && !packValid)) return;
+    if (incomplete) return;
     savingRef.current = true;
     setSaving(true);
     setError(null);
@@ -107,7 +121,6 @@ export function ProductForm({
   return (
     <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={96}>
       <ScrollView contentContainerStyle={[screenStyles.content, { paddingBottom }]} keyboardShouldPersistTaps="handled">
-        {error ? <Banner message={error} /> : null}
         {text('name', t('products.form.name'))}
         {text('strength', t('products.form.strength'), { optional: true, hint: t('products.form.strengthHint') })}
         {text('dosage', t('products.form.dosage'), { optional: true, hint: t('products.form.dosageHint') })}
@@ -147,6 +160,13 @@ export function ProductForm({
           value={form.status}
           onChange={(v) => set('status', v)}
         />
+        {/* Next to Save, where the rep is looking when it fails (the top of the form is off screen). */}
+        {error ? <Banner message={error} /> : null}
+        {submitted && incomplete ? (
+          <Text style={[type.secondary, styles.fixAbove]} accessibilityLiveRegion="polite">
+            {t('products.form.fixAbove')}
+          </Text>
+        ) : null}
         <Button title={submitLabel} onPress={save} loading={saving} />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -160,4 +180,5 @@ const styles = StyleSheet.create({
   packUnit: { flexBasis: 160, flexGrow: 2 },
   packHint: { marginTop: -spacing.sm, marginBottom: spacing.md },
   packError: { color: colors.danger },
+  fixAbove: { color: colors.danger, marginBottom: spacing.sm },
 });

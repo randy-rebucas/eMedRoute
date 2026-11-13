@@ -4,8 +4,10 @@ import { useT } from '@/lib/i18n';
 import { Illustration } from './Illustration';
 import { useAnnounce } from './ui';
 
-export function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+/** `actionLabel`: the button's words when it doesn't retry (e.g. "Go back"); default "Try again". */
+export function ErrorState({ message, onRetry, actionLabel }: { message: string; onRetry: () => void; actionLabel?: string }) {
   const t = useT();
+  const label = actionLabel ?? t('common.tryAgain');
   useAnnounce(message);
   return (
     <View style={styles.container}>
@@ -13,8 +15,8 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry: () 
       <Text style={styles.text} accessibilityRole="alert" accessibilityLiveRegion="polite">
         {message}
       </Text>
-      <TouchableOpacity style={styles.button} onPress={onRetry} accessibilityRole="button" accessibilityLabel={t('common.tryAgain')}>
-        <Text style={styles.buttonText}>{t('common.tryAgain')}</Text>
+      <TouchableOpacity style={styles.button} onPress={onRetry} accessibilityRole="button" accessibilityLabel={label}>
+        <Text style={styles.buttonText}>{label}</Text>
       </TouchableOpacity>
     </View>
   );

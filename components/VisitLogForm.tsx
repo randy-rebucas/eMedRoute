@@ -18,6 +18,11 @@ import { Banner, Button, screenStyles, useBottomPadding } from './ui';
 const MAX = { clinicName: 200, clinicLocation: 300, purpose: 500, notes: 2000 } as const;
 const DURATIONS = [15, 30, 45, 60, 90, 120];
 
+/** The chips, plus a saved length that isn't one of them (e.g. 20 min), so one is always selected. */
+export function durationsWith(current: number): number[] {
+  return DURATIONS.includes(current) || !current ? DURATIONS : [...DURATIONS, current].sort((a, b) => a - b);
+}
+
 interface FormState {
   clinicName: string;
   clinicLocation: string;
@@ -127,7 +132,6 @@ export function VisitLogForm({
     <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={96}>
       <ScrollView contentContainerStyle={[screenStyles.content, { paddingBottom }]} keyboardShouldPersistTaps="handled">
         {!visit ? <Text style={[type.secondary, styles.intro]}>{t('visits.form.logIntro')}</Text> : null}
-        {error ? <Banner message={error} /> : null}
 
         <ClinicLinkField
           value={form.linked}
@@ -169,7 +173,7 @@ export function VisitLogForm({
         <TimeField label={t('visits.form.time')} value={form.time} onChange={(v) => set('time', v)} error={required('time')} />
         <ChoiceChips
           label={t('visits.form.length')}
-          options={DURATIONS.map((m) => ({ value: m, label: t('visits.minutes', { minutes: m }) }))}
+          options={durationsWith(form.duration).map((m) => ({ value: m, label: t('visits.minutes', { minutes: m }) }))}
           value={form.duration}
           onChange={(v) => set('duration', v)}
         />
@@ -205,6 +209,8 @@ export function VisitLogForm({
           hint={t('visits.form.notesHint')}
           multiline
         />
+        {/* Next to Save, where the rep's eyes are when it fails (it was at the top, off screen). */}
+        {error ? <Banner message={error} /> : null}
         <Button title={submitLabel} onPress={save} loading={saving} />
       </ScrollView>
     </KeyboardAvoidingView>

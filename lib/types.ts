@@ -11,6 +11,8 @@ export interface RepSummary {
   name: string;
   company: string;
   email: string;
+  /** From the profile (a small JPEG data URI); not in the sign-in response, so it fills in after /session. */
+  profileImage?: string | null;
 }
 
 /** POST /auth/token and POST /auth/2fa. */
@@ -40,6 +42,8 @@ export interface RepProfile {
   profileImage?: string | null;
   status: RepStatus;
   isActivated?: boolean;
+  /** Set when the mobile number was proven by a texted code; sign-in codes go only to a verified number. Saving a new number clears it. */
+  phoneVerifiedAt?: string | null;
   /** Default true on the server. */
   notificationsEnabled?: boolean;
   /** Default true on the server. */
@@ -155,6 +159,23 @@ export interface Clinic {
   maxAdvanceDays: number;
   /** Shown to reps when they book: where to go, what to bring. */
   instructions: string | null;
+  /** The rep's latest completed visit here, "YYYY-MM-DD"; null if none. Missing from older servers. */
+  lastVisit?: string | null;
+  /** The rep's soonest requested or scheduled visit here from today on. Missing from older servers. */
+  nextVisit?: { date: string; time: string } | null;
+}
+
+/** GET /products?summary=1: the rep's active products by days left (Manila days). */
+export interface ProductExpiry {
+  expired: number;
+  /** Today … 30 days. */
+  soon: number;
+  /** 31–90 days. */
+  quarter: number;
+  /** 91–180 days. */
+  half: number;
+  /** After 180 days. */
+  later: number;
 }
 
 export interface Slot {
@@ -314,7 +335,7 @@ export interface Dashboard {
     /** Clinic bookings from today on that the clinic hasn't answered. */
     pendingRequests: number;
     activeProducts: number;
-    /** Active products that expire within 30 days. */
+    /** Active products already expired or expiring within 30 days (older servers: expiring only). */
     expiringProducts: number;
     openSupportRequests: number;
   };
@@ -322,6 +343,27 @@ export interface Dashboard {
   nextVisits: DashboardVisit[];
   /** Every scheduled visit today (Manila day), by time, for the route. Missing from older servers. */
   todayVisits?: DashboardVisit[];
+  /** The last 8 Monday-start weeks, oldest first, this week last. Missing from older servers. */
+  weeklyVisits?: WeeklyVisits[];
+}
+
+/** GET /visits?summary=1: outcome counts for the filters, ignoring `status`. */
+export interface VisitOutcomes {
+  done: number;
+  /** No-show or declined. */
+  notSeen: number;
+  cancelled: number;
+  /** Still requested or scheduled on a day before today: never closed. */
+  open: number;
+}
+
+/** One week of Home's visit chart. Cancelled, declined and no-show visits aren't counted. */
+export interface WeeklyVisits {
+  /** The week's Monday, "YYYY-MM-DD". */
+  week: string;
+  completed: number;
+  /** Requested or scheduled: booked but not done (yet). */
+  open: number;
 }
 
 /** POST /change-password with Bearer auth: a new token pair for this device. */

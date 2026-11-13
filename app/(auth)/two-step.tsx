@@ -5,7 +5,7 @@ import { ApiError } from '@/lib/api';
 import { clearPendingTwoFactor, getPendingTwoFactor, PENDING_2FA_TTL_MS, useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/lib/theme';
-import { mono, type } from '@/lib/typography';
+import { type } from '@/lib/typography';
 import { Button } from '@/components/ui';
 import { AuthHeader, AuthScreen, classifyAuthError, IconBadge, InlineError, OtpInput, StatusScreen } from '@/components/auth';
 
@@ -101,7 +101,7 @@ export default function TwoStepScreen() {
         style={[type.secondary, styles.timer]}
         accessibilityLabel={t('auth.twoStep.expiresInA11y', { minutes, seconds: secondsLeft % 60 })}
       >
-        {t('auth.twoStep.expiresIn')} <Text style={mono}>{`${minutes}:${seconds}`}</Text>
+        {t('auth.twoStep.expiresIn', { time: `${minutes}:${seconds}` })}
       </Text>
     </AuthScreen>
   );
@@ -109,5 +109,6 @@ export default function TwoStepScreen() {
 
 const styles = StyleSheet.create({
   error: { color: colors.danger, fontSize: 14, textAlign: 'center', marginTop: -spacing.sm, marginBottom: spacing.sm },
-  timer: { textAlign: 'center', marginTop: spacing.md },
+  // Tabular figures on the normal face: monospace spreads a clock time ("4 : 59") on Android.
+  timer: { textAlign: 'center', marginTop: spacing.md, fontVariant: ['tabular-nums'] },
 });

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { apiFetch, ApiError, apiRequest, errorMessage, query } from './api';
 import { emitRefresh } from './events';
-import { addDays, clinicTodayYmd } from './format';
+import { addDays, clinicHhmm, clinicTodayYmd } from './format';
 import { BookingInput, Clinic, ClinicSlots, Visit } from './types';
 import { useApiData } from './useApiData';
 import { usePaginatedList } from './usePaginatedList';
@@ -54,6 +54,8 @@ export function useClinics(search: string, all = false) {
   const list = usePaginatedList<Clinic>(CLINICS_PATH + query({ search: search.trim() || undefined, scope: all ? 'all' : undefined }), {
     limit: 50,
     refreshOn: ['clinics'],
+    // The directory and its rep hours still read offline; booking itself needs the connection.
+    offline: true,
   });
   const gone = useDropped();
   const items = useMemo(() => {
@@ -124,6 +126,40 @@ export function parseHours(hours: string[]): HoursWindow[] {
     if (m) out.push({ dayOfWeek: DAY_INDEX[m[1]], start: m[2], end: m[3] });
   }
   return out;
+}
+
+/** 0 = Sunday … 6 = Saturday, for a "YYYY-MM-DD" day. */
+export const weekdayOf = (day: string) => new Date(`${day}T00:00:00.000Z`).getUTCDay();
+
+/** A clinic is "due a visit" when the rep's last completed one is older than this, and none is booked. */
+export const DUE_AFTER_DAYS = 30;
+
+/**
+ * The clinic's next rep-hours window that hasn't ended yet, on the clinic's clock: today's if one
+ * is still open or to come, else the first one in the next seven days. Null without hours.
+ */
+export function nextHours(hours: string[], now: Date = new Date()): { day: string; start: string; end: string } | null {
+  const windows = parseHours(hours);
+  if (!windows.length) return null;
+  const today = clinicTodayYmd();
+  const time = clinicHhmm(now);
+  for (let i = 0; i <= 7; i++) {
+    const day = addDays(today, i);
+    const open = windows
+      .filter((w) => w.dayOfWeek === weekdayOf(day) && (i > 0 || w.end > time))
+      .sort((a, b) => a.start.localeCompare(b.start));
+    if (open.length) return { day, start: open[0].start, end: open[0].end };
+  }
+  return null;
+}
+
+/** The clinic's rep hours on one day, "15:00–17:00, 18:00–19:00" (earliest first); "" when none. */
+export function hoursOn(hours: string[], day: string): string {
+  return parseHours(hours)
+    .filter((w) => w.dayOfWeek === weekdayOf(day))
+    .sort((a, b) => a.start.localeCompare(b.start))
+    .map((w) => `${w.start}–${w.end}`)
+    .join(', ');
 }
 
 export interface BookingDay {

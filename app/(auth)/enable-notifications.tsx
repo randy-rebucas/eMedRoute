@@ -1,24 +1,20 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { Redirect, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/lib/auth';
 import { registerForPushNotifications, shouldAskForNotifications } from '@/lib/push';
-import { colors, radius, spacing } from '@/lib/theme';
+import { spacing } from '@/lib/theme';
 import { type } from '@/lib/typography';
-import { Button, IconName, LoadingView } from '@/components/ui';
-import { AuthHeader, AuthScreen, TextLink, useBlockHardwareBack } from '@/components/auth';
+import { RowGroup } from '@/components/forms';
+import { photos } from '@/components/Photo';
+import { PushBringsRows } from '@/components/PushBrings';
+import { Button, LoadingView } from '@/components/ui';
+import { AuthBand, AuthScreen, TextLink, useBlockHardwareBack } from '@/components/auth';
 import { useT } from '@/lib/i18n';
 
-const BENEFITS: { icon: IconName; key: 'auth.notify.answers' | 'auth.notify.visitDay' | 'auth.notify.reminders' | 'auth.notify.team' }[] = [
-  { icon: 'checkmark-circle-outline', key: 'auth.notify.answers' },
-  { icon: 'log-in-outline', key: 'auth.notify.visitDay' },
-  { icon: 'alarm-outline', key: 'auth.notify.reminders' },
-  { icon: 'people-outline', key: 'auth.notify.team' },
-];
-
 /**
- * Says what the rep will receive before the OS permission dialog. Every fresh sign-in passes
+ * Says what the rep will receive before the OS permission dialog: a photo band with the ask, then
+ * the same list of what push carries as Settings (`PushBringsRows`). Every fresh sign-in passes
  * through here; it skips straight to Home once the OS has been asked.
  */
 export default function EnableNotificationsScreen() {
@@ -62,33 +58,16 @@ export default function EnableNotificationsScreen() {
         </>
       }
     >
-      <AuthHeader title={t('auth.notify.title')} subtitle={t('auth.notify.subtitle')} />
-      <View style={styles.list}>
-        {BENEFITS.map((b) => (
-          <View key={b.key} style={styles.item}>
-            <View style={styles.icon}>
-              <Ionicons name={b.icon} size={22} color={colors.primaryOnSoft} />
-            </View>
-            <Text style={[type.body, styles.itemText]}>{t(b.key)}</Text>
-          </View>
-        ))}
-      </View>
-      <Text style={type.secondary}>{t('auth.notify.later')}</Text>
+      <AuthBand source={photos.requestSent} title={t('auth.notify.title')} line={t('auth.notify.subtitle')} height={220} scrimTop={0.7} />
+      <RowGroup title={t('settings.brings')}>
+        <PushBringsRows />
+      </RowGroup>
+      <Text style={[type.secondary, styles.later]}>{t('auth.notify.later')}</Text>
     </AuthScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  list: { gap: spacing.md, marginBottom: spacing.lg },
-  item: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  icon: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  itemText: { flex: 1 },
+  later: { marginTop: -spacing.sm },
   notNow: { alignSelf: 'center' },
 });

@@ -1,6 +1,7 @@
 import { ReactNode, useCallback, useRef, useState } from 'react';
 import {
   BackHandler,
+  ImageSourcePropType,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -21,6 +22,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ApiError } from '@/lib/api';
 import { colors, radius, spacing } from '@/lib/theme';
 import { t as translate, useT } from '@/lib/i18n';
+import { BrandLogo } from './BrandLogo';
+import { ScrimPhoto } from './Photo';
 import { Button, IconName, useAnnounce } from './ui';
 
 // Building blocks for the signed-out and onboarding screens, so they share
@@ -65,6 +68,42 @@ export function AuthScreen({
         {footer ? <View style={styles.footer}>{footer}</View> : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * The sign-in screens' first impression: a bundled photo under the navy scrim, the wordmark at the
+ * top, and the screen's title and line on the scrim's dark foot (never on the photo's light part).
+ */
+export function AuthBand({
+  source,
+  title,
+  line,
+  height = 176,
+  scrimTop = 0.62,
+}: {
+  source: ImageSourcePropType;
+  /** Set when the band carries the screen's heading (then it's the header for screen readers). */
+  title?: string;
+  line: string;
+  height?: number;
+  /** Raise for a light photo, so nothing on it crosses a bright patch. */
+  scrimTop?: number;
+}) {
+  return (
+    <ScrimPhoto source={source} style={[styles.band, { minHeight: height }]} top={scrimTop} bottom={0.96}>
+      <View style={styles.bandInner}>
+        <BrandLogo size="sm" align="left" tone="onNavy" />
+        <View style={styles.bandText}>
+          {title ? (
+            <Text style={styles.bandTitle} accessibilityRole="header">
+              {title}
+            </Text>
+          ) : null}
+          <Text style={title ? styles.bandLine : styles.bandLead}>{line}</Text>
+        </View>
+      </View>
+    </ScrimPhoto>
   );
 }
 
@@ -361,6 +400,12 @@ const TONES: Record<Tone, { bg: string; fg: string }> = {
 };
 
 const styles = StyleSheet.create({
+  band: { borderRadius: radius.lg, marginBottom: spacing.lg },
+  bandInner: { flex: 1, justifyContent: 'space-between', padding: spacing.md + 4, gap: spacing.lg },
+  bandText: { gap: spacing.xs },
+  bandTitle: { fontSize: 24, lineHeight: 30, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.3 },
+  bandLine: { fontSize: 15, lineHeight: 21, color: colors.onNavyMuted },
+  bandLead: { fontSize: 18, lineHeight: 24, fontWeight: '700', color: colors.primaryText },
   flex: { flex: 1 },
   screen: { flex: 1, backgroundColor: colors.surface },
   back: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, alignSelf: 'flex-start' },

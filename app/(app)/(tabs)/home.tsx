@@ -1,30 +1,42 @@
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/lib/auth';
 import { useDashboard } from '@/lib/dashboard';
-import { clinicTodayYmd, formatDate } from '@/lib/format';
+import { clinicHhmm, clinicTodayYmd, formatDate } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { bookingBlocked, useSubscription } from '@/lib/plan';
 import { todaysStops } from '@/lib/route';
 import { useTeam } from '@/lib/team';
+import { colors, radius, spacing } from '@/lib/theme';
 import { DashboardVisit } from '@/lib/types';
+import { type } from '@/lib/typography';
 import { usePendingDeletes } from '@/lib/undo';
 import { visitDay } from '@/lib/visits';
-import { useT } from '@/lib/i18n';
-import { colors, radius, spacing } from '@/lib/theme';
-import { Ionicons } from '@expo/vector-icons';
-import { mono, type } from '@/lib/typography';
 import { AppHeader } from '@/components/AppHeader';
-import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { SkeletonRows, ThinProgress } from '@/components/Loading';
+import { MonthLedger } from '@/components/MonthLedger';
 import { NextVisitCard } from '@/components/NextVisitCard';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { photos, ScrimPhoto } from '@/components/Photo';
 import { TodayRoute } from '@/components/TodayRoute';
-import { IconName, IconTile, screenStyles, SectionHeader } from '@/components/ui';
+import { IconName, screenStyles, SectionHeader } from '@/components/ui';
 import { VisitRow } from '@/components/VisitRow';
+import { WeeklyVisitsChart } from '@/components/WeeklyVisitsChart';
 
-/** Home: the next visit first, then today's route, quick actions, this month's counts and the rest of the upcoming visits. */
+/** Morning until noon, afternoon until six, then evening, on the clinic's clock. */
+function partOfDay(): 'morning' | 'afternoon' | 'evening' {
+  const hour = Number(clinicHhmm(Date.now()).slice(0, 2));
+  return hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+}
+
+/**
+ * Home, top to bottom: the day (greeting over a clinic photo, with today's stop count), the next
+ * visit, today's route, the two shortcuts, this month's progress and what needs the rep, the last
+ * eight weeks of visits, and the rest of what's coming up.
+ */
 export default function HomeScreen() {
   const { rep } = useAuth();
   const t = useT();
@@ -36,11 +48,30 @@ export default function HomeScreen() {
   const pending = usePendingDeletes();
   const shown = (visits: DashboardVisit[]) => visits.filter((v) => !pending.has(v._id));
   const [next, ...later] = shown(data?.nextVisits ?? []).filter((v) => visitDay(v) >= today);
-  const stops = todaysStops(shown(data?.todayVisits ?? data?.nextVisits ?? []));
+  const todays = shown(data?.todayVisits ?? data?.nextVisits ?? [])
+    .filter((v) => visitDay(v) === today)
+    .sort((a, b) => a.time.localeCompare(b.time));
+  const stops = todaysStops(todays);
   const { data: team } = useTeam();
   const { data: sub } = useSubscription();
   const invite = team && !team.team ? team.invite : null;
   const seeUpcoming = () => router.push({ pathname: '/visits', params: { segment: 'upcoming' } });
+  const weeks = data?.weeklyVisits;
+  const hasTrend = !!weeks?.length && weeks.some((w) => w.completed + w.open > 0);
+
+  const part = partOfDay();
+  const greeting = firstName
+    ? part === 'morning'
+      ? t('home.greeting.morning', { name: firstName })
+      : part === 'afternoon'
+        ? t('home.greeting.afternoon', { name: firstName })
+        : t('home.greeting.evening', { name: firstName })
+    : t(part === 'morning' ? 'home.greeting.morningNoName' : part === 'afternoon' ? 'home.greeting.afternoonNoName' : 'home.greeting.eveningNoName');
+  const dayLine = data
+    ? todays.length
+      ? t('home.day.stops', { count: todays.length, time: todays[0].time })
+      : t('home.day.none')
+    : null;
 
   return (
     <SafeAreaView style={screenStyles.container} edges={['top']}>
@@ -49,10 +80,34 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />}
       >
         <AppHeader />
-        <Text style={styles.date}>{formatDate(Date.now(), { weekday: 'long', month: 'long', day: 'numeric' })}</Text>
-        <Text style={[type.screenTitle, styles.greeting]} accessibilityRole="header">
-          {firstName ? t('home.greeting', { name: firstName }) : t('home.greetingNoName')}
-        </Text>
+
+        <ScrimPhoto source={photos.clinicLobby} style={styles.band} top={0.35} bottom={0.94}>
+          <View style={styles.bandInner}>
+            <View style={styles.bandTop}>
+              <Text style={styles.bandDate}>{formatDate(Date.now(), { weekday: 'long', month: 'long', day: 'numeric' })}</Text>
+              {data?.profile.territory ? (
+                <View style={styles.territory}>
+                  <Ionicons name="location" size={12} color={colors.primaryText} />
+                  <Text style={styles.territoryText} numberOfLines={1}>
+                    {data.profile.territory}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+            <View>
+              <Text style={styles.greeting} accessibilityRole="header">
+                {greeting}
+              </Text>
+              {dayLine ? (
+                <View style={styles.dayLine}>
+                  <View style={[styles.dayDot, !todays.length && styles.dayDotIdle]} />
+                  <Text style={styles.dayText}>{dayLine}</Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
+        </ScrimPhoto>
+
         <ThinProgress active={stale && !offline} />
         <OfflineBanner offline={offline} updatedAt={updatedAt} subject={t('home.offlineSubject')} />
         {invite ? (
@@ -75,48 +130,38 @@ export default function HomeScreen() {
           )
         ) : (
           <>
-            {next ? (
-              <NextVisitCard visit={next} />
-            ) : (
-              <View style={styles.empty}>
-                <EmptyState art="calendar" title={t('home.noNextVisit')} hint={t('home.noNextVisitHint')} />
-              </View>
-            )}
+            {next ? <NextVisitCard visit={next} /> : <NoVisitCard />}
 
             {stops.length >= 2 ? <TodayRoute stops={stops} /> : null}
 
             <View style={styles.quick}>
-              <QuickAction icon="business-outline" label={t('home.quick.book')} onPress={() => router.push('/clinics')} />
-              <QuickAction icon="create-outline" label={t('home.quick.log')} onPress={() => router.push('/visits/log')} />
+              <PhotoAction
+                photo={photos.doctorMeeting}
+                icon="business-outline"
+                label={t('home.quick.book')}
+                hint={t('home.quick.bookHint')}
+                onPress={() => router.push('/clinics')}
+              />
+              <PhotoAction
+                photo={photos.visitNotes}
+                icon="create-outline"
+                label={t('home.quick.log')}
+                hint={t('home.quick.logHint')}
+                onPress={() => router.push('/visits/log')}
+              />
             </View>
 
-            <View style={styles.counts}>
-              <Count
-                icon="calendar-outline"
-                value={data.stats.visitsThisMonth}
-                label={t('home.count.thisMonth')}
-                progress={
-                  data.stats.visitsThisMonth > 0
-                    ? { done: data.stats.completedThisMonth, total: data.stats.visitsThisMonth, label: t('home.count.completed', { done: data.stats.completedThisMonth, total: data.stats.visitsThisMonth }) }
-                    : undefined
-                }
-                onPress={() => router.push({ pathname: '/visits', params: { segment: 'past', range: 'thisMonth' } })}
-              />
-              <Count
-                icon="hourglass-outline"
-                value={data.stats.pendingRequests}
-                label={t('home.count.waiting')}
-                tone={data.stats.pendingRequests > 0 ? 'warning' : undefined}
-                onPress={seeUpcoming}
-              />
-              <Count
-                icon="time-outline"
-                value={data.stats.expiringProducts}
-                label={t('home.count.expiring')}
-                tone={data.stats.expiringProducts > 0 ? 'warning' : undefined}
-                onPress={() => router.push('/products')}
-              />
-            </View>
+            <MonthLedger
+              visits={data.stats.visitsThisMonth}
+              completed={data.stats.completedThisMonth}
+              waiting={data.stats.pendingRequests}
+              expiring={data.stats.expiringProducts}
+              onVisits={() => router.push({ pathname: '/visits', params: { segment: 'past', range: 'thisMonth', outcome: 'done' } })}
+              onWaiting={seeUpcoming}
+              onExpiring={() => router.push({ pathname: '/products', params: { filter: 'expiring' } })}
+            />
+
+            {hasTrend ? <WeeklyVisitsChart weeks={weeks!} /> : null}
 
             {later.length ? (
               <>
@@ -136,6 +181,21 @@ export default function HomeScreen() {
   );
 }
 
+/** No visit coming up: a photo card that says so (the Book a clinic shortcut sits right below it). */
+function NoVisitCard() {
+  const t = useT();
+  return (
+    <ScrimPhoto source={photos.handshake} style={styles.noVisit} top={0.35} bottom={0.96}>
+      <View style={styles.noVisitInner}>
+        <Text style={styles.noVisitTitle} accessibilityRole="header">
+          {t('home.noNextVisit')}
+        </Text>
+        <Text style={styles.noVisitHint}>{t('home.noNextVisitHint')}</Text>
+      </View>
+    </ScrimPhoto>
+  );
+}
+
 /** A banner that asks for something: a team invite, or booking that needs a plan. */
 function Notice({ icon, text, action, onPress }: { icon: IconName; text: string; action: string; onPress: () => void }) {
   return (
@@ -147,91 +207,78 @@ function Notice({ icon, text, action, onPress }: { icon: IconName; text: string;
   );
 }
 
-/** One of Home's two shortcuts: the rep's most common jobs, one tap away. */
-function QuickAction({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
-  return (
-    <TouchableOpacity style={styles.quickAction} onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
-      <IconTile icon={icon} tone="primary" size={36} />
-      <Text style={styles.quickLabel}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-function Count({
+/** One of Home's two shortcuts, on a photo of the job it starts. */
+function PhotoAction({
+  photo,
   icon,
-  value,
   label,
-  tone,
-  progress,
+  hint,
   onPress,
 }: {
+  photo: (typeof photos)[keyof typeof photos];
   icon: IconName;
-  value: number;
   label: string;
-  tone?: 'warning';
-  progress?: { done: number; total: number; label: string };
+  hint: string;
   onPress: () => void;
 }) {
-  const a11y = progress ? `${value} ${label}, ${progress.label}` : `${value} ${label}`;
   return (
-    <TouchableOpacity style={styles.count} onPress={onPress} accessibilityRole="button" accessibilityLabel={a11y}>
-      <IconTile icon={icon} tone={tone ?? 'slate'} size={32} />
-      <Text style={[mono, styles.countValue, tone === 'warning' && styles.countWarning]} maxFontSizeMultiplier={1.6}>
-        {value}
-      </Text>
-      <Text style={type.secondary}>{label}</Text>
-      {progress ? (
-        <View style={styles.bar}>
-          <View style={[styles.barFill, { width: `${Math.min(100, Math.round((progress.done / progress.total) * 100))}%` }]} />
+    <TouchableOpacity style={styles.quickAction} onPress={onPress} accessibilityRole="button" accessibilityLabel={label} accessibilityHint={hint} activeOpacity={0.85}>
+      <ScrimPhoto source={photo} style={styles.quickPhoto} top={0.1} bottom={0.95}>
+        <View style={styles.quickInner}>
+          <View style={styles.quickIcon}>
+            <Ionicons name={icon} size={18} color={colors.primaryText} />
+          </View>
+          <View>
+            <Text style={styles.quickLabel}>{label}</Text>
+            <Text style={styles.quickHint} numberOfLines={2}>
+              {hint}
+            </Text>
+          </View>
         </View>
-      ) : null}
+      </ScrimPhoto>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  date: { ...type.secondary, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 },
-  greeting: { marginTop: 2, marginBottom: spacing.sm },
-  empty: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  quick: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
-  quickAction: {
-    flexGrow: 1,
-    flexBasis: 140,
+  band: { minHeight: 176, borderRadius: radius.lg, marginBottom: spacing.md },
+  bandInner: { flex: 1, justifyContent: 'space-between', padding: spacing.md + 4, gap: spacing.lg },
+  bandTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  bandDate: { ...type.pill, flexShrink: 1, color: colors.primaryText, textTransform: 'uppercase', letterSpacing: 0.8 },
+  territory: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm + 4,
-    minHeight: 56,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.sm + 4,
-    paddingVertical: spacing.sm,
+    gap: 4,
+    maxWidth: '50%',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
+    backgroundColor: colors.primary,
   },
-  quickLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: colors.text },
-  counts: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
-  count: {
-    flexGrow: 1,
-    flexBasis: 96,
-    minHeight: 72,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.sm + 4,
-    gap: 2,
+  territoryText: { fontSize: 12, fontWeight: '600', color: colors.primaryText },
+  greeting: { fontSize: 26, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.4 },
+  dayLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs + 2 },
+  dayDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent },
+  dayDotIdle: { backgroundColor: colors.onNavyMuted },
+  dayText: { fontSize: 13, color: colors.onNavyMuted },
+  noVisit: { minHeight: 184, borderRadius: radius.lg, marginBottom: spacing.md },
+  noVisitInner: { flex: 1, justifyContent: 'flex-end', padding: spacing.md + 4 },
+  noVisitTitle: { fontSize: 20, fontWeight: '700', color: colors.primaryText },
+  noVisitHint: { fontSize: 14, lineHeight: 20, color: colors.onNavyMuted, marginTop: spacing.xs },
+  quick: { flexDirection: 'row', gap: spacing.sm + 4, marginBottom: spacing.md },
+  quickAction: { flex: 1 },
+  quickPhoto: { minHeight: 148, borderRadius: radius.lg },
+  quickInner: { flex: 1, justifyContent: 'space-between', padding: spacing.sm + 6 },
+  quickIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.sm,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  countValue: { fontSize: 24, fontWeight: '700', color: colors.text, marginTop: spacing.sm },
-  countWarning: { color: colors.warning },
-  bar: { height: 4, borderRadius: 2, backgroundColor: colors.slateSoft, marginTop: spacing.sm, overflow: 'hidden' },
-  barFill: { height: 4, borderRadius: 2, backgroundColor: colors.slate },
+  quickLabel: { fontSize: 16, fontWeight: '700', color: colors.primaryText },
+  quickHint: { fontSize: 12, lineHeight: 16, color: colors.onNavyMuted, marginTop: 2 },
   notice: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -240,7 +287,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.warningSoft,
     borderRadius: radius.md,
     padding: spacing.sm + 4,
-    marginTop: spacing.sm,
     marginBottom: spacing.sm,
   },
   noticeText: { flex: 1 },

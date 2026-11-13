@@ -13,7 +13,8 @@ export default defineStrings({
     confirm: 'Type the new password again',
     mismatch: 'The two passwords don’t match.',
     save: 'Change password',
-    changed: 'Password changed. Your other devices are signed out.',
+    doneTitle: 'Password changed',
+    changed: 'Your other devices are signed out. Use the new password next time you sign in with a password.',
   },
   fil: {
     intro: 'Kapag pinalitan mo ang password, masa-sign out ka sa lahat ng iba mong device.',
@@ -26,6 +27,7 @@ export default defineStrings({
     confirm: 'I-type ulit ang bagong password',
     mismatch: 'Hindi magkapareho ang dalawang password.',
     save: 'Palitan ang password',
-    changed: 'Napalitan na ang password. Na-sign out na ang iba mong device.',
+    doneTitle: 'Napalitan na ang password',
+    changed: 'Na-sign out na ang iba mong device. Gamitin ang bagong password sa susunod na mag-sign in ka gamit ang password.',
   },
 });

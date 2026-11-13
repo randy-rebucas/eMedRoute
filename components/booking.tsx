@@ -81,7 +81,7 @@ export function SlotGrid({ slots, value, onChange }: { slots: Slot[]; value: str
               accessibilityState={{ selected, disabled: full }}
               accessibilityLabel={`${s.time}, ${full ? t('booking.full') : t('booking.seatsLeftA11y', { count: s.remaining })}`}
             >
-              <Text style={[mono, styles.slotTime, selected && styles.onPrimary, full && styles.closedText]}>{s.time}</Text>
+              <Text style={[styles.slotTime, selected && styles.onPrimary, full && styles.closedText]}>{s.time}</Text>
               <Text style={[styles.slotSeats, selected && styles.onPrimary, full && styles.closedText]}>{seats}</Text>
             </TouchableOpacity>
           </View>
@@ -123,6 +123,7 @@ const styles = StyleSheet.create({
   },
   slotSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   slotFull: { backgroundColor: colors.background },
-  slotTime: { fontSize: 17, fontWeight: '700', color: colors.text },
+  // Tabular figures on the normal face: Android's monospace spreads clock times ("14 : 30").
+  slotTime: { fontSize: 17, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
   slotSeats: { ...type.pill, color: colors.textMuted },
 });

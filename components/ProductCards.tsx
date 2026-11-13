@@ -6,7 +6,7 @@ import { PlainKey, TFunction, useT } from '@/lib/i18n';
 import { expiryState, ExpiryState } from '@/lib/products';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Product, ProductStatus } from '@/lib/types';
-import { mono, type } from '@/lib/typography';
+import { type } from '@/lib/typography';
 import { productLabel } from './ProductPicker';
 import { IconName, IconTile } from './ui';
 
@@ -28,22 +28,6 @@ export function expiryWords(t: TFunction, expiryDate: string): string {
   return days > 0 ? t('products.expiresIn', { count: days }) : t('products.expiredAgo', { count: -days });
 }
 
-/** Expiring-soon (amber) or expired (red) badge, in words with an icon; nothing when fine. */
-export function ExpiryBadge({ product }: { product: Pick<Product, 'expiryDate' | 'status'> }) {
-  const t = useT();
-  const state = expiryState(product);
-  if (state === 'ok') return null;
-  const look = EXPIRY_LOOK[state];
-  return (
-    <View style={[styles.badge, { backgroundColor: look.bg }]}>
-      <Ionicons name={look.icon} size={14} color={look.fg} />
-      <Text style={[type.pill, { color: look.fg }]} maxFontSizeMultiplier={1.6}>
-        {t(look.label)}
-      </Text>
-    </View>
-  );
-}
-
 /** An icon for the product's dosage form, read from the free-text dosage and packaging fields. */
 export function productIcon(product: Pick<Product, 'dosage' | 'packaging' | 'category'>): IconName {
   const text = [product.dosage, product.packaging, product.category].filter(Boolean).join(' ').toLowerCase();
@@ -56,11 +40,21 @@ export function productIcon(product: Pick<Product, 'dosage' | 'packaging' | 'cat
   return 'cube-outline';
 }
 
-/** One product in the catalog list. */
-export function ProductRow({ product }: { product: Product }) {
+/** Days of shelf life the row meter spans: a year; longer reads as full. */
+const METER_DAYS = 365;
+
+/**
+ * One product in the catalog list. Rows join into one ruled card (`first`/`last` round its ends).
+ * Under the name, a slim meter shows the shelf life left on a one-year scale, in the expiry
+ * badge's colour, with the date and the days in words beside it.
+ */
+export function ProductRow({ product, first = true, last = true }: { product: Product; first?: boolean; last?: boolean }) {
   const t = useT();
   const expiry = formatDay(product.expiryDate, { month: 'short', day: 'numeric', year: 'numeric' });
   const state = expiryState(product);
+  const daysLeft = daysFromToday(product.expiryDate);
+  const meterColor = product.status !== 'active' ? colors.border : state === 'expired' ? colors.danger : state === 'soon' ? colors.warning : colors.slate;
+  const fill = Math.max(0, Math.min(1, daysLeft / METER_DAYS));
   const a11y = [
     productLabel(product),
     product.category,
@@ -69,7 +63,9 @@ export function ProductRow({ product }: { product: Product }) {
   ].join(', ');
 
   return (
-    <TouchableOpacity style={styles.row} onPress={() => router.push(`/products/${product._id}`)} accessibilityRole="button" accessibilityLabel={a11y}>
+    <TouchableOpacity
+      style={[styles.row, !first && styles.rowRule, first && styles.rowFirst, last && styles.rowLast]}
+      onPress={() => router.push(`/products/${product._id}`)} accessibilityRole="button" accessibilityLabel={a11y}>
       <View style={styles.rowIcon}>
         <IconTile icon={productIcon(product)} tone={product.status === 'active' ? 'slate' : 'neutral'} size={44} />
       </View>
@@ -78,114 +74,64 @@ export function ProductRow({ product }: { product: Product }) {
         <Text style={type.secondary} numberOfLines={1}>
           {[product.category, product.dosage, product.packaging].filter(Boolean).join(' · ')}
         </Text>
-        <Text style={type.secondary}>
-          {t('products.expiry')} <Text style={[mono, styles.figure]}>{expiry}</Text>
-        </Text>
-        <View style={styles.badges}>
-          <ExpiryBadge product={product} />
-          {product.status !== 'active' ? (
+        <View style={styles.meterRow}>
+          <View style={styles.meter} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <View style={[styles.meterFill, { width: `${fill * 100}%`, backgroundColor: meterColor }]} />
+          </View>
+          {/* Words for active stock ("Expires in 16 days"), the date for the rest; both are in the label. */}
+          <Text
+            style={[
+              type.secondary,
+              styles.meterText,
+              state === 'expired' && styles.textExpired,
+              state === 'soon' && styles.textSoon,
+            ]}
+            numberOfLines={1}
+          >
+            {state === 'expired' ? <Ionicons name="alert-circle" size={13} color={colors.danger} /> : null}
+            {state === 'soon' ? <Ionicons name="time" size={13} color={colors.warning} /> : null}
+            {state === 'ok' ? '' : ' '}
+            {product.status === 'active' ? expiryWords(t, product.expiryDate) : t('products.expiresOnLine', { date: expiry })}
+          </Text>
+        </View>
+        {product.status !== 'active' ? (
+          <View style={styles.badges}>
             <View style={[styles.badge, styles.badgeMuted]}>
               <Text style={[type.pill, { color: colors.textMuted }]}>{t(PRODUCT_STATUS_LABEL[product.status])}</Text>
             </View>
-          ) : null}
-        </View>
+          </View>
+        ) : null}
       </View>
       <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
     </TouchableOpacity>
   );
 }
 
-/** The product sheet as a rep shows it at a visit: every field, large and plain. */
-export function ProductSheetCard({ product }: { product: Product }) {
-  const t = useT();
-  const rows: [string, string | undefined][] = [
-    [t('products.form.category'), product.category],
-    [t('products.form.manufacturer'), product.manufacturer],
-    [t('products.form.dosage'), product.dosage],
-    [t('products.form.strength'), product.strength],
-    [t('products.form.packaging'), product.packaging],
-    [t('products.form.packSize'), product.packSize ? t('products.packOf', { count: product.packSize.count, unit: product.packSize.unit }) : undefined],
-  ];
-  return (
-    <View style={styles.sheet}>
-      <View style={styles.sheetIcon}>
-        <IconTile icon={productIcon(product)} tone="slate" size={56} />
-      </View>
-      <Text style={type.screenTitle} accessibilityRole="header">
-        {product.name}
-      </Text>
-      {product.strength ? <Text style={[type.body, styles.strength]}>{product.strength}</Text> : null}
-      <View style={styles.badges}>
-        <ExpiryBadge product={product} />
-        <View style={[styles.badge, product.status === 'active' ? styles.badgeActive : styles.badgeMuted]}>
-          <Text style={[type.pill, { color: product.status === 'active' ? colors.primaryOnSoft : colors.textMuted }]}>
-            {t(PRODUCT_STATUS_LABEL[product.status])}
-          </Text>
-        </View>
-      </View>
-      <Text style={[type.body, styles.description]}>{product.description}</Text>
-      <View style={styles.facts}>
-        {rows
-          .filter(([, v]) => !!v)
-          .map(([label, value]) => (
-            <View key={label} style={styles.fact}>
-              <Text style={type.secondary}>{label}</Text>
-              <Text style={[type.body, styles.factValue]}>{value}</Text>
-            </View>
-          ))}
-        <View style={[styles.fact, styles.factLast]}>
-          <Text style={type.secondary}>{t('products.expiry')}</Text>
-          <View style={styles.factValueBox}>
-            <Text style={[type.body, mono, styles.factValue]}>{formatDay(product.expiryDate, { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
-            <Text style={[type.secondary, styles.factValue]}>{expiryWords(t, product.expiryDate)}</Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
+  // Rows of one ruled card: side borders always, top/bottom ends only at the first/last row.
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm + 4,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
-    marginBottom: spacing.sm,
   },
+  rowRule: { borderTopWidth: StyleSheet.hairlineWidth },
+  rowFirst: { borderTopWidth: 1, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg },
+  rowLast: { borderBottomWidth: 1, borderBottomLeftRadius: radius.lg, borderBottomRightRadius: radius.lg, marginBottom: spacing.md },
+  meterRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs + 2 },
+  meter: { width: 56, height: 4, borderRadius: 2, backgroundColor: colors.slateSoft, overflow: 'hidden' },
+  meterFill: { height: 4, borderRadius: 2 },
+  meterText: { flex: 1, fontVariant: ['tabular-nums'] },
+  tabular: { fontVariant: ['tabular-nums'] },
+  textExpired: { color: colors.danger, fontWeight: '600' },
+  textSoon: { color: colors.warning, fontWeight: '600' },
   rowIcon: { alignSelf: 'flex-start' },
   rowBody: { flex: 1, gap: 2 },
-  sheetIcon: { marginBottom: spacing.md },
-  figure: { color: colors.text },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs },
   badge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 4 },
   badgeMuted: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
-  badgeActive: { backgroundColor: colors.primarySoft },
-  sheet: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  strength: { color: colors.textMuted, marginTop: 2 },
-  description: { marginTop: spacing.md },
-  facts: { marginTop: spacing.md },
-  fact: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    flexWrap: 'wrap',
-  },
-  factLast: { borderBottomWidth: 0 },
-  factValue: { textAlign: 'right' },
-  factValueBox: { alignItems: 'flex-end', flexShrink: 1 },
 });

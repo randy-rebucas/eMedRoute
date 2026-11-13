@@ -189,8 +189,10 @@ export default function RecordDeliveryScreen() {
             <Field label={t('deliveries.form.lot')} optional value={l.lot} onChangeText={(v) => update(l.key, { lot: v })} maxLength={60} autoCapitalize="characters" />
             <DateField label={t('deliveries.form.expiry')} value={l.expiry} onChange={(d) => update(l.key, { expiry: d })} />
             {l.expiry ? (
+              // The button clears the date; it used to read the hint ("Leave empty to…") as its label.
               <TouchableOpacity onPress={() => update(l.key, { expiry: '' })} style={styles.clear} accessibilityRole="button">
-                <Text style={styles.clearText}>{t('deliveries.form.expiryHint')}</Text>
+                <Ionicons name="close-circle-outline" size={18} color={colors.primaryOnSoft} />
+                <Text style={styles.clearText}>{t('deliveries.form.clearExpiry')}</Text>
               </TouchableOpacity>
             ) : (
               <Text style={[type.secondary, styles.hint]}>{t('deliveries.form.expiryHint')}</Text>
@@ -255,7 +257,7 @@ const styles = StyleSheet.create({
   linesLabel: { marginBottom: spacing.sm },
   line: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
@@ -265,7 +267,7 @@ const styles = StyleSheet.create({
   lineHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 4, marginBottom: spacing.sm },
   remove: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   hint: { marginTop: -spacing.sm },
-  clear: { minHeight: 48, justifyContent: 'center', marginTop: -spacing.sm },
+  clear: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 48, alignSelf: 'flex-start', marginTop: -spacing.sm },
   clearText: { fontSize: 14, fontWeight: '600', color: colors.primaryOnSoft },
   add: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 48, alignSelf: 'flex-start', marginBottom: spacing.md },
   addText: { fontSize: 15, fontWeight: '600', color: colors.primary },

@@ -6,11 +6,12 @@ import { SignInResult, useAuth } from '@/lib/auth';
 import { activationCheckout, beginActivation, looksLikeMobile } from '@/lib/onboarding';
 import { useCooldown } from '@/lib/useCooldown';
 import { useT } from '@/lib/i18n';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, spacing } from '@/lib/theme';
 import { type } from '@/lib/typography';
-import { BrandLogo, BrandMark } from '@/components/BrandLogo';
+import { photos } from '@/components/Photo';
 import { Banner, Button } from '@/components/ui';
 import {
+  AuthBand,
   AuthHeader,
   AuthScreen,
   classifyAuthError,
@@ -32,7 +33,8 @@ type Failure =
   | { kind: 'setupRequired' }
   /** `activationToken`: from a code sign-in, which has no password to pay with. */
   | { kind: 'inactive'; note?: string; activationToken?: string }
-  | { kind: 'message'; message: string };
+  /** `from`: which half of the form it came from, so it shows next to that button (not off screen at the top). */
+  | { kind: 'message'; message: string; from?: 'code' | 'password' };
 
 /**
  * Sign-in. First choice: a code texted to the rep's verified mobile (numbers proven at sign-up).
@@ -84,7 +86,10 @@ export default function LoginScreen() {
     try {
       await task();
     } catch (err) {
-      if (!onRefusal?.(err)) setFailure(refusal(err));
+      if (!onRefusal?.(err)) {
+        const f = refusal(err);
+        setFailure(f.kind === 'message' ? { ...f, from: which } : f);
+      }
     } finally {
       inFlight.current = false;
       setBusy(null);
@@ -103,12 +108,8 @@ export default function LoginScreen() {
 
   // ── Mobile code ──────────────────────────────────────────────────────────
   function sendCode() {
-    if (!phone.trim()) {
-      setFailure({ kind: 'message', message: t('auth.login.badPhone') });
-      return;
-    }
     if (!looksLikeMobile(phone)) {
-      setFailure({ kind: 'message', message: t('auth.login.badPhone') });
+      setFailure({ kind: 'message', message: t('auth.login.badPhone'), from: 'code' });
       return;
     }
     attempt('code', async () => {
@@ -152,7 +153,7 @@ export default function LoginScreen() {
           // The code can't say which account: back to the form, pointing at email and password.
           setCodeSent(false);
           setCode('');
-          setFailure({ kind: 'message', message: err.message });
+          setFailure({ kind: 'message', message: err.message, from: 'code' });
           return true;
         }
         return false;
@@ -172,7 +173,7 @@ export default function LoginScreen() {
   function signInWithPassword() {
     const id = email.trim();
     if (!id || !password) {
-      setFailure({ kind: 'message', message: t('auth.login.missingFields') });
+      setFailure({ kind: 'message', message: t('auth.login.missingFields'), from: 'password' });
       return;
     }
     attempt('password', async () => afterSignIn(await auth.loginWithPassword(id, password)), signInWithPassword);
@@ -271,6 +272,8 @@ export default function LoginScreen() {
   }
 
   const inlineError = failure?.kind === 'message' ? failure.message : null;
+  const passwordError = failure?.kind === 'message' && failure.from === 'password' ? failure.message : null;
+  const codeFormError = failure?.kind === 'message' && failure.from !== 'password' ? failure.message : null;
 
   // Step two of the code sign-in: the six digits.
   if (codeSent) {
@@ -304,17 +307,11 @@ export default function LoginScreen() {
 
   return (
     <AuthScreen>
-      <View style={styles.logo}>
-        {/* The app icon's look (the mark on navy), so the sign-in screen matches what was tapped. */}
-        <View style={styles.iconTile}>
-          <BrandMark size={52} />
-        </View>
-        <BrandLogo />
-      </View>
-      <AuthHeader title={t('auth.login.title')} subtitle={t('auth.login.subtitle')} align="center" />
+      {/* First impression: a rep with a doctor, the wordmark on the scrim's navy. */}
+      <AuthBand source={photos.doctorMeeting} line={t('auth.band.login')} />
+      <AuthHeader title={t('auth.login.title')} subtitle={t('auth.login.subtitle')} />
 
       {auth.notice ? <Banner message={auth.notice} tone="warning" /> : null}
-      {inlineError ? <Banner message={inlineError} /> : null}
 
       {/* First choice: a texted code. */}
       <IconField
@@ -333,6 +330,7 @@ export default function LoginScreen() {
         maxLength={20}
       />
       <Text style={[type.secondary, styles.hint]}>{t('auth.login.phoneHint')}</Text>
+      {codeFormError ? <Banner message={codeFormError} /> : null}
       <Button title={t('auth.login.sendCode')} icon="chatbubble-ellipses-outline" onPress={sendCode} loading={busy === 'code'} disabled={submitting} />
 
       <View style={styles.divider} accessibilityRole="text">
@@ -371,6 +369,7 @@ export default function LoginScreen() {
         returnKeyType="go"
         onSubmitEditing={signInWithPassword}
       />
+      {passwordError ? <Banner message={passwordError} /> : null}
       <Button
         title={t('auth.login.signInPassword')}
         variant="secondary"
@@ -388,8 +387,6 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  logo: { marginTop: spacing.lg, marginBottom: spacing.xl, alignItems: 'center', gap: spacing.md },
-  iconTile: { width: 88, height: 88, borderRadius: radius.lg + 6, backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center' },
   hint: { marginTop: -spacing.xs, marginBottom: spacing.md },
   divider: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginVertical: spacing.lg },
   rule: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
