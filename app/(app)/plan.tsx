@@ -1,10 +1,12 @@
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { formatDate, formatMoney } from '@/lib/format';
+import { aiOffered, useAiStatus } from '@/lib/ai';
+import { formatDate, formatDay, formatMoney } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { emitRefresh } from '@/lib/events';
 import { daysLeft, openBillingRequest, useSubscription, yearlyMonthsFree } from '@/lib/plan';
+import { AiStatus, Subscription } from '@/lib/types';
 import { openSupportDraft, useSupportRequests } from '@/lib/support';
 import { colors, radius, spacing } from '@/lib/theme';
 import { type } from '@/lib/typography';
@@ -29,6 +31,7 @@ export default function PlanScreen() {
   const { data: sub, loading, refreshing, error, offline, stale, updatedAt, refresh } = useSubscription();
   // Only to spot a billing request already waiting on support (the GET has no side effects).
   const { items: requests, refresh: refreshRequests } = useSupportRequests();
+  const { data: ai } = useAiStatus();
   const paddingBottom = useBottomPadding();
 
   if (!sub) {
@@ -141,11 +144,78 @@ export default function PlanScreen() {
         )
       ) : null}
 
+      {aiOffered(ai) ? <AiPlanSection ai={ai!} sub={sub} asked={!!openBillingRequest(requests)} /> : null}
+
       <RowGroup>
         {asked ? <NavRow icon="mail-outline" label={t('plan.seeRequests')} onPress={() => router.push('/support')} /> : null}
         <NavRow icon="people-outline" label={t('plan.teamLink')} value={teamValue} onPress={() => router.push('/team')} last />
       </RowGroup>
     </ScrollView>
+  );
+}
+
+/**
+ * The AI assistant on Plan: this month's use against the allowance, and for a rep without Pro,
+ * what Pro costs and gives, with a request for a Pro payment link (bought on the web, like plans).
+ */
+function AiPlanSection({ ai, sub, asked }: { ai: AiStatus; sub: Subscription; asked: boolean }) {
+  const t = useT();
+  const share = ai.limit > 0 ? Math.min(1, ai.used / ai.limit) : 1;
+  const sellPro = ai.plan === 'standard' && ai.proMonthly > 0;
+  const midPlan = sub.coveredBy === 'individual' && sub.individual?.active && sub.individual.plan !== 'pro';
+  const monthsFree = yearlyMonthsFree({ monthly: ai.proMonthly, yearly: ai.proYearly });
+  return (
+    <>
+      <RowGroup title={t('ai.plan.title')}>
+        <View style={[styles.usage, sellPro && styles.rule]} accessible>
+          <View style={styles.usageHead}>
+            <Ionicons name="sparkles-outline" size={20} color={colors.slate} />
+            <Text style={[type.body, styles.rowLabel]}>
+              {ai.limit > 0 ? t('ai.plan.usage', { used: ai.used, limit: ai.limit }) : t('ai.plan.what')}
+            </Text>
+            {ai.plan === 'pro' ? (
+              <View style={[styles.tag, styles.tagPro]}>
+                <Text style={[styles.tagText, { color: colors.primaryOnSoft }]}>{t('ai.plan.pro')}</Text>
+              </View>
+            ) : null}
+          </View>
+          {ai.limit > 0 ? (
+            <>
+              <View style={styles.meter}>
+                <View style={[styles.meterFill, { width: `${share * 100}%` }, share >= 1 && styles.meterFull]} />
+              </View>
+              <Text style={type.secondary}>{t('ai.plan.resets', { date: formatDay(ai.resetsOn, { month: 'long', day: 'numeric' }) })}</Text>
+            </>
+          ) : null}
+        </View>
+        {sellPro ? (
+          <>
+            <PriceRow label={t('ai.plan.pro')} amount={formatMoney(ai.proMonthly)} per={t('plan.perMonth')} />
+            <PriceRow
+              label={`${t('ai.plan.pro')} · ${t('plan.yearly')}`}
+              amount={formatMoney(ai.proYearly)}
+              per={t('plan.perYear')}
+              tag={monthsFree > 0 ? t('plan.monthsFree', { count: monthsFree }) : undefined}
+              last
+            />
+          </>
+        ) : null}
+      </RowGroup>
+      <Text style={styles.note}>
+        {ai.plan === 'pro' ? t('ai.plan.onPro') : sellPro ? `${t('ai.plan.proGives', { count: ai.proActions })}. ${t('ai.plan.what')}` : t('ai.plan.what')}
+      </Text>
+      {sellPro && !asked ? (
+        <View style={styles.action}>
+          {midPlan ? <Text style={type.secondary}>{t('ai.plan.switch')}</Text> : null}
+          <Button
+            title={t('ai.plan.ask')}
+            icon="sparkles-outline"
+            variant="secondary"
+            onPress={() => openSupportDraft({ category: 'billing', subject: t('ai.plan.askSubject'), message: t('ai.plan.askMessage') })}
+          />
+        </View>
+      ) : null}
+    </>
   );
 }
 
@@ -189,6 +259,12 @@ const styles = StyleSheet.create({
   tag: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.sm },
   tagPlan: { backgroundColor: colors.warningSoft },
   tagFree: { backgroundColor: colors.slateSoft },
+  tagPro: { backgroundColor: colors.primarySoft },
+  usage: { gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 4 },
+  usageHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 4 },
+  meter: { height: 6, borderRadius: 3, backgroundColor: colors.slateSoft, overflow: 'hidden' },
+  meterFill: { height: 6, borderRadius: 3, backgroundColor: colors.primary },
+  meterFull: { backgroundColor: colors.warning },
   tagText: { fontSize: 12, fontWeight: '700' },
   save: { fontSize: 13, fontWeight: '600', color: colors.primaryOnSoft },
   amountCol: { alignItems: 'flex-end' },
