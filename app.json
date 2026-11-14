@@ -18,6 +18,7 @@
     },
     "android": {
       "package": "solutions.myclinicsoft.emedroute",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#0B2136",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -59,8 +60,11 @@
       "@react-native-community/datetimepicker"
     ],
     "extra": {
-      "apiUrl": "http://localhost:3000",
-      "router": {}
+      "apiUrl": "https://www.myclinicsoft.solutions",
+      "router": {},
+      "eas": {
+        "projectId": "56c2a1b9-6575-4034-a8ed-94795b0e02f1"
+      }
     },
     "owner": "randyreb"
   }

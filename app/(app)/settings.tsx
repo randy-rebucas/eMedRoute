@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Linking, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { errorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { API_BASE_URL } from '@/lib/config';
 import { TFunction, useT } from '@/lib/i18n';
 import { updateNotificationSettings, useRepProfile } from '@/lib/profile';
 import { getPushPermission, PushPermission, pushState, PushState, registerForPushNotifications } from '@/lib/push';
@@ -229,6 +231,17 @@ export default function SettingsScreen() {
           onPress={confirmSignOutEverywhere}
           tone="danger"
           chevron={false}
+          last
+        />
+      </RowGroup>
+
+      <RowGroup>
+        <NavRow
+          icon="trash-outline"
+          label={t('settings.deleteAccount')}
+          value={t('settings.deleteAccountHint')}
+          onPress={() => WebBrowser.openBrowserAsync(`${API_BASE_URL}/delete-account`).catch(() => {})}
+          tone="danger"
           last
         />
       </RowGroup>

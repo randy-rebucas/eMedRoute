@@ -49,6 +49,8 @@ export default defineStrings({
     'signOutEverywhere.title': 'Sign out on all devices?',
     'signOutEverywhere.body': 'Every phone signed in to your account, this one included, has to sign in again.',
     'signOutEverywhere.confirm': 'Sign out everywhere',
+    deleteAccount: 'Delete account',
+    deleteAccountHint: 'Ask us to delete your account and data',
   },
   fil: {
     push: 'Push notifications',
@@ -95,5 +97,7 @@ export default defineStrings({
     'signOutEverywhere.title': 'Mag-sign out sa lahat ng device?',
     'signOutEverywhere.body': 'Kailangang mag-sign in ulit sa bawat phone na naka-sign in sa account mo, kasama ang phone na ito.',
     'signOutEverywhere.confirm': 'Mag-sign out sa lahat',
+    deleteAccount: 'I-delete ang account',
+    deleteAccountHint: 'Hilingin na burahin ang account at data mo',
   },
 });

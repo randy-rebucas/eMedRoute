@@ -43,3 +43,6 @@ yarn-error.*
 # local env (never commit; .env.example is the template)
 .env
 
+emedroute-firebase-adminsdk-fbsvc-83cb7b0be5.json
+google-services.json
+GoogleService-Info.plist
