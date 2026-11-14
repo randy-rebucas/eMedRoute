@@ -25,6 +25,7 @@ import { useCooldown } from '@/lib/useCooldown';
 import { type } from '@/lib/typography';
 import { photos } from '@/components/Photo';
 import { Banner, Button } from '@/components/ui';
+import { TurnstileCheck, type TurnstileState } from '@/components/TurnstileCheck';
 import {
   AuthBand,
   AuthHeader,
@@ -68,6 +69,9 @@ export default function RegisterScreen() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [done, setDone] = useState<Done | null>(null);
+  const [captcha, setCaptcha] = useState<TurnstileState>({ status: 'pending' });
+  // Turnstile tokens work once: a new key remounts the check after each attempt.
+  const [captchaKey, setCaptchaKey] = useState(0);
   const [cooldown, startCooldown] = useCooldown();
   // A keyboard "Go", the button and the sixth digit can all fire before `busy` re-renders.
   const inFlight = useRef(false);
@@ -165,15 +169,29 @@ export default function RegisterScreen() {
       setError(t('onboarding.details.badPhone'));
       return;
     }
+    if (captcha.status === 'pending') {
+      setError(t('onboarding.details.securityCheck'));
+      return;
+    }
+    const turnstileToken = captcha.status === 'token' ? captcha.token : undefined;
     run(async () => {
-      const result = await startSignup({
-        firstName: d.firstName.trim(),
-        lastName: d.lastName.trim(),
-        company: d.company.trim(),
-        territory: d.territory,
-        email: d.email,
-        phone: d.phone.trim(),
-      });
+      let result: Awaited<ReturnType<typeof startSignup>>;
+      try {
+        result = await startSignup({
+          firstName: d.firstName.trim(),
+          lastName: d.lastName.trim(),
+          company: d.company.trim(),
+          territory: d.territory,
+          email: d.email,
+          phone: d.phone.trim(),
+          turnstileToken,
+        });
+      } finally {
+        if (turnstileToken) {
+          setCaptcha({ status: 'pending' });
+          setCaptchaKey((k) => k + 1);
+        }
+      }
       setSignupId(result.signupId);
       setCode('');
       setSubmitted(false);
@@ -484,6 +502,7 @@ export default function RegisterScreen() {
         </Text>
         .
       </Text>
+      <TurnstileCheck key={captchaKey} onChange={setCaptcha} />
       {/* Beside the button, not at the top: the form is long, and an "email in use" from the server lands here. */}
       {error ? <Banner message={error} /> : null}
       <Button title={t('onboarding.details.continue')} onPress={submitDetails} loading={busy} />

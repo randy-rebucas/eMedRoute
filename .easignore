@@ -42,3 +42,7 @@ yarn-error.*
 
 # local env (never commit; .env.example is the template)
 .env
+
+# Secrets: with an .easignore, EAS no longer reads .gitignore, so list them here too.
+*firebase-adminsdk*.json
+*.keystore

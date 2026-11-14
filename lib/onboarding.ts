@@ -20,6 +20,8 @@ export interface SignupDetails {
   phone: string;
   company: string;
   territory?: string;
+  /** From the Turnstile check (components/TurnstileCheck); left out when Turnstile is off. */
+  turnstileToken?: string;
 }
 
 export type CodeChannel = 'email' | 'phone';

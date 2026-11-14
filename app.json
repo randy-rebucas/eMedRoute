@@ -4,7 +4,7 @@
     "slug": "emedroute",
     "description": "eMedRoute by MyClinicSoft — book visits in a clinic's rep hours, keep your visit log and carry your product sheets.",
     "scheme": "emedroute",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
