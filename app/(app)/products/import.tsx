@@ -20,7 +20,7 @@ import {
   RowProblem,
 } from '@/lib/productImport';
 import { colors, radius, spacing } from '@/lib/theme';
-import { mono, type } from '@/lib/typography';
+import { mono, textSize, type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { Illustration } from '@/components/Illustration';
 import { Banner, Button, IconTile, screenStyles, useBottomPadding } from '@/components/ui';
@@ -88,7 +88,19 @@ export default function ImportProductsScreen() {
   // State lags a frame: two taps in one frame must not import the rows twice.
   const busyRef = useRef(false);
 
+  // A second tap while the picker is open would open it again and report the file unreadable.
+  const picking = useRef(false);
   async function choose() {
+    if (picking.current) return;
+    picking.current = true;
+    try {
+      await chooseFile();
+    } finally {
+      picking.current = false;
+    }
+  }
+
+  async function chooseFile() {
     setProblem(null);
     let picked;
     try {
@@ -326,7 +338,7 @@ const styles = StyleSheet.create({
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   columns: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs + 2, marginTop: spacing.xs },
   column: { borderRadius: radius.sm, backgroundColor: colors.slateSoft, paddingHorizontal: spacing.sm, paddingVertical: 4 },
-  columnText: { fontSize: 13, color: colors.text },
+  columnText: { fontSize: textSize.sm, color: colors.text },
   hint: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
   hintIcon: { marginTop: 1 },
   fileRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 4, marginBottom: spacing.md },

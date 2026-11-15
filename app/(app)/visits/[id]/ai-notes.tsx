@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,12 +6,13 @@ import { errorMessage } from '@/lib/api';
 import { draftVisitNote, isAllowanceUsedUp, MAX_AI_NOTE_INPUT, useAiStatus } from '@/lib/ai';
 import { formatDay } from '@/lib/format';
 import { useT } from '@/lib/i18n';
+import { useDiscardGuard } from '@/lib/useDiscardGuard';
 import { colors, radius, spacing } from '@/lib/theme';
 import { AiVisitNote } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { saveVisitNotes, useVisit } from '@/lib/visits';
-import { ErrorState } from '@/components/ErrorState';
+import { ErrorState, NotFoundState } from '@/components/ErrorState';
 import { Banner, Button, LoadingView, screenStyles, useBottomPadding } from '@/components/ui';
 
 /** The visit's notes field holds this much (the server's limit). */
@@ -25,7 +26,7 @@ const MAX_NOTES = 2000;
 export default function AiNotesScreen() {
   const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: visit, loading, error, refresh } = useVisit(id);
+  const { data: visit, loading, error, refresh, notFound } = useVisit(id);
   const { data: ai } = useAiStatus();
   const paddingBottom = useBottomPadding();
   const [text, setText] = useState('');
@@ -35,8 +36,14 @@ export default function AiNotesScreen() {
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [usedUp, setUsedUp] = useState<string | null>(null);
+  // State lags a frame: a double tap must not spend two AI actions or save twice.
+  const draftingRef = useRef(false);
+  const savingRef = useRef(false);
+  // A draft already cost an AI action; typed words are worth asking about too.
+  useDiscardGuard((draft !== null || text.trim() !== '') && !saving);
 
   if (!visit) {
+    if (notFound) return <NotFoundState />;
     if (loading) return <LoadingView />;
     return <ErrorState message={error ?? t('common.failedToLoad')} onRetry={refresh} />;
   }
@@ -44,7 +51,8 @@ export default function AiNotesScreen() {
   const outOfActions = !!ai && ai.remaining === 0;
 
   async function makeDraft() {
-    if (!visit || drafting) return;
+    if (!visit || drafting || draftingRef.current) return;
+    draftingRef.current = true;
     setDrafting(true);
     setProblem(null);
     try {
@@ -55,12 +63,14 @@ export default function AiNotesScreen() {
       if (isAllowanceUsedUp(err)) setUsedUp(err.message);
       else setProblem(isNetworkError(err) ? t('common.needsConnection') : errorMessage(err));
     } finally {
+      draftingRef.current = false;
       setDrafting(false);
     }
   }
 
   async function save() {
-    if (!visit || saving) return;
+    if (!visit || saving || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     setProblem(null);
     try {
@@ -68,6 +78,7 @@ export default function AiNotesScreen() {
       router.back();
     } catch (err) {
       setProblem(isNetworkError(err) ? t('common.needsConnection') : errorMessage(err));
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -171,7 +182,7 @@ export default function AiNotesScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  clinic: { fontSize: 20, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
+  clinic: { fontSize: textSize.h4, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
   gap: { marginBottom: spacing.md },
   top: { marginTop: spacing.sm },
   center: { textAlign: 'center', marginTop: spacing.sm },
@@ -183,7 +194,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.md - 4,
     paddingVertical: spacing.sm + 2,
-    fontSize: 16,
+    fontSize: textSize.lg,
     lineHeight: 22,
     color: colors.text,
     textAlignVertical: 'top',
@@ -197,7 +208,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     marginBottom: spacing.md,
   },
-  checkTitle: { fontSize: 14, fontWeight: '700', color: colors.warning },
+  checkTitle: { fontSize: textSize.md, fontWeight: '700', color: colors.warning },
   usedUp: {
     gap: spacing.sm,
     backgroundColor: colors.surface,

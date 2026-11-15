@@ -5,7 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { daysFromToday } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { byDay, DateRange, dayHeading, Outcome, OUTCOME_STATUSES, useVisitList, visitDay, VisitSegment } from '@/lib/visits';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
@@ -154,7 +154,7 @@ export default function VisitsScreen() {
             {stale || offline ? (
               <View>
                 <ThinProgress active={stale && !offline} />
-                <OfflineBanner offline={offline} updatedAt={updatedAt} subject={t('visits.offlineSubject')} />
+                <OfflineBanner offline={offline} updatedAt={updatedAt} refreshError={items.length ? error : null} subject={t('visits.offlineSubject')} />
               </View>
             ) : null}
             {segment === 'upcoming' && items.length > 0 ? <WeekStrip visits={items} picked={pickedDay} onPick={setPickedDay} more={hasMore} /> : null}
@@ -183,14 +183,14 @@ const styles = StyleSheet.create({
   logButton: { marginTop: 0 },
   range: {},
   dayHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: spacing.sm, paddingHorizontal: 2, marginBottom: spacing.sm },
-  dayTitle: { fontSize: 13, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
+  dayTitle: { fontSize: textSize.sm, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
   dayTitleToday: { color: colors.text },
   dayCount: { fontVariant: ['tabular-nums'] },
   dayEmpty: { gap: spacing.md, paddingVertical: spacing.lg, alignItems: 'stretch' },
   dayEmptyText: { textAlign: 'center', color: colors.textMuted },
   photoEmpty: { minHeight: 240, borderRadius: radius.lg },
   photoEmptyInner: { flex: 1, justifyContent: 'flex-end', padding: spacing.md + 4 },
-  photoEmptyTitle: { fontSize: 20, fontWeight: '700', color: colors.primaryText },
-  photoEmptyHint: { fontSize: 14, lineHeight: 20, color: colors.onNavyMuted, marginTop: spacing.xs },
+  photoEmptyTitle: { fontSize: textSize.h4, fontWeight: '700', color: colors.primaryText },
+  photoEmptyHint: { fontSize: textSize.md, lineHeight: 20, color: colors.onNavyMuted, marginTop: spacing.xs },
   photoEmptyButton: { marginTop: spacing.md },
 });

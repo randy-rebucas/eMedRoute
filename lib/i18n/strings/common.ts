@@ -39,6 +39,7 @@ export default defineStrings({
     'offline.yourRecords': 'your saved data',
     'offline.banner': 'Offline. Showing {subject}. Pull down to try again.',
     'offline.bannerWhen': 'Offline. Showing {subject} from {when}. Pull down to try again.',
+    refreshFailed: "Couldn't refresh. This may not be up to date. Pull down to try again.",
 
     // Language picker (Settings)
     'language.title': 'Language',
@@ -47,6 +48,27 @@ export default defineStrings({
     'language.systemNow': 'Same as phone ({language})',
     'language.en': 'English',
     'language.fil': 'Filipino',
+    // app/+not-found.tsx, the root ErrorBoundary, components/UpdateGate.tsx
+    'notFound.title': "This page isn't here",
+    'notFound.body': 'The link may be old, or the item was removed.',
+    'notFound.home': 'Go to Home',
+    'crash.title': 'Something went wrong',
+    'crash.body': 'eMedRoute hit a problem on this screen. Your saved work is safe. Try again.',
+    'update.requiredTitle': 'Update eMedRoute',
+    'update.requiredBody': 'This version no longer works with the server. Update the app to keep going.',
+    'update.softTitle': 'An update is ready',
+    'update.softBody': 'A newer eMedRoute is in the store, with fixes and improvements.',
+    'update.update': 'Update',
+    'update.later': 'Later',
+    'update.noStore': 'Open the {store} and update eMedRoute.',
+    'update.appStore': 'App Store',
+    'update.playStore': 'Play Store',
+
+    // Leaving a form with typed changes (VisitLogForm, Deliver, AI notes, visit notes, sheets)
+    'discard.title': 'Discard your changes?',
+    'discard.body': 'What you typed here won’t be kept.',
+    'discard.discard': 'Discard',
+    'discard.keepEditing': 'Keep editing',
   },
   fil: {
     cancel: 'Kanselahin',
@@ -81,6 +103,7 @@ export default defineStrings({
     'offline.yourRecords': 'naka-save na data',
     'offline.banner': 'Offline. Ipinapakita ang {subject}. Hilahin pababa para subukan ulit.',
     'offline.bannerWhen': 'Offline. Ipinapakita ang {subject} (naka-save noong {when}). Hilahin pababa para subukan ulit.',
+    refreshFailed: 'Hindi ma-refresh. Baka hindi ito ang pinakabago. Hilahin pababa para subukan ulit.',
 
     'language.title': 'Wika',
     'language.choose': 'Pumili ng wika',
@@ -88,5 +111,25 @@ export default defineStrings({
     'language.systemNow': 'Kapareho ng phone ({language})',
     'language.en': 'English',
     'language.fil': 'Filipino',
+
+    'notFound.title': 'Wala rito ang page na ito',
+    'notFound.body': 'Maaaring luma na ang link, o tinanggal na ang item.',
+    'notFound.home': 'Pumunta sa Home',
+    'crash.title': 'May nangyaring mali',
+    'crash.body': 'Nagka-problema ang eMedRoute sa screen na ito. Ligtas ang naka-save mo. Subukan ulit.',
+    'update.requiredTitle': 'I-update ang eMedRoute',
+    'update.requiredBody': 'Hindi na gumagana ang version na ito sa server. I-update ang app para makapagpatuloy.',
+    'update.softTitle': 'May bagong update',
+    'update.softBody': 'May mas bagong eMedRoute sa store, may mga ayos at pagpapabuti.',
+    'update.update': 'I-update',
+    'update.later': 'Mamaya',
+    'update.noStore': 'Buksan ang {store} at i-update ang eMedRoute.',
+    'update.appStore': 'App Store',
+    'update.playStore': 'Play Store',
+
+    'discard.title': 'Itapon ang mga binago mo?',
+    'discard.body': 'Hindi mase-save ang tinype mo rito.',
+    'discard.discard': 'Itapon',
+    'discard.keepEditing': 'Ituloy',
   },
 });

@@ -102,8 +102,8 @@ export function holdingShares(rows: ClinicHolding[]): number[] {
   });
 }
 
-export async function createDelivery(input: DeliveryInput): Promise<Delivery> {
-  const delivery = await apiRequest<Delivery>(DELIVERIES_PATH, { method: 'POST', body: input });
+export async function createDelivery(input: DeliveryInput, requestKey?: string): Promise<Delivery> {
+  const delivery = await apiRequest<Delivery>(DELIVERIES_PATH, { method: 'POST', body: input, idempotencyKey: requestKey });
   emitRefresh('deliveries');
   return delivery;
 }

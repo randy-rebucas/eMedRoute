@@ -46,6 +46,8 @@ export function useApiData<T>(path: string | null, options: Options = {}) {
   const [offline, setOffline] = useState(false);
   /** `data` is the saved offline copy; the server hasn't confirmed it yet this visit. */
   const [stale, setStale] = useState(false);
+  /** The server said the record doesn't exist (404/410): deleted, or a stale link. */
+  const [notFound, setNotFound] = useState(false);
   const inFlight = useRef(0);
   // Only the latest request may write state (path changed, refresh over a slow load).
   const sequence = useRef(0);
@@ -109,6 +111,7 @@ export function useApiData<T>(path: string | null, options: Options = {}) {
         setError(null);
         setOffline(false);
         setStale(false);
+        setNotFound(false);
       } catch (err) {
         const network = isNetworkError(err);
         outcome = network ? 'network' : 'failed';
@@ -116,7 +119,10 @@ export function useApiData<T>(path: string | null, options: Options = {}) {
         const drop = !network && err instanceof ApiError && shouldDropCacheOnStatus(err.status);
         if (cacheKey && drop) removeOffline(cacheKey);
         if (!isLatest()) return;
-        if (drop && fromCache.current) {
+        const gone = !network && err instanceof ApiError && (err.status === 404 || err.status === 410);
+        setNotFound(gone);
+        // Gone clears even a server-loaded copy: it was deleted elsewhere, and acting on it would fail.
+        if (drop && (fromCache.current || gone)) {
           fromCache.current = false;
           setData(null);
           setUpdatedAt(null);
@@ -146,5 +152,5 @@ export function useApiData<T>(path: string | null, options: Options = {}) {
 
   useRefreshOn(refreshOn, poll);
 
-  return { data, setData, loading, refreshing, error, updatedAt, offline, stale, refresh, poll };
+  return { data, setData, loading, refreshing, error, updatedAt, offline, stale, notFound, refresh, poll };
 }

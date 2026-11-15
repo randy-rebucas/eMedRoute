@@ -5,7 +5,7 @@ import { formatDate, formatDay } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Delivery, DeliveryStatus } from '@/lib/types';
-import { mono, type } from '@/lib/typography';
+import { mono, textSize, type } from '@/lib/typography';
 import { productLabel } from './ProductPicker';
 import { IconName } from './ui';
 
@@ -77,7 +77,15 @@ export function DeliveryCard({ delivery, onCancel, cancelling }: { delivery: Del
       ) : null}
 
       {onCancel && delivery.status === 'pending' ? (
-        <TouchableOpacity style={styles.cancel} onPress={onCancel} disabled={cancelling} accessibilityRole="button">
+        <TouchableOpacity
+          style={styles.cancel}
+          onPress={onCancel}
+          disabled={cancelling}
+          accessibilityRole="button"
+          // Several cards can show the same button: say which delivery it cancels.
+          accessibilityLabel={`${t('deliveries.cancel')}, ${delivery.clinicName}, ${formatDate(delivery.createdAt, { month: 'short', day: 'numeric' })}`}
+          accessibilityState={{ disabled: !!cancelling, busy: !!cancelling }}
+        >
           <Ionicons name="close-circle-outline" size={18} color={colors.danger} />
           <Text style={styles.cancelText}>{t('deliveries.cancel')}</Text>
         </TouchableOpacity>
@@ -115,5 +123,5 @@ const styles = StyleSheet.create({
   },
   italic: { fontStyle: 'italic' },
   cancel: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2, minHeight: 48, marginTop: spacing.xs, alignSelf: 'flex-start' },
-  cancelText: { fontSize: 15, fontWeight: '600', color: colors.danger },
+  cancelText: { fontSize: textSize.base, fontWeight: '600', color: colors.danger },
 });

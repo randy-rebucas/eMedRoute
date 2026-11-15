@@ -6,7 +6,7 @@ import { clinicTodayYmd, daysFromToday, formatDay } from '@/lib/format';
 import { TFunction, useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Clinic } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { Button, IconName } from './ui';
 
 /** A Sunday, so weekday names come from the locale (2023-01-01 was a Sunday). */
@@ -237,7 +237,13 @@ export function ClinicRow({
           ) : null}
         </View>
       ) : requested ? (
-        <TouchableOpacity style={styles.quiet} onPress={onWithdraw} disabled={busy || !onWithdraw} accessibilityRole="button">
+        <TouchableOpacity
+          style={styles.quiet}
+          onPress={onWithdraw}
+          disabled={busy || !onWithdraw}
+          accessibilityRole="button"
+          accessibilityLabel={`${t('clinics.access.withdraw')}, ${clinic.name}`}
+        >
           <Ionicons name="close-circle-outline" size={18} color={colors.textMuted} />
           <Text style={styles.quietText}>{t('clinics.access.withdraw')}</Text>
         </TouchableOpacity>
@@ -263,7 +269,7 @@ const styles = StyleSheet.create({
   mark: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.slateSoft, alignItems: 'center', justifyContent: 'center' },
   // A clinic that added the rep wears the rep app's navy; the rest stay slate.
   markLinked: { backgroundColor: colors.navy },
-  markText: { fontSize: 17, fontWeight: '700', color: colors.slate },
+  markText: { fontSize: textSize.xl, fontWeight: '700', color: colors.slate },
   markTextLinked: { color: colors.primaryText },
   titleBox: { flex: 1, gap: 2 },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, flexWrap: 'wrap' },
@@ -291,7 +297,7 @@ const styles = StyleSheet.create({
   },
   historyDue: { backgroundColor: colors.warningSoft },
   historyBooked: { backgroundColor: colors.primarySoft },
-  historyText: { fontSize: 13, fontWeight: '600', color: colors.slate, flexShrink: 1 },
+  historyText: { fontSize: textSize.sm, fontWeight: '600', color: colors.slate, flexShrink: 1 },
   week: {
     marginTop: spacing.sm + 4,
     paddingTop: spacing.sm + 4,
@@ -311,10 +317,10 @@ const styles = StyleSheet.create({
   cellOpen: { backgroundColor: colors.primarySoft },
   cellToday: { borderColor: colors.navy, borderWidth: 1.5 },
   cellPicked: { backgroundColor: colors.primary },
-  cellText: { fontSize: 13, fontWeight: '600', color: colors.textMuted },
+  cellText: { fontSize: textSize.sm, fontWeight: '600', color: colors.textMuted },
   cellTextOpen: { color: colors.primaryOnSoft, fontWeight: '700' },
   cellTextPicked: { color: colors.primaryText },
-  readout: { fontSize: 13, lineHeight: 18, color: colors.text, marginTop: spacing.sm },
+  readout: { fontSize: textSize.sm, lineHeight: 18, color: colors.text, marginTop: spacing.sm },
   readoutLead: { color: colors.textMuted, fontWeight: '600' },
   hoursFallback: {
     flexDirection: 'row',
@@ -340,5 +346,5 @@ const styles = StyleSheet.create({
   book: { flexGrow: 1, flexBasis: 160 },
   requestButton: { marginTop: spacing.md },
   quiet: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2, minHeight: 48, marginTop: spacing.sm, alignSelf: 'flex-start' },
-  quietText: { fontSize: 15, fontWeight: '600', color: colors.textMuted },
+  quietText: { fontSize: textSize.base, fontWeight: '600', color: colors.textMuted },
 });

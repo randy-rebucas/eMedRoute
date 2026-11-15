@@ -65,6 +65,8 @@ export interface RequestOptions {
   auth?: boolean; // default true
   /** Give up after this long (default `REQUEST_TIMEOUT_MS`). */
   timeoutMs?: number;
+  /** Sent as `Idempotency-Key`: the server answers a resend with the first save (lib/requestKey.ts). */
+  idempotencyKey?: string;
 }
 
 /** Headers for an authenticated request made outside `apiFetch`. */
@@ -342,6 +344,7 @@ async function send(path: string, options: RequestOptions, token: string | null)
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (payload !== undefined) headers['Content-Type'] = 'application/json';
   if (token) Object.assign(headers, authHeaders(token));
+  if (options.idempotencyKey) headers['Idempotency-Key'] = options.idempotencyKey;
 
   let response: Response;
   try {

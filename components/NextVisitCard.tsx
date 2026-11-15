@@ -6,7 +6,7 @@ import { useT } from '@/lib/i18n';
 import { openDirections } from '@/lib/maps';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Dashboard } from '@/lib/types';
-import { mono, type } from '@/lib/typography';
+import { mono, textSize, type } from '@/lib/typography';
 import { nextStep, visitDay, visitState } from '@/lib/visits';
 import { StatusPill } from './StatusPill';
 import { nextStepText, visitA11yLabel } from './VisitRow';
@@ -98,14 +98,14 @@ const styles = StyleSheet.create({
   },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, flexWrap: 'wrap' },
   eyebrow: { ...type.pill, color: colors.onNavyMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
-  clinic: { fontSize: 22, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.2, marginTop: spacing.sm },
+  clinic: { fontSize: textSize.h3, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.2, marginTop: spacing.sm },
   whenRow: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.md, rowGap: spacing.xs, marginTop: spacing.sm + 4 },
   whenBox: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2 },
-  when: { fontSize: 15, fontWeight: '600', color: colors.primaryText },
-  time: { fontSize: 17, fontWeight: '700', color: colors.primaryText },
-  muted: { fontSize: 13, lineHeight: 18, color: colors.onNavyMuted },
+  when: { fontSize: textSize.base, fontWeight: '600', color: colors.primaryText },
+  time: { fontSize: textSize.xl, fontWeight: '700', color: colors.primaryText },
+  muted: { fontSize: textSize.sm, lineHeight: 18, color: colors.onNavyMuted },
   place: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs + 2, marginTop: spacing.sm },
-  placeText: { flex: 1, fontSize: 14, lineHeight: 20 },
+  placeText: { flex: 1, fontSize: textSize.md, lineHeight: 20 },
   next: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.navyLine,
   },
-  nextText: { flex: 1, fontSize: 15, lineHeight: 21, color: colors.primaryText },
+  nextText: { flex: 1, fontSize: textSize.base, lineHeight: 21, color: colors.primaryText },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
   action: {
     flexGrow: 1,
@@ -130,5 +130,5 @@ const styles = StyleSheet.create({
   },
   actionPrimary: { backgroundColor: colors.primary },
   actionGhost: { borderWidth: 1, borderColor: colors.navyLine },
-  actionText: { fontSize: 15, fontWeight: '600', color: colors.primaryText },
+  actionText: { fontSize: textSize.base, fontWeight: '600', color: colors.primaryText },
 });

@@ -2,15 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Linking, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { errorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { API_BASE_URL } from '@/lib/config';
 import { TFunction, useT } from '@/lib/i18n';
 import { updateNotificationSettings, useRepProfile } from '@/lib/profile';
 import { getPushPermission, PushPermission, pushState, PushState, registerForPushNotifications } from '@/lib/push';
 import { colors, radius, spacing } from '@/lib/theme';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { NavRow, RowGroup } from '@/components/forms';
 import { ThinProgress } from '@/components/Loading';
@@ -240,7 +238,7 @@ export default function SettingsScreen() {
           icon="trash-outline"
           label={t('settings.deleteAccount')}
           value={t('settings.deleteAccountHint')}
-          onPress={() => WebBrowser.openBrowserAsync(`${API_BASE_URL}/delete-account`).catch(() => {})}
+          onPress={() => router.push('/delete-account')}
           tone="danger"
           last
         />
@@ -258,8 +256,8 @@ const styles = StyleSheet.create({
   heroTop: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm + 4 },
   bell: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.navyLine, alignItems: 'center', justifyContent: 'center' },
   heroText: { flex: 1, gap: 4 },
-  heroTitle: { fontSize: 17, lineHeight: 22, fontWeight: '700', color: colors.primaryText },
-  heroBody: { fontSize: 13, lineHeight: 18, color: colors.onNavyMuted },
+  heroTitle: { fontSize: textSize.xl, lineHeight: 22, fontWeight: '700', color: colors.primaryText },
+  heroBody: { fontSize: textSize.sm, lineHeight: 18, color: colors.onNavyMuted },
   heroFoot: {
     gap: spacing.sm + 4,
     marginTop: spacing.md,
@@ -270,7 +268,7 @@ const styles = StyleSheet.create({
   },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.sm, backgroundColor: colors.primary },
   chipWarn: { backgroundColor: colors.warningSoft },
-  chipText: { fontSize: 12, fontWeight: '700', color: colors.primaryText },
+  chipText: { fontSize: textSize.xs, fontWeight: '700', color: colors.primaryText },
   heroButton: { alignSelf: 'stretch' },
   note: { ...type.secondary, marginTop: -spacing.md, marginBottom: spacing.lg, marginHorizontal: spacing.xs },
 });

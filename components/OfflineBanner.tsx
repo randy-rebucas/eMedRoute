@@ -9,14 +9,20 @@ export function savedAtLabel(updatedAt: number): string {
 
 /**
  * Shown above records that come from the device's saved copy because the server couldn't be
- * reached. Pass the hook's `offline` and `updatedAt`; renders nothing when online.
+ * reached. Pass the hook's `offline` and `updatedAt`; renders nothing when online and up to date.
  */
 export function OfflineBanner({
   offline,
   updatedAt,
   subject,
+  refreshError,
 }: {
   offline: boolean;
+  /**
+   * The last refresh failed for another reason (a server error) while older data is still on
+   * screen. Pass it only when there is data showing; the empty-screen error state covers the rest.
+   */
+  refreshError?: string | null;
   updatedAt: number | null;
   /**
    * What is on screen, translated, e.g. t('visits.offlineSubject') → "your last-loaded visits"
@@ -25,7 +31,7 @@ export function OfflineBanner({
   subject?: string;
 }) {
   const t = useT();
-  if (!offline) return null;
+  if (!offline) return refreshError ? <Banner tone="warning" message={t('common.refreshFailed')} /> : null;
   const what = subject ?? t('common.offline.yourRecords');
   const message = updatedAt
     ? t('common.offline.bannerWhen', { subject: what, when: savedAtLabel(updatedAt) })

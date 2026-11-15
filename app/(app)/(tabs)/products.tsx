@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useT } from '@/lib/i18n';
 import { ProductFilter, useProducts } from '@/lib/products';
 import { colors, radius, spacing } from '@/lib/theme';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { useDebounced } from '@/lib/useDebounced';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
@@ -128,7 +128,7 @@ export default function ProductsScreen() {
             {stale || offline ? (
               <View>
                 <ThinProgress active={stale && !offline} />
-                <OfflineBanner offline={offline} updatedAt={updatedAt} subject={t('products.offlineSubject')} />
+                <OfflineBanner offline={offline} updatedAt={updatedAt} refreshError={items.length ? error : null} subject={t('products.offlineSubject')} />
               </View>
             ) : null}
           </View>
@@ -157,9 +157,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.md - 4,
   },
-  searchInput: { flex: 1, fontSize: 15, color: colors.text, paddingVertical: spacing.sm },
+  searchInput: { flex: 1, fontSize: textSize.base, color: colors.text, paddingVertical: spacing.sm },
   photoEmpty: { minHeight: 220, borderRadius: radius.lg },
   photoEmptyInner: { flex: 1, justifyContent: 'flex-end', padding: spacing.md + 4 },
-  photoEmptyTitle: { fontSize: 20, fontWeight: '700', color: colors.primaryText },
-  photoEmptyHint: { fontSize: 14, lineHeight: 20, color: colors.onNavyMuted, marginTop: spacing.xs },
+  photoEmptyTitle: { fontSize: textSize.h4, fontWeight: '700', color: colors.primaryText },
+  photoEmptyHint: { fontSize: textSize.md, lineHeight: 20, color: colors.onNavyMuted, marginTop: spacing.xs },
 });

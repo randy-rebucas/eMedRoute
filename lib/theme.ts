@@ -32,6 +32,10 @@ export const colors = {
   navyLine: '#24405C',
   /** A text action on the navy snackbar (Undo): a light teal that reads on navy, where `primary` doesn't. */
   onNavyAction: '#7FE0DE',
+  /** Dims the screen behind a sheet or modal. */
+  scrim: 'rgba(11, 33, 54, 0.4)',
+  /** Over a photo while it uploads: darker, so the spinner reads. */
+  scrimStrong: 'rgba(11, 33, 54, 0.55)',
 };
 
 export const spacing = {

@@ -10,7 +10,7 @@ import { emitRefresh } from '@/lib/events';
 import { bookingBlocked, useSubscription } from '@/lib/plan';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Clinic } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { useDebounced } from '@/lib/useDebounced';
 import { clinicHistory, ClinicRow } from '@/components/ClinicRow';
@@ -162,7 +162,7 @@ export default function ClinicsScreen() {
             {stale || offline ? (
               <View>
                 <ThinProgress active={stale && !offline} />
-                <OfflineBanner offline={offline} updatedAt={updatedAt} subject={t('clinics.offlineSubject')} />
+                <OfflineBanner offline={offline} updatedAt={updatedAt} refreshError={items.length ? error : null} subject={t('clinics.offlineSubject')} />
               </View>
             ) : null}
           </View>
@@ -213,6 +213,16 @@ function AccessRequestSheet({ clinic, onClose }: { clinic: Clinic | null; onClos
     }
   }, [clinic]);
 
+  // Closing (X, back, the backdrop) while sending would hide the answer; with a message typed, ask first.
+  function close() {
+    if (sendingRef.current) return;
+    if (!message.trim()) return onClose();
+    Alert.alert(t('common.discard.title'), t('common.discard.body'), [
+      { text: t('common.discard.keepEditing'), style: 'cancel' },
+      { text: t('common.discard.discard'), style: 'destructive', onPress: onClose },
+    ]);
+  }
+
   async function send() {
     if (!clinic || sendingRef.current) return;
     sendingRef.current = true;
@@ -243,14 +253,14 @@ function AccessRequestSheet({ clinic, onClose }: { clinic: Clinic | null; onClos
   }
 
   return (
-    <Modal visible={!!clinic} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={!!clinic} animationType="slide" transparent onRequestClose={close}>
       <KeyboardAvoidingView style={styles.backdrop} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <SafeAreaView style={styles.sheet} edges={['bottom']}>
           <View style={styles.sheetHead}>
             <Text style={[type.cardTitle, styles.flex]} accessibilityRole="header">
               {clinic ? t('clinics.access.title', { clinic: clinic.name }) : ''}
             </Text>
-            <TouchableOpacity onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('common.cancel')}>
+            <TouchableOpacity onPress={close} disabled={sending} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('common.cancel')}>
               <Ionicons name="close-outline" size={28} color={colors.text} />
             </TouchableOpacity>
           </View>
@@ -278,11 +288,11 @@ const styles = StyleSheet.create({
   band: { minHeight: 168, borderRadius: radius.lg, marginTop: spacing.sm, marginBottom: spacing.xs },
   bandInner: { flex: 1, justifyContent: 'flex-end', padding: spacing.md + 4, gap: spacing.xs },
   bandTitle: { ...type.screenTitle, color: colors.primaryText },
-  bandIntro: { fontSize: 14, lineHeight: 20, color: colors.onNavyMuted },
+  bandIntro: { fontSize: textSize.md, lineHeight: 20, color: colors.onNavyMuted },
   bandLine: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs + 2 },
-  bandCount: { fontSize: 13, fontWeight: '600', color: colors.primaryText, fontVariant: ['tabular-nums'] },
+  bandCount: { fontSize: textSize.sm, fontWeight: '600', color: colors.primaryText, fontVariant: ['tabular-nums'] },
   bandDue: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.sm, backgroundColor: colors.warningSoft },
-  bandDueText: { fontSize: 12, fontWeight: '700', color: colors.warning, fontVariant: ['tabular-nums'] },
+  bandDueText: { fontSize: textSize.xs, fontWeight: '700', color: colors.warning, fontVariant: ['tabular-nums'] },
   search: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -295,8 +305,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md - 4,
     marginTop: spacing.xs,
   },
-  searchInput: { flex: 1, fontSize: 15, color: colors.text, paddingVertical: spacing.sm },
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(11, 33, 54, 0.4)' },
+  searchInput: { flex: 1, fontSize: textSize.base, color: colors.text, paddingVertical: spacing.sm },
+  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrim },
   // A sheet may cast one soft shadow (design rules).
   sheet: {
     backgroundColor: colors.background,

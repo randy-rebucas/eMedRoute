@@ -1,19 +1,26 @@
-import { Redirect, Stack } from 'expo-router';
+import { Redirect, Stack, usePathname } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
 import { colors } from '@/lib/theme';
+import { noteSignedInRep, rememberReturnPath } from '@/lib/returnTo';
 import { useForegroundRefresh } from '@/lib/useForegroundRefresh';
 import { NotificationResponder } from '@/components/NotificationResponder';
 import { SnackbarHost } from '@/components/Snackbar';
 
 /** Signed-in area: tabs plus pushed screens. Only for a signed-in session. */
 export default function AppLayout() {
-  const { signedIn, loading } = useAuth();
+  const { signedIn, loading, rep } = useAuth();
   const t = useT();
+  const pathname = usePathname();
   useForegroundRefresh(signedIn);
+  if (signedIn) noteSignedInRep(rep?.id);
 
   if (loading) return null;
-  if (!signedIn) return <Redirect href="/" />;
+  if (!signedIn) {
+    // A session that expires mid-task: signing in again comes back here (lib/returnTo.ts).
+    rememberReturnPath(pathname);
+    return <Redirect href="/" />;
+  }
 
   return (
     <>
@@ -45,6 +52,7 @@ export default function AppLayout() {
         <Stack.Screen name="notifications" options={{ title: t('notifications.title') }} />
         <Stack.Screen name="settings" options={{ title: t('more.settings') }} />
         <Stack.Screen name="change-password" options={{ title: t('settings.changePassword') }} />
+        <Stack.Screen name="delete-account" options={{ title: t('settings.delete.title') }} />
         <Stack.Screen name="plan" options={{ title: t('more.plan') }} />
         <Stack.Screen name="sponsorships" options={{ title: t('more.sponsorships') }} />
         <Stack.Screen name="referral" options={{ title: t('more.referral') }} />

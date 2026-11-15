@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing } from '@/lib/theme';
 import { useT } from '@/lib/i18n';
+import { textSize } from '@/lib/typography';
 
 export type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -53,6 +54,8 @@ export function Button({
       onPress={onPress}
       disabled={isDisabled}
       accessibilityRole="button"
+      // While loading only a spinner shows: keep the button's name for screen readers.
+      accessibilityLabel={title}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
     >
       {loading ? (
@@ -186,13 +189,13 @@ export const screenStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.md, paddingBottom: spacing.xl },
   list: { padding: spacing.md, flexGrow: 1 },
-  title: { fontSize: 18, fontWeight: '700', color: colors.text },
-  muted: { fontSize: 14, color: colors.textMuted },
-  body: { fontSize: 15, color: colors.text, lineHeight: 21 },
+  title: { fontSize: textSize.xxl, fontWeight: '700', color: colors.text },
+  muted: { fontSize: textSize.md, color: colors.textMuted },
+  body: { fontSize: textSize.base, color: colors.text, lineHeight: 21 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm },
-  cardTitle: { fontSize: 15, fontWeight: '600', color: colors.text, flexShrink: 1 },
-  cardLine: { fontSize: 14, color: colors.text, marginTop: spacing.xs },
-  cardMeta: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+  cardTitle: { fontSize: textSize.base, fontWeight: '600', color: colors.text, flexShrink: 1 },
+  cardLine: { fontSize: textSize.md, color: colors.text, marginTop: spacing.xs },
+  cardMeta: { fontSize: textSize.sm, color: colors.textMuted, marginTop: 2 },
 });
 
 const styles = StyleSheet.create({
@@ -208,18 +211,18 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.6 },
   buttonInner: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   buttonInnerReverse: { flexDirection: 'row-reverse' },
-  buttonText: { fontSize: 16, fontWeight: '600' },
+  buttonText: { fontSize: textSize.lg, fontWeight: '600' },
   section: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, marginBottom: spacing.sm, flexWrap: 'wrap' },
-  sectionTitle: { fontSize: 17, fontWeight: '600', color: colors.text },
+  sectionTitle: { fontSize: textSize.xl, fontWeight: '600', color: colors.text },
   sectionAction: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 48, justifyContent: 'center' },
   // The darker teal: this sits on the page background, where `primary` is under 4.5:1.
-  sectionActionText: { fontSize: 15, fontWeight: '600', color: colors.primaryOnSoft },
+  sectionActionText: { fontSize: textSize.base, fontWeight: '600', color: colors.primaryOnSoft },
   tile: { borderRadius: radius.sm + 2, alignItems: 'center', justifyContent: 'center' },
   badge: { borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 4, alignSelf: 'flex-start' },
-  badgeText: { fontSize: 12, fontWeight: '600' },
+  badgeText: { fontSize: textSize.xs, fontWeight: '600' },
   banner: { borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md },
-  bannerText: { fontSize: 14, fontWeight: '500' },
+  bannerText: { fontSize: textSize.md, fontWeight: '500' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
   footer: { paddingVertical: spacing.lg, alignItems: 'center' },
-  footerError: { color: colors.danger, fontSize: 14, textAlign: 'center' },
+  footerError: { color: colors.danger, fontSize: textSize.md, textAlign: 'center' },
 });

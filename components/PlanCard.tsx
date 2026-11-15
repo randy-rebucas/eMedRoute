@@ -6,6 +6,7 @@ import { cycleDays, daysLeft } from '@/lib/plan';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Subscription } from '@/lib/types';
 import { photos, ScrimPhoto } from './Photo';
+import { textSize } from '@/lib/typography';
 
 const longDate = (iso: string | null | undefined) => formatDate(iso, { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -124,10 +125,10 @@ const styles = StyleSheet.create({
   hero: { backgroundColor: colors.navy, borderRadius: radius.lg, padding: spacing.md + 4, gap: spacing.sm, marginBottom: spacing.lg },
   photo: { borderRadius: radius.lg, minHeight: 240, marginBottom: spacing.lg },
   photoBody: { flex: 1, justifyContent: 'flex-end', padding: spacing.md + 4, gap: spacing.sm },
-  title: { fontSize: 20, lineHeight: 26, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.2 },
-  muted: { fontSize: 14, lineHeight: 20, color: colors.onNavyMuted },
+  title: { fontSize: textSize.h4, lineHeight: 26, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.2 },
+  muted: { fontSize: textSize.md, lineHeight: 20, color: colors.onNavyMuted },
   figures: { fontVariant: ['tabular-nums'] },
-  soon: { fontSize: 13, lineHeight: 18, color: colors.warningSoft, fontWeight: '600' },
+  soon: { fontSize: textSize.sm, lineHeight: 18, color: colors.warningSoft, fontWeight: '600' },
   chip: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
@@ -139,9 +140,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   chipWarn: { backgroundColor: colors.warningSoft },
-  chipText: { fontSize: 12, fontWeight: '700', color: colors.primaryText },
+  chipText: { fontSize: textSize.xs, fontWeight: '700', color: colors.primaryText },
   meterWrap: { gap: 6, marginTop: spacing.xs },
   track: { height: 8, borderRadius: 4, backgroundColor: colors.navyLine, overflow: 'hidden' },
   fill: { height: 8, borderRadius: 4 },
-  meterLabel: { fontSize: 13, fontWeight: '600', color: colors.primaryText, fontVariant: ['tabular-nums'] },
+  meterLabel: { fontSize: textSize.sm, fontWeight: '600', color: colors.primaryText, fontVariant: ['tabular-nums'] },
 });

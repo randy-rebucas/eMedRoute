@@ -13,7 +13,7 @@ import {
 } from '@/lib/onboarding';
 import { ActivationPass, getActivationPass, setActivationPass } from '@/lib/storage';
 import { colors, spacing } from '@/lib/theme';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { LoadingView } from '@/components/ui';
 import { classifyAuthError, IconBadge, InlineError, StatusScreen } from '@/components/auth';
 
@@ -36,13 +36,15 @@ export default function ActivationScreen() {
   const [activated, setActivated] = useState(false);
   const [slow, setSlow] = useState(false);
   const [opening, setOpening] = useState(false);
+  const paying = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const startedAt = useRef(Date.now());
   const checking = useRef(false);
   const browserOpen = useRef(false);
 
   const backToSignIn = useCallback(async () => {
-    await setActivationPass(null);
+    // A storage failure must not leave the rep stuck on this screen.
+    await setActivationPass(null).catch(() => {});
     router.replace('/login');
   }, []);
 
@@ -105,7 +107,7 @@ export default function ActivationScreen() {
   );
 
   /** A fresh checkout with the pass (a checkout link works once), then open it. */
-  const payAgain = useCallback(async () => {
+  const payAgainOnce = useCallback(async () => {
     const current = await getActivationPass();
     if (!current) {
       setPass(null);
@@ -131,6 +133,17 @@ export default function ActivationScreen() {
       setOpening(false);
     }
   }, [check, describe, openCheckout, t]);
+
+  const payAgain = useCallback(async () => {
+    // Two taps would create two checkouts and two browser sessions.
+    if (paying.current) return;
+    paying.current = true;
+    try {
+      await payAgainOnce();
+    } finally {
+      paying.current = false;
+    }
+  }, [payAgainOnce]);
 
   // First appearance: load the pass, open the checkout the previous screen handed over, start looking.
   useEffect(() => {
@@ -210,5 +223,5 @@ export default function ActivationScreen() {
 
 const styles = StyleSheet.create({
   checking: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, marginTop: spacing.lg, paddingHorizontal: spacing.md },
-  error: { color: colors.danger, fontSize: 14, textAlign: 'center', marginTop: spacing.md },
+  error: { color: colors.danger, fontSize: textSize.md, textAlign: 'center', marginTop: spacing.md },
 });

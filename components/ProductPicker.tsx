@@ -6,7 +6,7 @@ import { useT } from '@/lib/i18n';
 import { useActiveProducts } from '@/lib/products';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Product } from '@/lib/types';
-import { mono, type } from '@/lib/typography';
+import { mono, textSize, type } from '@/lib/typography';
 import { Button, LoadingView } from './ui';
 
 /** Most products one visit can carry (server: MAX_VISIT_PRODUCTS). */
@@ -117,9 +117,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     backgroundColor: colors.primarySoft,
   },
-  chipText: { fontSize: 15, color: colors.primaryOnSoft, fontWeight: '600' },
+  chipText: { fontSize: textSize.base, color: colors.primaryOnSoft, fontWeight: '600' },
   add: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 48, alignSelf: 'flex-start' },
-  addText: { fontSize: 15, fontWeight: '600', color: colors.primary },
+  addText: { fontSize: textSize.base, fontWeight: '600', color: colors.primary },
   modal: { flex: 1, backgroundColor: colors.background },
   modalHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.md },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },

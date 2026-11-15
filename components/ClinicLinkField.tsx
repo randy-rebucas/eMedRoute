@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useClinics } from '@/lib/clinics';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { ListFooter, LoadingView } from './ui';
 
 export type LinkedClinic = { id: string; name: string; location: string };
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   linkedName: { fontWeight: '600', color: colors.primaryOnSoft },
   actions: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.lg },
   action: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 48 },
-  actionText: { fontSize: 15, fontWeight: '600', color: colors.primary },
+  actionText: { fontSize: textSize.base, fontWeight: '600', color: colors.primary },
   muted: { color: colors.textMuted },
   modal: { flex: 1, backgroundColor: colors.background },
   modalHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.md },
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.md - 4,
   },
-  searchInput: { flex: 1, fontSize: 15, color: colors.text, paddingVertical: spacing.sm },
+  searchInput: { flex: 1, fontSize: textSize.base, color: colors.text, paddingVertical: spacing.sm },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },
   option: {
     flexDirection: 'row',

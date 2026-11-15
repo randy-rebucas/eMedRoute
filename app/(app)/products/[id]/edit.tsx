@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useT } from '@/lib/i18n';
 import { updateProduct, useProduct } from '@/lib/products';
-import { ErrorState } from '@/components/ErrorState';
+import { ErrorState, NotFoundState } from '@/components/ErrorState';
 import { ProductForm } from '@/components/ProductForm';
 import { LoadingView } from '@/components/ui';
 
@@ -9,10 +9,11 @@ import { LoadingView } from '@/components/ui';
 export default function EditProductScreen() {
   const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: product, loading, error, offline, stale, refresh } = useProduct(id);
+  const { data: product, loading, error, offline, stale, refresh, notFound } = useProduct(id);
 
   // Only the server's copy is edited: a saved offline copy could save over newer changes.
   if (!product || stale) {
+    if (notFound) return <NotFoundState />;
     if (loading || (stale && !offline && !error)) return <LoadingView />;
     return <ErrorState message={offline ? t('common.editNeedsConnection') : (error ?? t('common.failedToLoad'))} onRetry={refresh} />;
   }

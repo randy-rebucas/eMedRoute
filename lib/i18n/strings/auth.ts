@@ -3,6 +3,8 @@ import { defineStrings } from '../types';
 // Area "auth": app/(auth)/*, components/auth.tsx, lib/auth.tsx. See lib/i18n/GLOSSARY.md.
 export default defineStrings({
   en: {
+    // TurnstileCheck (screen readers)
+    securityCheck: 'Security check',
     showPassword: 'Show password',
     hidePassword: 'Hide password',
     backToSignIn: 'Back to sign-in',
@@ -68,6 +70,7 @@ export default defineStrings({
       "You're signed out on this device, but we couldn't confirm your other devices were signed out. Sign in and try again, or change your password.",
   },
   fil: {
+    securityCheck: 'Security check',
     showPassword: 'Ipakita ang password',
     hidePassword: 'Itago ang password',
     backToSignIn: 'Bumalik sa sign-in',

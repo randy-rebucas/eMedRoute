@@ -6,7 +6,7 @@ import { TFunction, useT } from '@/lib/i18n';
 import { byMonth, daysSinceDone, memberMonth, QUIET_DAYS, teamMonth } from '@/lib/team';
 import { colors, radius, spacing } from '@/lib/theme';
 import { TeamMember } from '@/lib/types';
-import { mono, type } from '@/lib/typography';
+import { mono, textSize, type } from '@/lib/typography';
 
 // The validated pair (skill: accent = completed / primary series, slate = secondary).
 const DONE = colors.accent;
@@ -172,18 +172,18 @@ const styles = StyleSheet.create({
   figures: { fontVariant: ['tabular-nums'] },
   actions: { flexDirection: 'row', gap: spacing.lg, flexWrap: 'wrap' },
   action: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 44 },
-  actionText: { fontSize: 15, fontWeight: '600', color: colors.primary },
+  actionText: { fontSize: textSize.base, fontWeight: '600', color: colors.primary },
   legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.md, rowGap: spacing.xs, paddingHorizontal: spacing.md, marginVertical: spacing.sm },
   key: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   swatch: { width: 10, height: 10, borderRadius: 2 },
-  keyText: { fontSize: 12, color: colors.textMuted },
+  keyText: { fontSize: textSize.xs, color: colors.textMuted },
   row: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2, gap: 6, minHeight: 64 },
   rule: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   rowPicked: { backgroundColor: colors.surfaceMuted },
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  name: { flexShrink: 1, fontSize: 15, fontWeight: '600', color: colors.text },
-  tag: { fontSize: 12, fontWeight: '600', color: colors.slate, borderWidth: 1, borderColor: colors.slate, borderRadius: radius.sm, paddingHorizontal: 6, paddingVertical: 1 },
-  count: { marginLeft: 'auto', fontSize: 15, fontWeight: '700', color: colors.text },
+  name: { flexShrink: 1, fontSize: textSize.base, fontWeight: '600', color: colors.text },
+  tag: { fontSize: textSize.xs, fontWeight: '600', color: colors.slate, borderWidth: 1, borderColor: colors.slate, borderRadius: radius.sm, paddingHorizontal: 6, paddingVertical: 1 },
+  count: { marginLeft: 'auto', fontSize: textSize.base, fontWeight: '700', color: colors.text },
   track: { flexDirection: 'row', height: 10, borderRadius: 5, backgroundColor: colors.slateSoft, overflow: 'hidden' },
   lastLine: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   quiet: { color: colors.warning, fontWeight: '600' },
@@ -195,5 +195,5 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
-  axisText: { fontSize: 12, color: colors.textMuted },
+  axisText: { fontSize: textSize.xs, color: colors.textMuted },
 });

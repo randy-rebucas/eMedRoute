@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { errorMessage } from '@/lib/api';
 import { clinicTodayYmd } from '@/lib/format';
@@ -7,6 +8,7 @@ import { spacing } from '@/lib/theme';
 import { LogEntryInput, PersonalVisitStatus, Visit } from '@/lib/types';
 import { type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
+import { useDiscardGuard } from '@/lib/useDiscardGuard';
 import { visitDay } from '@/lib/visits';
 import { ClinicLinkField, LinkedClinic } from './ClinicLinkField';
 import { Field } from './forms';
@@ -80,8 +82,11 @@ export function VisitLogForm({
   submitLabel: string;
   onSubmit: (input: LogEntryInput) => Promise<void>;
 }) {
+  // The stack header's real height (it grows with large text and differs per platform).
+  const headerHeight = useHeaderHeight();
   const t = useT();
   const [form, setForm] = useState<FormState>(() => initial(visit));
+  const [start] = useState(form);
   // Until the rep picks a status, a past day defaults to Done and today or later to Planned.
   const [statusTouched, setStatusTouched] = useState(!!visit);
   const [submitted, setSubmitted] = useState(false);
@@ -97,6 +102,11 @@ export function VisitLogForm({
   };
   const required = (key: 'clinicName' | 'clinicLocation' | 'purpose' | 'date' | 'time') =>
     submitted && !String(form[key]).trim() ? t('profile.required') : null;
+
+  const dirty = (Object.keys(form) as (keyof FormState)[]).some((k) =>
+    k === 'productIds' || k === 'linked' ? JSON.stringify(form[k]) !== JSON.stringify(start[k]) : form[k] !== start[k]
+  );
+  useDiscardGuard(dirty && !saving);
 
   async function save() {
     if (savingRef.current) return;
@@ -129,7 +139,7 @@ export function VisitLogForm({
   }
 
   return (
-    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={96}>
+    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={headerHeight}>
       <ScrollView contentContainerStyle={[screenStyles.content, { paddingBottom }]} keyboardShouldPersistTaps="handled">
         {!visit ? <Text style={[type.secondary, styles.intro]}>{t('visits.form.logIntro')}</Text> : null}
 

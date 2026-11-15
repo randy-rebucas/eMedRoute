@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { API_BASE_URL } from '@/lib/config';
+import { useT } from '@/lib/i18n';
 
 /**
  * What the check reports:
@@ -14,16 +15,32 @@ export type TurnstileState = { status: 'token'; token: string } | { status: 'pen
 
 const PAGE_URL = `${API_BASE_URL}/turnstile/app`;
 
+/** How long the page may stay silent before the check counts as failed. */
+const NO_ANSWER_MS = 25000;
+
 /**
  * Cloudflare Turnstile for the app. There's no native widget, so this shows our own page
  * (backend app/turnstile/app) in a WebView, which posts the token back. Change `key` to get a new one.
  */
 export function TurnstileCheck({ onChange }: { onChange: (state: TurnstileState) => void }) {
+  const t = useT();
   const origin = useMemo(() => new URL(API_BASE_URL).origin, []);
+  // A page that loads but never answers (blocked script, a stuck widget) would hold sign-up on
+  // "finish the security check" forever. After a while, treat it as failed: the server decides.
+  const answered = useRef(false);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!answered.current) onChangeRef.current({ status: 'failed' });
+    }, NO_ANSWER_MS);
+    return () => clearTimeout(timer);
+  }, []);
 
   const onMessage = (event: WebViewMessageEvent) => {
     // Only our page may answer; the widget's own frames can't reach this bridge.
     if (!event.nativeEvent.url.startsWith(`${origin}/`)) return;
+    answered.current = true;
     let message: { type?: unknown; token?: unknown };
     try {
       message = JSON.parse(event.nativeEvent.data);
@@ -52,7 +69,7 @@ export function TurnstileCheck({ onChange }: { onChange: (state: TurnstileState)
         scrollEnabled={false}
         setSupportMultipleWindows={false}
         style={styles.webview}
-        accessibilityLabel="Security check"
+        accessibilityLabel={t('auth.securityCheck')}
       />
     </View>
   );

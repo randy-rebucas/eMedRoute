@@ -2,7 +2,8 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { AppState } from 'react-native';
 import { apiFetch, apiRequest, ApiError, AUTH_ENDPOINTS, query, setSessionExpiredHandler, storeTokens, TokenPair } from './api';
 import { clearSession, getOrCreateDeviceId, getPendingSignOut, getSession, setPendingSignOut } from './storage';
-import { registerForPushNotifications, watchPushToken } from './push';
+import { clearDeliveredNotifications, registerForPushNotifications, watchPushToken } from './push';
+import { skipNextReturnPath } from './returnTo';
 import { clearOfflineCache } from './offlineCache';
 import { resetClinicCaches } from './clinics';
 import { commitPendingNow, settleDeletesForSignOut } from './undo';
@@ -91,6 +92,7 @@ export function summaryFromProfile(p: RepProfile): RepSummary {
 /** What this account left in memory: the next one starts clean. */
 function forgetAccountState() {
   resetClinicCaches();
+  clearDeliveredNotifications().catch(() => {});
 }
 
 /**
@@ -315,6 +317,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Whatever the server said, this device is signed out.
       await clearSession();
       forgetAccountState();
+      skipNextReturnPath();
       setState({ status: 'signedOut' });
       if (everywhere && failure) {
         // "Everywhere" is a security action: tell the rep it may not have happened.

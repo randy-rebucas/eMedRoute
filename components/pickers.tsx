@@ -6,7 +6,7 @@ import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/d
 import { formatDay, toYmd } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
-import { mono, type } from '@/lib/typography';
+import { mono, textSize, type } from '@/lib/typography';
 import { IconName } from './ui';
 
 // Date, time and choice inputs for the visit and product forms. Values are plain strings
@@ -329,8 +329,8 @@ const styles = StyleSheet.create({
   boxError: { borderColor: colors.danger },
   boxText: { flex: 1 },
   placeholder: { color: colors.textMuted },
-  error: { fontSize: 13, color: colors.danger },
-  backdrop: { flex: 1, backgroundColor: 'rgba(6, 24, 38, 0.45)' },
+  error: { fontSize: textSize.sm, color: colors.danger },
+  backdrop: { flex: 1, backgroundColor: colors.scrim },
   sheet: {
     backgroundColor: colors.surface,
     borderTopLeftRadius: radius.lg,
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
   },
   done: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
-  doneText: { fontSize: 16, fontWeight: '600', color: colors.primary },
+  doneText: { fontSize: textSize.lg, fontWeight: '600', color: colors.primary },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: {
     minHeight: 48,
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   chipSelected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  chipText: { fontSize: 15, color: colors.text },
+  chipText: { fontSize: textSize.base, color: colors.text },
   chipTextSelected: { fontWeight: '600', color: colors.primaryOnSoft },
   // Bleeds to the screen edges so tags scroll under them, not under the list padding.
   filterScroll: { marginHorizontal: -spacing.md, flexGrow: 0 },
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   pillSelected: { borderColor: colors.primary, backgroundColor: colors.primary },
-  pillText: { fontSize: 14, fontWeight: '600', color: colors.text },
+  pillText: { fontSize: textSize.md, fontWeight: '600', color: colors.text },
   pillTextSelected: { color: colors.primaryText },
   segments: {
     flexDirection: 'row',
@@ -381,6 +381,6 @@ const styles = StyleSheet.create({
   },
   segment: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm - 2, paddingHorizontal: spacing.xs },
   segmentSelected: { backgroundColor: colors.primary },
-  segmentText: { fontSize: 15, fontWeight: '600', color: colors.text },
+  segmentText: { fontSize: textSize.base, fontWeight: '600', color: colors.text },
   segmentTextSelected: { color: colors.primaryText },
 });

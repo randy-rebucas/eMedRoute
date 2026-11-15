@@ -1,9 +1,9 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, Ref, useState } from 'react';
 import { StyleSheet, Switch, Text, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { IconName, IconTile } from './ui';
 
 // Labelled inputs and ruled rows for the signed-in forms (profile, settings, support).
@@ -17,7 +17,7 @@ export function Field({
   multiline,
   style,
   ...rest
-}: TextInputProps & { label: string; hint?: string; error?: string | null; optional?: boolean }) {
+}: TextInputProps & { label: string; hint?: string; error?: string | null; optional?: boolean; ref?: Ref<TextInput> }) {
   const t = useT();
   const [focused, setFocused] = useState(false);
   return (
@@ -173,13 +173,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.md - 4,
     paddingVertical: spacing.sm + 2,
-    fontSize: 15,
+    fontSize: textSize.base,
     color: colors.text,
   },
   inputMultiline: { minHeight: 112, textAlignVertical: 'top' },
   inputFocused: { borderColor: colors.primary },
   inputError: { borderColor: colors.danger },
-  error: { fontSize: 13, color: colors.danger },
+  error: { fontSize: textSize.sm, color: colors.danger },
   group: { marginBottom: spacing.lg },
   groupTitle: { ...type.secondary, fontWeight: '600', marginBottom: spacing.sm, marginLeft: spacing.xs },
   panel: {

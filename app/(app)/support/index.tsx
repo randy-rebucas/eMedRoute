@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { errorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -9,7 +9,7 @@ import { TFunction, useT } from '@/lib/i18n';
 import { lastActivity, replyToSupportRequest, RequestState, requestState, useSupportRequests } from '@/lib/support';
 import { colors, radius, spacing } from '@/lib/theme';
 import { SupportRequest } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { ErrorState } from '@/components/ErrorState';
 import { Field } from '@/components/forms';
@@ -47,7 +47,11 @@ export default function SupportScreen() {
   const t = useT();
   const { rep } = useAuth();
   const { items, loading, refreshing, loadingMore, error, loadMoreError, refresh, reload, loadMore } = useSupportRequests();
-  const [open, setOpen] = useState<string | null>(null);
+  // A support push opens its request (lib/push.ts routeForNotification).
+  const params = useLocalSearchParams<{ open?: string }>();
+  const [open, setOpen] = useState<string | null>(typeof params.open === 'string' ? params.open : null);
+  // Typed replies outlive collapsing a row (or opening another), for as long as this screen is open.
+  const drafts = useRef(new Map<string, string>());
   const paddingBottom = useBottomPadding();
 
   if (loading && items.length === 0) return <LoadingView />;
@@ -65,8 +69,12 @@ export default function SupportScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />}
       onEndReached={loadMore}
       onEndReachedThreshold={0.4}
+      // The reply box sits inside a row: keep it above the keyboard (Android resizes the window itself).
+      automaticallyAdjustKeyboardInsets
+      keyboardShouldPersistTaps="handled"
       ListHeaderComponent={
         <View style={styles.header}>
+          {error ? <Banner tone="warning" message={t('common.refreshFailed')} /> : null}
           <Text style={type.secondary}>{t('support.intro')}</Text>
           <Button title={t('support.new')} icon="create-outline" onPress={() => router.push('/support/new')} />
           {replied > 0 ? (
@@ -94,6 +102,7 @@ export default function SupportScreen() {
           last={index === items.length - 1}
           expanded={open === item._id}
           onToggle={() => setOpen(open === item._id ? null : item._id)}
+          drafts={drafts.current}
         />
       )}
     />
@@ -106,12 +115,14 @@ function RequestRow({
   last,
   expanded,
   onToggle,
+  drafts,
 }: {
   request: SupportRequest;
   first: boolean;
   last: boolean;
   expanded: boolean;
   onToggle: () => void;
+  drafts: Map<string, string>;
 }) {
   const t = useT();
   const state = requestState(request);
@@ -144,21 +155,28 @@ function RequestRow({
         <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color={colors.textMuted} />
       </TouchableOpacity>
 
-      {expanded ? <Thread request={request} state={state} /> : null}
+      {expanded ? <Thread request={request} state={state} drafts={drafts} /> : null}
       {/* A line inside the row, not a bottom border: a hairline border notches the side borders. */}
       {!last ? <View style={styles.rule} /> : null}
     </View>
   );
 }
 
-function Thread({ request, state }: { request: SupportRequest; state: RequestState }) {
+function Thread({ request, state, drafts }: { request: SupportRequest; state: RequestState; drafts: Map<string, string> }) {
   const t = useT();
   const replies = request.replies ?? [];
-  const [reply, setReply] = useState('');
+  const [reply, setReplyState] = useState(() => drafts.get(request._id) ?? '');
+  const setReply = (value: string) => {
+    setReplyState(value);
+    if (value) drafts.set(request._id, value);
+    else drafts.delete(request._id);
+  };
   const [sending, setSending] = useState(false);
   const [missing, setMissing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  // State lags a frame: a double tap must not send the reply twice.
+  const sendingRef = useRef(false);
   useAnnounce(sent ? t('support.replySent') : null);
 
   async function send() {
@@ -169,6 +187,8 @@ function Thread({ request, state }: { request: SupportRequest; state: RequestSta
       setMissing(true);
       return;
     }
+    if (sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true);
     try {
       await replyToSupportRequest(request._id, reply.trim());
@@ -177,6 +197,7 @@ function Thread({ request, state }: { request: SupportRequest; state: RequestSta
     } catch (err) {
       setError(isNetworkError(err) ? t('common.needsConnection') : errorMessage(err));
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }
@@ -242,7 +263,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     backgroundColor: colors.warningSoft,
   },
-  repliedText: { flex: 1, fontSize: 13, lineHeight: 18, fontWeight: '600', color: colors.warning },
+  repliedText: { flex: 1, fontSize: textSize.sm, lineHeight: 18, fontWeight: '600', color: colors.warning },
   empty: {
     alignItems: 'center',
     gap: spacing.sm,
@@ -262,11 +283,11 @@ const styles = StyleSheet.create({
   rule: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginHorizontal: -spacing.md },
   head: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 56, paddingVertical: spacing.sm + 4 },
   headText: { flex: 1, gap: 4, alignItems: 'flex-start' },
-  subject: { fontSize: 15, lineHeight: 21, fontWeight: '500', color: colors.text },
+  subject: { fontSize: textSize.base, lineHeight: 21, fontWeight: '500', color: colors.text },
   subjectStrong: { fontWeight: '700' },
   nums: { fontVariant: ['tabular-nums'] },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.sm },
-  chipText: { fontSize: 12, fontWeight: '700' },
+  chipText: { fontSize: textSize.xs, fontWeight: '700' },
   thread: { gap: spacing.sm, paddingBottom: spacing.md },
   message: { borderRadius: radius.md, backgroundColor: colors.surfaceMuted, padding: spacing.sm + 4, gap: spacing.xs },
   messageTeam: { backgroundColor: colors.primarySoft },

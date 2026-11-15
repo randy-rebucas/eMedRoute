@@ -204,6 +204,8 @@ export function usePaginatedList<T extends { _id?: string; id?: string }, X = Re
       return;
     }
     setItems([]);
+    // The summary belongs to the old filter: don't show it over the new one's list.
+    setExtra(null);
     itemCount.current = 0;
     fromCache.current = false;
     setOffline(false);

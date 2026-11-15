@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useT } from '@/lib/i18n';
 import { openRoute, RouteStop, stopsLeftOut } from '@/lib/route';
 import { colors, radius, spacing } from '@/lib/theme';
-import { mono, type } from '@/lib/typography';
+import { mono, textSize, type } from '@/lib/typography';
 import { Button, IconTile } from './ui';
 
 /**
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   dot: { width: 10, height: 10, borderRadius: 5, marginTop: 6, borderWidth: 2, borderColor: colors.slate, backgroundColor: colors.surface },
   dotLast: { backgroundColor: colors.slate },
   line: { flex: 1, width: 2, backgroundColor: colors.border, marginVertical: 2 },
-  time: { fontSize: 15, lineHeight: 21, fontWeight: '600', color: colors.text, minWidth: 48 },
+  time: { fontSize: textSize.base, lineHeight: 21, fontWeight: '600', color: colors.text, minWidth: 48 },
   name: { flex: 1 },
   button: { marginTop: spacing.sm },
   leftOut: { marginTop: spacing.sm },

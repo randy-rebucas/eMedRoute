@@ -1,4 +1,5 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { Alert, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ApiError, errorMessage } from '@/lib/api';
@@ -16,7 +17,7 @@ import {
 } from '@/lib/sponsorships';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Sponsorship, SponsorshipQuote, SponsorshipsState, SponsorTerm } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { ErrorState } from '@/components/ErrorState';
 import { Field } from '@/components/forms';
@@ -56,6 +57,8 @@ function useActionError() {
  * prices, the offer form, and earlier ones as short rows. Paying happens on PayMongo's web page.
  */
 export default function SponsorshipsScreen() {
+  // The stack header's real height (it grows with large text and differs per platform).
+  const headerHeight = useHeaderHeight();
   const t = useT();
   const { data, loading, refreshing, error, offline, stale, updatedAt, refresh } = useSponsorships();
   const paddingBottom = useBottomPadding();
@@ -68,7 +71,7 @@ export default function SponsorshipsScreen() {
   const { waiting, current, past } = sponsorshipGroups(data.sponsorships);
 
   return (
-    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={96}>
+    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={headerHeight}>
       <ScrollView
         contentContainerStyle={[screenStyles.content, { paddingBottom }]}
         keyboardShouldPersistTaps="handled"
@@ -268,7 +271,11 @@ function SponsorshipCard({ s, prices }: { s: Sponsorship; prices: SponsorshipsSt
     if (!prices.payable) setChoosing(false);
   }, [prices.payable]);
 
+  const busyRef = useRef(false);
   async function run(key: string, action: () => Promise<unknown>) {
+    // State lags a frame: two taps on a term would open two checkouts.
+    if (busyRef.current) return false;
+    busyRef.current = true;
     setBusy(key);
     setProblem(null);
     setNote(null);
@@ -279,6 +286,7 @@ function SponsorshipCard({ s, prices }: { s: Sponsorship; prices: SponsorshipsSt
       setProblem(describe(err));
       return false;
     } finally {
+      busyRef.current = false;
       setBusy(null);
     }
   }
@@ -428,10 +436,12 @@ function OfferForm({ clinics }: { clinics: SponsorshipsState['clinics'] }) {
   const [sending, setSending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [sent, setSent] = useState<string | null>(null);
+  const sendingRef = useRef(false);
 
   async function send() {
     const clinic = clinics.find((c) => c.id === clinicId);
-    if (!clinic || sending) return;
+    if (!clinic || sending || sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true);
     setProblem(null);
     setSent(null);
@@ -443,6 +453,7 @@ function OfferForm({ clinics }: { clinics: SponsorshipsState['clinics'] }) {
     } catch (err) {
       setProblem(describe(err));
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }
@@ -496,8 +507,8 @@ const styles = StyleSheet.create({
   figures: { fontVariant: ['tabular-nums'] },
   // What the rep pays for, on the app's navy (as Home's next visit): solid, no shadow.
   hero: { backgroundColor: colors.navy, borderRadius: radius.lg, padding: spacing.md + 4, gap: spacing.xs + 2, marginBottom: spacing.lg },
-  heroTitle: { fontSize: 20, lineHeight: 26, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.2 },
-  heroMuted: { fontSize: 14, lineHeight: 20, color: colors.onNavyMuted },
+  heroTitle: { fontSize: textSize.h4, lineHeight: 26, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.2 },
+  heroMuted: { fontSize: textSize.md, lineHeight: 20, color: colors.onNavyMuted },
   photo: { borderRadius: radius.lg, minHeight: 220, marginBottom: spacing.lg },
   photoBody: { flex: 1, justifyContent: 'flex-end', padding: spacing.md + 4, gap: spacing.xs + 2 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
@@ -510,14 +521,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     backgroundColor: colors.warningSoft,
   },
-  chipText: { fontSize: 12, fontWeight: '700', color: colors.warning },
+  chipText: { fontSize: textSize.xs, fontWeight: '700', color: colors.warning },
   section: { marginBottom: spacing.lg },
   sectionTitle: { ...type.secondary, fontWeight: '600', marginBottom: spacing.sm, marginLeft: spacing.xs },
   list: { gap: spacing.sm },
   panel: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
   rule: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 56, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  amount: { fontSize: 16, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
+  amount: { fontSize: textSize.lg, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
   note: { ...type.secondary, marginTop: spacing.sm, marginHorizontal: spacing.xs },
   card: {
     backgroundColor: colors.surface,
@@ -535,17 +546,17 @@ const styles = StyleSheet.create({
   meter: { gap: 4 },
   track: { height: 8, borderRadius: 4, backgroundColor: colors.slateSoft, overflow: 'hidden' },
   fill: { height: 8, borderRadius: 4 },
-  meterLabel: { fontSize: 13, lineHeight: 18, fontWeight: '600', color: colors.text, fontVariant: ['tabular-nums'] },
+  meterLabel: { fontSize: textSize.sm, lineHeight: 18, fontWeight: '600', color: colors.text, fontVariant: ['tabular-nums'] },
   meterSoon: { color: colors.warning },
-  soon: { fontSize: 13, lineHeight: 18, color: colors.warning },
+  soon: { fontSize: textSize.sm, lineHeight: 18, color: colors.warning },
   quote: { borderLeftWidth: 3, borderLeftColor: colors.border, paddingLeft: spacing.sm + 4, paddingVertical: 2 },
   actions: { gap: spacing.sm },
   terms: { gap: spacing.sm, marginTop: spacing.xs },
   term: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 52, paddingHorizontal: spacing.md },
-  termAmount: { fontSize: 15, fontWeight: '600', color: colors.text, fontVariant: ['tabular-nums'] },
+  termAmount: { fontSize: textSize.base, fontWeight: '600', color: colors.text, fontVariant: ['tabular-nums'] },
   // Destructive but rarely wanted: red words, not a second full-width button on every card.
   endAction: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  endText: { fontSize: 15, fontWeight: '600', color: colors.danger },
+  endText: { fontSize: textSize.base, fontWeight: '600', color: colors.danger },
   endBusy: { opacity: 0.5 },
   pastRow: { minHeight: 56, justifyContent: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: 2 },
   none: { padding: spacing.md },

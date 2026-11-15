@@ -2,7 +2,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { dismissSnack, undoDelete, useSnack } from '@/lib/undo';
 import { useAnnounce } from './ui';
 
@@ -55,5 +55,5 @@ const styles = StyleSheet.create({
   },
   text: { ...type.body, flex: 1, color: colors.surface, paddingVertical: spacing.sm },
   action: { minHeight: 48, minWidth: 64, paddingHorizontal: spacing.md, alignItems: 'center', justifyContent: 'center' },
-  actionText: { fontSize: 15, fontWeight: '700', color: colors.onNavyAction },
+  actionText: { fontSize: textSize.base, fontWeight: '700', color: colors.onNavyAction },
 });

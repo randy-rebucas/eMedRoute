@@ -4,7 +4,7 @@ import { formatDay } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
 import { WeeklyVisits } from '@/lib/types';
-import { mono, type } from '@/lib/typography';
+import { mono, textSize, type } from '@/lib/typography';
 
 /**
  * Chart series colours, checked with the dataviz palette validator against the card surface:
@@ -149,8 +149,8 @@ const styles = StyleSheet.create({
   headText: { flex: 1 },
   avgBox: { alignItems: 'flex-end' },
   tabular: { fontVariant: ['tabular-nums'] },
-  avgValue: { fontSize: 22, fontWeight: '700', color: colors.text },
-  avgLabel: { fontSize: 12, color: colors.textMuted },
+  avgValue: { fontSize: textSize.h3, fontWeight: '700', color: colors.text },
+  avgLabel: { fontSize: textSize.xs, color: colors.textMuted },
   readout: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -159,11 +159,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     marginBottom: spacing.sm + 4,
   },
-  readoutWeek: { fontSize: 13, fontWeight: '700', color: colors.text, textTransform: 'uppercase', letterSpacing: 0.4 },
-  readoutValue: { fontSize: 13, color: colors.textMuted },
+  readoutWeek: { fontSize: textSize.sm, fontWeight: '700', color: colors.text, textTransform: 'uppercase', letterSpacing: 0.4 },
+  readoutValue: { fontSize: textSize.sm, color: colors.textMuted },
   plot: { height: PLOT_HEIGHT, justifyContent: 'flex-end', borderBottomWidth: 1, borderBottomColor: colors.border },
   gridLine: { position: 'absolute', left: 0, right: 24, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
-  scale: { position: 'absolute', right: 0, top: -7, fontSize: 12, color: colors.textMuted },
+  scale: { position: 'absolute', right: 0, top: -7, fontSize: textSize.xs, color: colors.textMuted },
   avgLine: {
     position: 'absolute',
     left: 0,
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   segTop: { borderTopLeftRadius: 4, borderTopRightRadius: 4 },
   zero: { height: 2, width: '100%', backgroundColor: colors.border, borderRadius: 1 },
   axis: { flexDirection: 'row', marginTop: spacing.xs + 2, marginRight: 24 },
-  tick: { flex: 1, textAlign: 'center', fontSize: 12, color: colors.textMuted },
+  tick: { flex: 1, textAlign: 'center', fontSize: textSize.xs, color: colors.textMuted },
   tickPicked: { color: colors.text, fontWeight: '700' },
   legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.md, rowGap: spacing.xs, marginTop: spacing.md },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2 },

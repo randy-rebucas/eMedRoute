@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LANGUAGE_PREFERENCES, LanguagePreference, languageChoiceLabel, systemLanguage, useLanguage, useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
+import { textSize } from '@/lib/typography';
 
 /** "Filipino", or "Same as phone (English)" when following the phone. */
 export function useLanguageSummary(): string {
@@ -64,7 +65,7 @@ export function LanguagePicker({ visible, onClose }: { visible: boolean; onClose
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(6, 24, 38, 0.45)' },
+  backdrop: { flex: 1, backgroundColor: colors.scrim },
   sheet: {
     backgroundColor: colors.surface,
     borderTopLeftRadius: radius.lg,
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     gap: spacing.sm,
   },
-  title: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
+  title: { fontSize: textSize.xxl, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -86,8 +87,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   optionSelected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  optionText: { fontSize: 16, color: colors.text },
+  optionText: { fontSize: textSize.lg, color: colors.text },
   optionTextSelected: { fontWeight: '700', color: colors.primaryOnSoft },
   cancel: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
-  cancelText: { fontSize: 16, fontWeight: '600', color: colors.primary },
+  cancelText: { fontSize: textSize.lg, fontWeight: '600', color: colors.primary },
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,7 +8,7 @@ import { formatDate, formatTime } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
 import { AiBriefResult, AiStatus } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { Button } from './ui';
 
@@ -23,7 +23,11 @@ export function AiBriefCard({ visitId, ai, offline }: { visitId: string; ai: AiS
   const [problem, setProblem] = useState<string | null>(null);
   const [usedUp, setUsedUp] = useState<string | null>(null);
 
+  // Each call spends an AI action: two taps in one frame must not spend two.
+  const inFlight = useRef(false);
   async function load(refresh = false) {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     setProblem(null);
     try {
@@ -32,6 +36,7 @@ export function AiBriefCard({ visitId, ai, offline }: { visitId: string; ai: AiS
       if (isAllowanceUsedUp(err)) setUsedUp(err.message);
       else setProblem(isNetworkError(err) ? t('common.needsConnection') : errorMessage(err));
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   }
@@ -112,9 +117,9 @@ const styles = StyleSheet.create({
   },
   head: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2 },
   body: { gap: spacing.sm },
-  headline: { fontSize: 16, lineHeight: 22, fontWeight: '600', color: colors.text },
+  headline: { fontSize: textSize.lg, lineHeight: 22, fontWeight: '600', color: colors.text },
   section: { gap: 2 },
   link: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 44, alignSelf: 'flex-start' },
-  linkText: { fontSize: 15, fontWeight: '600', color: colors.primaryOnSoft },
-  error: { fontSize: 13, color: colors.danger },
+  linkText: { fontSize: textSize.base, fontWeight: '600', color: colors.primaryOnSoft },
+  error: { fontSize: textSize.sm, color: colors.danger },
 });

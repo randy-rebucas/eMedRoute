@@ -7,6 +7,7 @@ import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/lib/theme';
 import { Avatar, initialsOf } from './Avatar';
 import { BrandLogo } from './BrandLogo';
+import { textSize } from '@/lib/typography';
 
 // Kept importable from here for older callers; it lives with Avatar now.
 export { initialsOf } from './Avatar';
@@ -85,7 +86,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeText: { fontSize: 12, lineHeight: 14, fontWeight: '700', color: colors.primaryText, fontVariant: ['tabular-nums'] },
+  badgeText: { fontSize: textSize.xs, lineHeight: 14, fontWeight: '700', color: colors.primaryText, fontVariant: ['tabular-nums'] },
   avatar: {
     width: 48,
     height: 48,

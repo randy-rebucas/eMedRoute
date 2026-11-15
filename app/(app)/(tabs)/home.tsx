@@ -11,7 +11,7 @@ import { todaysStops } from '@/lib/route';
 import { useTeam } from '@/lib/team';
 import { colors, radius, spacing } from '@/lib/theme';
 import { DashboardVisit } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { usePendingDeletes } from '@/lib/undo';
 import { visitDay } from '@/lib/visits';
 import { AppHeader } from '@/components/AppHeader';
@@ -119,7 +119,7 @@ export default function HomeScreen() {
         </ScrimPhoto>
 
         <ThinProgress active={stale && !offline} />
-        <OfflineBanner offline={offline} updatedAt={updatedAt} subject={t('home.offlineSubject')} />
+        <OfflineBanner offline={offline} updatedAt={updatedAt} refreshError={data ? error : null} subject={t('home.offlineSubject')} />
         {invite ? (
           <Notice
             icon="people-outline"
@@ -265,16 +265,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     backgroundColor: colors.primary,
   },
-  territoryText: { fontSize: 12, fontWeight: '600', color: colors.primaryText },
-  greeting: { fontSize: 26, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.4 },
+  territoryText: { fontSize: textSize.xs, fontWeight: '600', color: colors.primaryText },
+  greeting: { fontSize: textSize.h1, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.4 },
   dayLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs + 2 },
   dayDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent },
   dayDotIdle: { backgroundColor: colors.onNavyMuted },
-  dayText: { fontSize: 13, color: colors.onNavyMuted },
+  dayText: { fontSize: textSize.sm, color: colors.onNavyMuted },
   noVisit: { minHeight: 184, borderRadius: radius.lg, marginBottom: spacing.md },
   noVisitInner: { flex: 1, justifyContent: 'flex-end', padding: spacing.md + 4 },
-  noVisitTitle: { fontSize: 20, fontWeight: '700', color: colors.primaryText },
-  noVisitHint: { fontSize: 14, lineHeight: 20, color: colors.onNavyMuted, marginTop: spacing.xs },
+  noVisitTitle: { fontSize: textSize.h4, fontWeight: '700', color: colors.primaryText },
+  noVisitHint: { fontSize: textSize.md, lineHeight: 20, color: colors.onNavyMuted, marginTop: spacing.xs },
   quick: { flexDirection: 'row', gap: spacing.sm + 4, marginBottom: spacing.md },
   quickAction: { flex: 1 },
   quickPhoto: { minHeight: 148, borderRadius: radius.lg },
@@ -287,8 +287,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  quickLabel: { fontSize: 16, fontWeight: '700', color: colors.primaryText },
-  quickHint: { fontSize: 12, lineHeight: 16, color: colors.onNavyMuted, marginTop: 2 },
+  quickLabel: { fontSize: textSize.lg, fontWeight: '700', color: colors.primaryText },
+  quickHint: { fontSize: textSize.xs, lineHeight: 16, color: colors.onNavyMuted, marginTop: 2 },
   notice: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -300,5 +300,5 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   noticeText: { flex: 1 },
-  noticeAction: { fontSize: 15, fontWeight: '700', color: colors.primaryOnSoft },
+  noticeAction: { fontSize: textSize.base, fontWeight: '700', color: colors.primaryOnSoft },
 });

@@ -23,7 +23,7 @@ import { formatDate } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { updateProfile, useRepProfile } from '@/lib/profile';
 import { colors, radius, spacing } from '@/lib/theme';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { Avatar } from '@/components/Avatar';
 import { ErrorState } from '@/components/ErrorState';
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   // The rep on the app's navy, as on More: the picture leads.
   hero: { backgroundColor: colors.navy, borderRadius: radius.lg, alignItems: 'center', paddingVertical: spacing.lg, paddingHorizontal: spacing.md, marginBottom: spacing.lg },
   photoWrap: { width: 112, height: 112, marginBottom: spacing.md },
-  photoBusy: { ...StyleSheet.absoluteFill, borderRadius: 56, backgroundColor: 'rgba(11, 33, 54, 0.55)', alignItems: 'center', justifyContent: 'center' },
+  photoBusy: { ...StyleSheet.absoluteFill, borderRadius: 56, backgroundColor: colors.scrimStrong, alignItems: 'center', justifyContent: 'center' },
   camera: {
     position: 'absolute',
     right: -2,
@@ -279,12 +279,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  name: { fontSize: 22, fontWeight: '700', color: colors.primaryText, textAlign: 'center', letterSpacing: -0.2 },
-  muted: { fontSize: 14, color: colors.onNavyMuted, marginTop: 2, textAlign: 'center' },
+  name: { fontSize: textSize.h3, fontWeight: '700', color: colors.primaryText, textAlign: 'center', letterSpacing: -0.2 },
+  muted: { fontSize: textSize.md, color: colors.onNavyMuted, marginTop: 2, textAlign: 'center' },
   territory: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: spacing.sm, paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.sm, backgroundColor: colors.primary },
-  territoryText: { fontSize: 12, fontWeight: '600', color: colors.primaryText },
-  changeLink: { marginTop: spacing.md, minHeight: 32, justifyContent: 'center' },
-  changeText: { fontSize: 15, fontWeight: '600', color: colors.primaryText, textDecorationLine: 'underline' },
+  territoryText: { fontSize: textSize.xs, fontWeight: '600', color: colors.primaryText },
+  changeLink: { marginTop: spacing.md, minHeight: 44, justifyContent: 'center' },
+  changeText: { fontSize: textSize.base, fontWeight: '600', color: colors.primaryText, textDecorationLine: 'underline' },
   groupTitle: { ...type.label, color: colors.textMuted, marginBottom: spacing.sm, marginLeft: 2 },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, marginBottom: spacing.lg },
   bioCard: { paddingVertical: spacing.md },
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, gap: 1 },
   tabular: { fontVariant: ['tabular-nums'] },
   note: { marginTop: 2 },
-  backdrop: { flex: 1, backgroundColor: 'rgba(11, 33, 54, 0.4)' },
+  backdrop: { flex: 1, backgroundColor: colors.scrim },
   sheet: { backgroundColor: colors.background, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.md },
   sheetHint: { marginTop: 2, marginBottom: spacing.sm },
   option: {
