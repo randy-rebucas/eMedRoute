@@ -6,7 +6,7 @@ import { daysFromToday } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { useTeam, useTeamVisits } from '@/lib/team';
 import { colors, spacing } from '@/lib/theme';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { usePendingDeletes } from '@/lib/undo';
 import { byDay, dayHeading } from '@/lib/visits';
 import { EmptyState } from '@/components/EmptyState';
@@ -102,7 +102,7 @@ export default function TeamVisitsScreen() {
 const styles = StyleSheet.create({
   header: { gap: spacing.sm, marginBottom: spacing.md },
   dayHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: spacing.sm, paddingHorizontal: 2, marginBottom: spacing.sm, marginTop: spacing.sm },
-  dayTitle: { fontSize: 13, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
+  dayTitle: { fontSize: textSize.sm, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
   dayTitleToday: { color: colors.text },
   dayCount: { fontVariant: ['tabular-nums'] },
 });

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useNavigation } from 'expo-router';
-import { usePreventRemove } from 'expo-router/react-navigation';
+import { usePreventRemove, useHeaderHeight } from 'expo-router/react-navigation';
 import { Ionicons } from '@expo/vector-icons';
 import { errorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -9,7 +9,7 @@ import { useT } from '@/lib/i18n';
 import { updateProfile, useRepProfile } from '@/lib/profile';
 import { colors, radius, spacing } from '@/lib/theme';
 import { RepProfile } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { ErrorState } from '@/components/ErrorState';
 import { Field } from '@/components/forms';
@@ -41,6 +41,8 @@ const REQUIRED: (keyof Form)[] = ['firstName', 'lastName', 'phone', 'company'];
  * server then stops texting sign-in codes), and before typed changes are dropped.
  */
 export default function EditProfileScreen() {
+  // The stack header's real height (it grows with large text and differs per platform).
+  const headerHeight = useHeaderHeight();
   const t = useT();
   const navigation = useNavigation();
   const { setRepFromProfile } = useAuth();
@@ -108,7 +110,7 @@ export default function EditProfileScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={96}>
+    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={headerHeight}>
       <ScrollView contentContainerStyle={[screenStyles.content, { paddingBottom }]} keyboardShouldPersistTaps="handled">
         <Text style={styles.section} accessibilityRole="header">
           {t('profile.edit.name')}
@@ -219,7 +221,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     backgroundColor: colors.warningSoft,
   },
-  warnText: { flex: 1, fontSize: 13, lineHeight: 18, color: colors.warning },
+  warnText: { flex: 1, fontSize: textSize.sm, lineHeight: 18, color: colors.warning },
   locked: {
     flexDirection: 'row',
     gap: spacing.sm + 4,

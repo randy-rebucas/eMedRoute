@@ -70,3 +70,34 @@ export async function replyToSupportRequest(id: string, message: string): Promis
   await apiFetch(`${SUPPORT_PATH}/${encodeURIComponent(id)}/replies`, { method: 'POST', body: { message } });
   emitRefresh('support');
 }
+
+// ── Account deletion request ─────────────────────────────────────────────────
+
+const DELETION_PATH = '/api/medical-representatives/profile/deletion-request';
+export const DELETION_REASON_MAX = 1000;
+
+export type DeletionStatus = 'open' | 'in-progress' | 'resolved' | 'closed';
+
+export interface DeletionRequest {
+  reference: string;
+  status: DeletionStatus;
+  /** ISO date. */
+  requestedAt: string;
+}
+
+/** The rep's unfinished deletion request, or null when there is none. */
+export async function getDeletionRequest(): Promise<DeletionRequest | null> {
+  const json = await apiFetch<{ data?: DeletionRequest | null }>(DELETION_PATH);
+  return json?.data ?? null;
+}
+
+/**
+ * Ask for the account to be deleted (store policy: it starts in the app). The platform team
+ * confirms it is the account holder and finishes it; if one is open, the server returns that one.
+ */
+export async function requestDeletion(reason?: string): Promise<DeletionRequest> {
+  const trimmed = reason?.trim();
+  const json = await apiFetch<{ data: DeletionRequest }>(DELETION_PATH, { method: 'POST', body: trimmed ? { reason: trimmed } : {} });
+  emitRefresh('support');
+  return json.data;
+}

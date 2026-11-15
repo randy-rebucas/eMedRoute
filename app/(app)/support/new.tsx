@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useNavigation } from 'expo-router';
-import { usePreventRemove } from 'expo-router/react-navigation';
+import { usePreventRemove, useHeaderHeight } from 'expo-router/react-navigation';
 import { Ionicons } from '@expo/vector-icons';
 import { errorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -34,6 +34,8 @@ const CATEGORY_LABEL: Record<SupportCategory, PlainKey> = {
  * payment link; an untouched prefill leaves without asking.
  */
 export default function NewSupportRequestScreen() {
+  // The stack header's real height (it grows with large text and differs per platform).
+  const headerHeight = useHeaderHeight();
   const t = useT();
   const navigation = useNavigation();
   const { rep } = useAuth();
@@ -105,7 +107,7 @@ export default function NewSupportRequestScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={96}>
+    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={headerHeight}>
       <ScrollView contentContainerStyle={[screenStyles.content, { paddingBottom }]} keyboardShouldPersistTaps="handled">
         <ChoiceChips
           label={t('support.categoryLabel')}

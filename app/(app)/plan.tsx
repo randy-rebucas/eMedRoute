@@ -9,7 +9,7 @@ import { daysLeft, openBillingRequest, useSubscription, yearlyMonthsFree } from 
 import { AiStatus, Subscription } from '@/lib/types';
 import { openSupportDraft, useSupportRequests } from '@/lib/support';
 import { colors, radius, spacing } from '@/lib/theme';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { ErrorState } from '@/components/ErrorState';
 import { NavRow, RowGroup } from '@/components/forms';
 import { ThinProgress } from '@/components/Loading';
@@ -265,10 +265,10 @@ const styles = StyleSheet.create({
   meter: { height: 6, borderRadius: 3, backgroundColor: colors.slateSoft, overflow: 'hidden' },
   meterFill: { height: 6, borderRadius: 3, backgroundColor: colors.primary },
   meterFull: { backgroundColor: colors.warning },
-  tagText: { fontSize: 12, fontWeight: '700' },
-  save: { fontSize: 13, fontWeight: '600', color: colors.primaryOnSoft },
+  tagText: { fontSize: textSize.xs, fontWeight: '700' },
+  save: { fontSize: textSize.sm, fontWeight: '600', color: colors.primaryOnSoft },
   amountCol: { alignItems: 'flex-end' },
-  amount: { fontSize: 18, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
+  amount: { fontSize: textSize.xxl, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
   action: { gap: spacing.sm + 4, marginBottom: spacing.lg },
   asked: {
     flexDirection: 'row',
@@ -281,5 +281,5 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   askedText: { flex: 1, gap: 2 },
-  askedTitle: { fontSize: 15, lineHeight: 21, fontWeight: '600', color: colors.text },
+  askedTitle: { fontSize: textSize.base, lineHeight: 21, fontWeight: '600', color: colors.text },
 });

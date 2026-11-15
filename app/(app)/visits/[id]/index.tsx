@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,7 +13,7 @@ import { bookingBlocked, useSubscription } from '@/lib/plan';
 import { useActiveProducts } from '@/lib/products';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Visit } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { scheduleDelete } from '@/lib/undo';
 import {
   deleteVisit,
@@ -27,7 +27,7 @@ import {
   visitProgress,
   visitState,
 } from '@/lib/visits';
-import { ErrorState } from '@/components/ErrorState';
+import { ErrorState, NotFoundState } from '@/components/ErrorState';
 import { ThinProgress } from '@/components/Loading';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { productLabel } from '@/components/ProductPicker';
@@ -38,6 +38,7 @@ import { DeliveryCard } from '@/components/DeliveryCard';
 import { VisitProgress } from '@/components/VisitProgress';
 import { canDeliver, cancelDelivery, useVisitDeliveries } from '@/lib/deliveries';
 import { isNetworkError } from '@/lib/useApiData';
+import { useDiscardGuard } from '@/lib/useDiscardGuard';
 import { nextStepText, visitA11yLabel } from '@/components/VisitRow';
 
 const MAX_NOTES = 2000;
@@ -51,7 +52,8 @@ const MAX_NOTES = 2000;
 export default function VisitDetailScreen() {
   const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: visit, setData: setVisit, loading, refreshing, error, offline, stale, updatedAt, refresh } = useVisit(id);
+  const { data: visit, setData: setVisit, loading, refreshing, error, offline, stale, updatedAt, refresh, notFound } = useVisit(id);
+  const removing = useRef(false);
   const { data: activeProducts } = useActiveProducts();
   const { data: deliveries } = useVisitDeliveries(id);
   const { data: sub } = useSubscription();
@@ -64,6 +66,7 @@ export default function VisitDetailScreen() {
   const [problem, setProblem] = useState<string | null>(null);
 
   if (!visit) {
+    if (notFound) return <NotFoundState />;
     if (loading) return <LoadingView />;
     return <ErrorState message={error ?? t('common.failedToLoad')} onRetry={refresh} />;
   }
@@ -85,7 +88,9 @@ export default function VisitDetailScreen() {
   const whoNext = state === 'waiting' ? t('visits.whoNext.clinic') : state === 'approved' ? t('visits.whoNext.you') : null;
 
   function remove() {
-    if (!visit) return;
+    // Two taps would go back twice, past the list.
+    if (!visit || removing.current) return;
+    removing.current = true;
     scheduleDelete({
       id: visit._id,
       message: t('visits.deleted'),
@@ -165,7 +170,7 @@ export default function VisitDetailScreen() {
       {stale || offline ? (
         <View style={styles.status}>
           <ThinProgress active={stale && !offline} />
-          <OfflineBanner offline={offline} updatedAt={updatedAt} subject={t('visits.offlineSubjectOne')} />
+          <OfflineBanner offline={offline} updatedAt={updatedAt} refreshError={error} subject={t('visits.offlineSubjectOne')} />
         </View>
       ) : null}
 
@@ -361,9 +366,12 @@ function NotesBlock({
   const [problem, setProblem] = useState<string | null>(null);
   const notes = visit.notes?.trim() ?? '';
   const editing = draft !== null;
+  const savingRef = useRef(false);
+  useDiscardGuard(draft !== null && draft.trim() !== notes && !saving);
 
   async function save() {
-    if (draft === null || saving) return;
+    if (draft === null || saving || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     setProblem(null);
     try {
@@ -373,6 +381,7 @@ function NotesBlock({
     } catch (err) {
       setProblem(isNetworkError(err) ? t('common.needsConnection') : errorMessage(err));
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -445,16 +454,16 @@ const styles = StyleSheet.create({
   // Same navy as Home's next visit: solid fill, no shadow.
   hero: { backgroundColor: colors.navy, borderRadius: radius.lg, padding: spacing.md + 4, marginBottom: spacing.md },
   top: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
-  clinic: { fontSize: 22, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.2, marginTop: spacing.sm },
+  clinic: { fontSize: textSize.h3, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.2, marginTop: spacing.sm },
   struck: { textDecorationLine: 'line-through', color: colors.onNavyMuted },
   whenRow: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.md, rowGap: spacing.xs, marginTop: spacing.sm + 4 },
   whenBox: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2 },
-  when: { fontSize: 15, fontWeight: '600', color: colors.primaryText },
+  when: { fontSize: textSize.base, fontWeight: '600', color: colors.primaryText },
   // A clock time: tabular figures on the normal face (monospace spreads "14 : 30" on Android).
-  time: { fontSize: 17, fontWeight: '700', color: colors.primaryText, fontVariant: ['tabular-nums'] },
-  muted: { fontSize: 13, lineHeight: 18, color: colors.onNavyMuted },
+  time: { fontSize: textSize.xl, fontWeight: '700', color: colors.primaryText, fontVariant: ['tabular-nums'] },
+  muted: { fontSize: textSize.sm, lineHeight: 18, color: colors.onNavyMuted },
   place: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs + 2, marginTop: spacing.sm },
-  placeText: { flex: 1, fontSize: 14, lineHeight: 20 },
+  placeText: { flex: 1, fontSize: textSize.md, lineHeight: 20 },
   next: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -464,7 +473,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.navyLine,
   },
-  nextText: { fontSize: 15, lineHeight: 21, fontWeight: '600', color: colors.primaryText },
+  nextText: { fontSize: textSize.base, lineHeight: 21, fontWeight: '600', color: colors.primaryText },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
   action: {
     flexGrow: 1,
@@ -479,7 +488,7 @@ const styles = StyleSheet.create({
   },
   actionPrimary: { backgroundColor: colors.primary },
   actionGhost: { borderWidth: 1, borderColor: colors.navyLine },
-  actionText: { fontSize: 15, fontWeight: '600', color: colors.primaryText },
+  actionText: { fontSize: textSize.base, fontWeight: '600', color: colors.primaryText },
   disabled: { opacity: 0.5 },
   quote: {
     borderLeftWidth: 3,
@@ -507,7 +516,7 @@ const styles = StyleSheet.create({
   mutedText: { color: colors.textMuted },
   link: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2, minHeight: 44, alignSelf: 'flex-start' },
   notesLinks: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.lg },
-  linkText: { fontSize: 15, fontWeight: '600', color: colors.primaryOnSoft },
+  linkText: { fontSize: textSize.base, fontWeight: '600', color: colors.primaryOnSoft },
   input: {
     minHeight: 112,
     borderWidth: 1,
@@ -516,12 +525,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.md - 4,
     paddingVertical: spacing.sm + 2,
-    fontSize: 15,
+    fontSize: textSize.base,
     color: colors.text,
     textAlignVertical: 'top',
     marginTop: spacing.xs,
   },
-  error: { fontSize: 13, color: colors.danger, marginTop: spacing.xs },
+  error: { fontSize: textSize.sm, color: colors.danger, marginTop: spacing.xs },
   notesActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   deliveries: { marginBottom: spacing.sm, gap: spacing.xs },
   kept: { textAlign: 'center' },

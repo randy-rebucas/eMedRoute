@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -10,10 +11,12 @@ import { useT } from '@/lib/i18n';
 import { useActiveProducts } from '@/lib/products';
 import { colors, radius, spacing } from '@/lib/theme';
 import { DeliveryKind, Product } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
+import { useDiscardGuard } from '@/lib/useDiscardGuard';
+import { useRequestKey } from '@/lib/requestKey';
 import { useVisit } from '@/lib/visits';
-import { ErrorState } from '@/components/ErrorState';
+import { ErrorState, NotFoundState } from '@/components/ErrorState';
 import { Field } from '@/components/forms';
 import { ChoiceChips, DateField, FilterChips } from '@/components/pickers';
 import { productLabel } from '@/components/ProductPicker';
@@ -49,10 +52,12 @@ type Line = { key: number; product: Product; quantity: string; unit: string; lot
  * quantity, unit, and optionally the lot and batch expiry. The clinic confirms what arrived.
  */
 export default function RecordDeliveryScreen() {
+  // The stack header's real height (it grows with large text and differs per platform).
+  const headerHeight = useHeaderHeight();
   const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: visit, loading, error: loadError, refresh } = useVisit(id);
-  const { data: products, loading: productsLoading } = useActiveProducts();
+  const { data: visit, loading, error: loadError, refresh, notFound } = useVisit(id);
+  const { data: products, loading: productsLoading, error: productsError, refresh: refreshProducts } = useActiveProducts();
   const paddingBottom = useBottomPadding();
   const [kind, setKind] = useState<DeliveryKind>('sample');
   const [lines, setLines] = useState<Line[]>([]);
@@ -64,8 +69,13 @@ export default function RecordDeliveryScreen() {
   const sending = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [nextKey, setNextKey] = useState(1);
+  // A resend after a timeout must not record the delivery twice.
+  const requestKey = useRequestKey();
+  // Typed lines (quantity, lot, expiry) are a lot to lose to one back press.
+  useDiscardGuard((lines.length > 0 || note.trim() !== '') && !saving);
 
   if (!visit) {
+    if (notFound) return <NotFoundState />;
     if (loading) return <LoadingView />;
     return <ErrorState message={loadError ?? t('common.failedToLoad')} onRetry={refresh} />;
   }
@@ -95,7 +105,7 @@ export default function RecordDeliveryScreen() {
     setSaving(true);
     setError(null);
     try {
-      await createDelivery({
+      const input = {
         visitId: visit._id,
         kind,
         note: note.trim() || undefined,
@@ -106,7 +116,8 @@ export default function RecordDeliveryScreen() {
           lotNumber: l.lot.trim() || undefined,
           expiryDate: l.expiry || undefined,
         })),
-      });
+      };
+      await createDelivery(input, requestKey(input));
       router.back();
     } catch (err) {
       if (isNetworkError(err)) setError(t('common.needsConnection'));
@@ -130,7 +141,7 @@ export default function RecordDeliveryScreen() {
   const choices = (products ?? []).filter((p) => !usedIds.has(p._id));
 
   return (
-    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={96}>
+    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={headerHeight}>
       <ScrollView contentContainerStyle={[screenStyles.content, { paddingBottom }]} keyboardShouldPersistTaps="handled">
         <Text style={[type.secondary, styles.intro]}>{t('deliveries.form.intro', { clinic: visit.clinicName })}</Text>
         {!canDeliver(visit) ? <Banner message={t('deliveries.error.cantDeliver')} tone="warning" /> : null}
@@ -230,6 +241,9 @@ export default function RecordDeliveryScreen() {
               // Still loading the products: a spinner, not "No products".
               products == null && productsLoading ? (
                 <ActivityIndicator color={colors.primary} style={styles.loadingProducts} />
+              ) : products == null && productsError ? (
+                // A failed load isn't an empty catalog.
+                <ErrorState message={productsError} onRetry={refreshProducts} />
               ) : (
                 <Text style={type.secondary}>{t('deliveries.form.noProducts')}</Text>
               )
@@ -268,9 +282,9 @@ const styles = StyleSheet.create({
   remove: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   hint: { marginTop: -spacing.sm },
   clear: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 48, alignSelf: 'flex-start', marginTop: -spacing.sm },
-  clearText: { fontSize: 14, fontWeight: '600', color: colors.primaryOnSoft },
+  clearText: { fontSize: textSize.md, fontWeight: '600', color: colors.primaryOnSoft },
   add: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 48, alignSelf: 'flex-start', marginBottom: spacing.md },
-  addText: { fontSize: 15, fontWeight: '600', color: colors.primary },
+  addText: { fontSize: textSize.base, fontWeight: '600', color: colors.primary },
   modal: { flex: 1, backgroundColor: colors.background },
   modalHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.md },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },

@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatDate } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
-import { mono, type } from '@/lib/typography';
+import { mono, textSize, type } from '@/lib/typography';
 import { IconName } from './ui';
 
 const RING = 76;
@@ -128,11 +128,11 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
   ring: { width: RING, height: RING },
   ringCenter: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
-  pct: { fontSize: 18, fontWeight: '700', color: colors.text },
-  pctSign: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
+  pct: { fontSize: textSize.xxl, fontWeight: '700', color: colors.text },
+  pctSign: { fontSize: textSize.xs, fontWeight: '600', color: colors.textMuted },
   topText: { flex: 1 },
   eyebrow: { ...type.pill, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
-  figure: { fontSize: 28, fontWeight: '700', color: colors.text, marginTop: 2 },
+  figure: { fontSize: textSize.title, fontWeight: '700', color: colors.text, marginTop: 2 },
   figureOf: { color: colors.textMuted, fontWeight: '400' },
   none: { marginTop: spacing.xs, color: colors.textMuted },
   row: {
@@ -146,6 +146,6 @@ const styles = StyleSheet.create({
   rowLabel: { flex: 1 },
   badge: { minWidth: 32, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.sm, backgroundColor: colors.slateSoft, alignItems: 'center' },
   badgeFlagged: { backgroundColor: colors.warningSoft },
-  badgeText: { fontSize: 14, fontWeight: '700', color: colors.slate },
+  badgeText: { fontSize: textSize.md, fontWeight: '700', color: colors.slate },
   badgeTextFlagged: { color: colors.warning },
 });

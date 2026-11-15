@@ -4,7 +4,7 @@ import { ClinicHolding, holdingShares, holdingTotals } from '@/lib/deliveries';
 import { formatDate } from '@/lib/format';
 import { TFunction, useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 
 // Received is the primary series (the validated teal), waiting the secondary (slate).
 const RECEIVED = colors.accent;
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.md, rowGap: spacing.xs, marginTop: spacing.sm },
   key: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   swatch: { width: 10, height: 10, borderRadius: 2 },
-  keyText: { fontSize: 12, color: colors.textMuted },
+  keyText: { fontSize: textSize.xs, color: colors.textMuted },
   readout: { minHeight: 36, marginTop: spacing.sm, fontVariant: ['tabular-nums'] },
   readoutOn: { color: colors.text },
   rows: { marginTop: spacing.xs, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   rowPicked: { backgroundColor: colors.surfaceMuted },
   rowHead: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
   clinic: { flex: 1 },
-  figure: { fontSize: 14, fontWeight: '700', color: colors.text },
+  figure: { fontSize: textSize.md, fontWeight: '700', color: colors.text },
   // The one axis: every bar starts at zero on the left.
   track: { height: 8, borderRadius: 4, backgroundColor: colors.slateSoft, overflow: 'hidden' },
   bar: { flexDirection: 'row', height: 8, minWidth: 4, gap: 2 },

@@ -8,7 +8,8 @@ describe('routeForNotification', () => {
     // A visit change moves the clinic's next/last visit too.
     expect(routeForNotification({ screen: 'visits', id: 'v 1' })).toEqual({ href: '/visits/v%201', topics: ['visits', 'deliveries', 'dashboard', 'clinics'] });
     // Support answered: the list and More's open count.
-    expect(routeForNotification({ screen: 'support', id: 'r1' })).toEqual({ href: '/support', topics: ['support', 'dashboard'] });
+    expect(routeForNotification({ screen: 'support', id: 'r1' })).toEqual({ href: '/support?open=r1', topics: ['support', 'dashboard'] });
+    expect(routeForNotification({ screen: 'support' })).toEqual({ href: '/support', topics: ['support', 'dashboard'] });
     expect(routeForNotification({ screen: 'visits' }).href).toBe('/visits');
     expect(routeForNotification({ screen: 'products', id: 'p1' })).toEqual({ href: '/products/p1', topics: ['products', 'dashboard'] });
     expect(routeForNotification({ screen: 'team', id: 'x' })).toEqual({ href: '/team', topics: ['team'] });

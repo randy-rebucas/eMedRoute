@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,7 +13,7 @@ import { useSubscription } from '@/lib/plan';
 import { answerInvite, inviteRep, leaveTeam, removeMember, renameTeam, startTeam, useTeam, withdrawInvite } from '@/lib/team';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Team, TeamInvite, TeamMember } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { ErrorState } from '@/components/ErrorState';
 import { Field, NavRow, RowGroup } from '@/components/forms';
@@ -55,6 +56,8 @@ const longDate = (value: string) => formatDate(value, { month: 'short', day: 'nu
  * gives, and the form to start one.
  */
 export default function TeamScreen() {
+  // The stack header's real height (it grows with large text and differs per platform).
+  const headerHeight = useHeaderHeight();
   const t = useT();
   const { data, loading, refreshing, error, offline, stale, updatedAt, refresh } = useTeam();
   const paddingBottom = useBottomPadding();
@@ -65,7 +68,7 @@ export default function TeamScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={96}>
+    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={headerHeight}>
       <ScrollView
         contentContainerStyle={[screenStyles.content, { paddingBottom }]}
         keyboardShouldPersistTaps="handled"
@@ -174,8 +177,12 @@ function InviteCard({ invite }: { invite: TeamInvite }) {
   const describe = useActionError();
   const [busy, setBusy] = useState<'accept' | 'decline' | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  // State lags a frame: a second Accept would show a false "invite changed" error.
+  const busyRef = useRef(false);
 
   async function answer(accept: boolean) {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusy(accept ? 'accept' : 'decline');
     setProblem(null);
     try {
@@ -183,6 +190,7 @@ function InviteCard({ invite }: { invite: TeamInvite }) {
     } catch (err) {
       setProblem(describe(err));
     } finally {
+      busyRef.current = false;
       setBusy(null);
     }
   }
@@ -223,13 +231,15 @@ function StartTeam({ withPhoto }: { withPhoto: boolean }) {
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  const savingRef = useRef(false);
 
   async function start() {
-    if (saving) return;
+    if (saving || savingRef.current) return;
     if (name.trim().length < 2) {
       setProblem(t('team.start.nameRequired'));
       return;
     }
+    savingRef.current = true;
     setSaving(true);
     setProblem(null);
     try {
@@ -237,6 +247,7 @@ function StartTeam({ withPhoto }: { withPhoto: boolean }) {
     } catch (err) {
       setProblem(describe(err));
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -507,11 +518,11 @@ const styles = StyleSheet.create({
   // The team on the app's navy (as Home's next visit): solid, no shadow.
   hero: { backgroundColor: colors.navy, borderRadius: radius.lg, padding: spacing.md + 4, gap: spacing.sm, marginBottom: spacing.lg },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  heroTitle: { fontSize: 20, lineHeight: 26, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.2 },
+  heroTitle: { fontSize: textSize.h4, lineHeight: 26, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.2 },
   heroIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: -spacing.sm },
-  heroMuted: { fontSize: 14, lineHeight: 20, color: colors.onNavyMuted },
+  heroMuted: { fontSize: textSize.md, lineHeight: 20, color: colors.onNavyMuted },
   heroWarn: { gap: spacing.xs, marginTop: spacing.xs },
-  heroWarnText: { fontSize: 13, lineHeight: 18, color: colors.warningSoft },
+  heroWarnText: { fontSize: textSize.sm, lineHeight: 18, color: colors.warningSoft },
   heroPrivacy: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start', marginBottom: spacing.xs },
   chip: {
     alignSelf: 'flex-start',
@@ -524,7 +535,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   chipWarn: { backgroundColor: colors.warningSoft },
-  chipText: { fontSize: 12, fontWeight: '700', color: colors.primaryText },
+  chipText: { fontSize: textSize.xs, fontWeight: '700', color: colors.primaryText },
   photo: { borderRadius: radius.lg, minHeight: 200, marginBottom: spacing.lg },
   photoBody: { flex: 1, justifyContent: 'flex-end', padding: spacing.md + 4, gap: spacing.xs },
   card: {
@@ -539,6 +550,6 @@ const styles = StyleSheet.create({
   info: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 4, minHeight: 52, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   pendingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 56, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   withdraw: { minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.sm },
-  withdrawText: { fontSize: 15, fontWeight: '600', color: colors.danger },
+  withdrawText: { fontSize: textSize.base, fontWeight: '600', color: colors.danger },
   dimmed: { opacity: 0.5 },
 });

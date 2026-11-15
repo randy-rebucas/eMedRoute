@@ -6,7 +6,7 @@ import { tapSlot } from '@/lib/haptics';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Slot } from '@/lib/types';
-import { mono, type } from '@/lib/typography';
+import { mono, textSize, type } from '@/lib/typography';
 
 // The booking sheet's date strip and slot grid, shared by Book and Move.
 
@@ -106,8 +106,8 @@ const styles = StyleSheet.create({
   },
   dayChipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   dayChipClosed: { backgroundColor: colors.background, borderStyle: 'dashed' },
-  dayWeek: { fontSize: 12, fontWeight: '600', color: colors.textMuted, textTransform: 'uppercase' },
-  dayNumber: { fontSize: 20, fontWeight: '700', color: colors.text },
+  dayWeek: { fontSize: textSize.xs, fontWeight: '600', color: colors.textMuted, textTransform: 'uppercase' },
+  dayNumber: { fontSize: textSize.h4, fontWeight: '700', color: colors.text },
   closedText: { color: colors.textMuted, opacity: 0.7 },
   onPrimary: { color: colors.primaryText },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -spacing.xs },
@@ -124,6 +124,6 @@ const styles = StyleSheet.create({
   slotSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   slotFull: { backgroundColor: colors.background },
   // Tabular figures on the normal face: Android's monospace spreads clock times ("14 : 30").
-  slotTime: { fontSize: 17, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
+  slotTime: { fontSize: textSize.xl, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
   slotSeats: { ...type.pill, color: colors.textMuted },
 });

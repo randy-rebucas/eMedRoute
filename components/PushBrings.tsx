@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/lib/theme';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { IconName } from './ui';
 
 /**
@@ -42,5 +42,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 4, minHeight: 56, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   rule: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   text: { flex: 1, gap: 2 },
-  title: { fontSize: 15, lineHeight: 21, fontWeight: '600', color: colors.text },
+  title: { fontSize: textSize.base, lineHeight: 21, fontWeight: '600', color: colors.text },
 });

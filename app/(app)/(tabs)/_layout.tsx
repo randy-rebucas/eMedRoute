@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/lib/theme';
 import { IconName } from '@/components/ui';
 import { useT } from '@/lib/i18n';
+import { textSize } from '@/lib/typography';
 
 /** Outline icons in both states (one icon per meaning); the tint and label mark the selected tab. */
 function tabIcon(name: IconName) {
@@ -24,7 +25,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: textSize.xs, fontWeight: '600' },
       }}
     >
       <Tabs.Screen name="home" options={{ title: t('nav.home'), tabBarIcon: tabIcon('home-outline') }} />

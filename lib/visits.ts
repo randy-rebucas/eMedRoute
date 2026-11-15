@@ -259,8 +259,8 @@ export function useVisit(id: string | undefined) {
 // ── Writes ───────────────────────────────────────────────────────────────────
 
 /** Log a visit of the rep's own (no clinic on MyClinicSoft). */
-export async function createLogEntry(input: LogEntryInput): Promise<Visit> {
-  const visit = await apiRequest<Visit>(VISITS_PATH, { method: 'POST', body: input });
+export async function createLogEntry(input: LogEntryInput, requestKey?: string): Promise<Visit> {
+  const visit = await apiRequest<Visit>(VISITS_PATH, { method: 'POST', body: input, idempotencyKey: requestKey });
   emitRefresh('visits', 'dashboard', 'clinics');
   return visit;
 }

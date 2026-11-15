@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Alert, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { errorMessage } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { joinedThisMonth, newReferralCode, useReferral } from '@/lib/referral';
 import { colors, radius, spacing } from '@/lib/theme';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { ErrorState } from '@/components/ErrorState';
 import { NavRow, RowGroup } from '@/components/forms';
@@ -34,7 +34,12 @@ export default function ReferralScreen() {
   }
 
   const share = () =>
-    Share.share({ message: t('referral.shareMessage', { code: data.code, link: data.link }), url: data.link }).catch(() => {});
+    // The message already carries the link; iOS would show it twice if `url` came too.
+    Share.share(
+      Platform.OS === 'ios'
+        ? { message: t('referral.shareMessage', { code: data.code, link: data.link }) }
+        : { message: t('referral.shareMessage', { code: data.code, link: data.link }), url: data.link }
+    ).catch(() => {});
 
   const confirmNewCode = () => {
     if (busy) return;
@@ -168,16 +173,16 @@ const styles = StyleSheet.create({
   status: { gap: spacing.sm, marginBottom: spacing.md },
   // The code is what the rep came for: on the app's navy, solid, no shadow.
   hero: { backgroundColor: colors.navy, borderRadius: radius.lg, padding: spacing.md + 4, marginBottom: spacing.lg, gap: spacing.sm },
-  heroLabel: { fontSize: 13, fontWeight: '600', color: colors.onNavyMuted },
+  heroLabel: { fontSize: textSize.sm, fontWeight: '600', color: colors.onNavyMuted },
   // Normal face, not mono: monospace spreads the hyphen ("REP - R8MWD8"), which reads as a space.
   // The server's alphabet has no 0/O or 1/I/L, so the plain face is unambiguous.
-  code: { fontSize: 36, lineHeight: 44, fontWeight: '700', letterSpacing: 1.5, color: colors.primaryText, fontVariant: ['tabular-nums'] },
-  link: { fontSize: 13, lineHeight: 18, color: colors.onNavyMuted },
+  code: { fontSize: textSize.display, lineHeight: 44, fontWeight: '700', letterSpacing: 1.5, color: colors.primaryText, fontVariant: ['tabular-nums'] },
+  link: { fontSize: textSize.sm, lineHeight: 18, color: colors.onNavyMuted },
   shareButton: { marginTop: spacing.sm },
-  heroHint: { fontSize: 12, lineHeight: 16, color: colors.onNavyMuted, textAlign: 'center' },
+  heroHint: { fontSize: textSize.xs, lineHeight: 16, color: colors.onNavyMuted, textAlign: 'center' },
   step: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 4, minHeight: 56, paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2 },
   stepNumber: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  stepNumberText: { fontSize: 13, fontWeight: '700', color: colors.primaryOnSoft, fontVariant: ['tabular-nums'] },
+  stepNumberText: { fontSize: textSize.sm, fontWeight: '700', color: colors.primaryOnSoft, fontVariant: ['tabular-nums'] },
   rule: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   flex: { flex: 1, gap: 2 },
   sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: spacing.sm, marginBottom: spacing.sm, marginHorizontal: spacing.xs },
@@ -188,8 +193,8 @@ const styles = StyleSheet.create({
   note: { ...type.secondary, marginTop: spacing.sm, marginHorizontal: spacing.xs },
   empty: { borderRadius: radius.lg, minHeight: 190 },
   emptyText: { flex: 1, justifyContent: 'flex-end', padding: spacing.md + 4, gap: 4 },
-  emptyTitle: { fontSize: 17, lineHeight: 22, fontWeight: '700', color: colors.primaryText },
-  emptyBody: { fontSize: 13, lineHeight: 18, color: colors.onNavyMuted },
+  emptyTitle: { fontSize: textSize.xl, lineHeight: 22, fontWeight: '700', color: colors.primaryText },
+  emptyBody: { fontSize: textSize.sm, lineHeight: 18, color: colors.onNavyMuted },
   errorWrap: { marginTop: spacing.lg },
   newCode: { marginTop: spacing.lg },
 });

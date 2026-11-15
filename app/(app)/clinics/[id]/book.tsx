@@ -3,19 +3,21 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, S
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, Stack, useLocalSearchParams, useNavigation } from 'expo-router';
-import { usePreventRemove } from 'expo-router/react-navigation';
+import { usePreventRemove, useHeaderHeight } from 'expo-router/react-navigation';
 import { ApiError, errorMessage } from '@/lib/api';
 import { bookingDays, dropClinic, findOpenBooking, hoursOn, nextHours, requestVisit, useBookingDay, useClinic, useSlots } from '@/lib/clinics';
 import { emitRefresh } from '@/lib/events';
 import { formatDay } from '@/lib/format';
 import { sentRequest } from '@/lib/haptics';
 import { useT } from '@/lib/i18n';
+import { useRequestKey } from '@/lib/requestKey';
+import { ErrorState } from '@/components/ErrorState';
 import { useSubscription } from '@/lib/plan';
 import { useRepProfile } from '@/lib/profile';
 import { getPushPermission, PushPermission, pushState } from '@/lib/push';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Clinic, Visit } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { visitProgress } from '@/lib/visits';
 import { IconBadge, TextLink } from '@/components/auth';
@@ -38,10 +40,12 @@ const MAX_NOTES = 2000;
  */
 export default function BookScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { clinic, loading } = useClinic(id);
+  const { clinic, loading, error, refresh } = useClinic(id);
 
   if (!clinic) {
     if (loading) return <LoadingView />;
+    // Offline or a server error isn't "gone": the rep can try again.
+    if (error) return <ErrorState message={error} onRetry={refresh} />;
     return <Gone />;
   }
   return <BookingSheet clinic={clinic} key={clinic.id} />;
@@ -65,6 +69,8 @@ type Problem = { message: string; existing?: Visit | null };
 const shortDay = (day: string) => formatDay(day, { weekday: 'short', month: 'short', day: 'numeric' });
 
 function BookingSheet({ clinic }: { clinic: Clinic }) {
+  // The stack header's real height (it grows with large text and differs per platform).
+  const headerHeight = useHeaderHeight();
   const t = useT();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -82,12 +88,17 @@ function BookingSheet({ clinic }: { clinic: Clinic }) {
   const [sending, setSending] = useState(false);
   // State lags a frame: two taps in one frame must not send two requests.
   const sendingRef = useRef(false);
+  // A resend after a timeout must not send the request twice.
+  const requestKey = useRequestKey();
   const [problem, setProblem] = useState<Problem | null>(null);
   const [sent, setSent] = useState<Visit | null>(null);
 
   // A swipe down or Back shouldn't silently drop a purpose the rep spent a minute on.
   const dirty = !!(purpose.trim() || notes.trim() || productIds.length) && !sent && !slots.gone;
+  // "Open existing" leaves on purpose: the booking is already there, nothing typed is lost that matters.
+  const leaving = useRef(false);
   usePreventRemove(dirty, ({ data }) => {
+    if (leaving.current) return navigation.dispatch(data.action);
     Alert.alert(t('booking.discardTitle'), t('booking.discardBody', { clinic: clinic.name }), [
       { text: t('booking.keepEditing'), style: 'cancel' },
       { text: t('booking.discard'), style: 'destructive', onPress: () => navigation.dispatch(data.action) },
@@ -115,14 +126,15 @@ function BookingSheet({ clinic }: { clinic: Clinic }) {
     setSending(true);
     setProblem(null);
     try {
-      const visit = await requestVisit({
+      const input = {
         clinicId: clinic.id,
         purpose: purpose.trim(),
         date: day,
         time,
         notes: notes.trim() || undefined,
         productIds: productIds.length ? productIds : undefined,
-      });
+      };
+      const visit = await requestVisit(input, requestKey(input));
       sentRequest();
       setSent(visit);
     } catch (err) {
@@ -165,10 +177,10 @@ function BookingSheet({ clinic }: { clinic: Clinic }) {
     }
   }
 
-  const summary = day && time ? `${shortDay(day)} · ${time} · ${clinic.slotMinutes} min` : null;
+  const summary = day && time ? `${shortDay(day)} · ${time} · ${t('visits.minutes', { minutes: clinic.slotMinutes })}` : null;
 
   return (
-    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={56}>
+    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={headerHeight}>
       <Stack.Screen options={{ title: t('booking.title') }} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
@@ -291,7 +303,10 @@ function BookingSheet({ clinic }: { clinic: Clinic }) {
             {problem.existing ? (
               <TextLink
                 title={t('booking.openExisting')}
-                onPress={() => router.replace(`/visits/${problem.existing!._id}`)}
+                onPress={() => {
+                  leaving.current = true;
+                  router.replace(`/visits/${problem.existing!._id}`);
+                }}
                 style={styles.existing}
               />
             ) : null}
@@ -398,9 +413,9 @@ const styles = StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: spacing.xl },
   // The clinic being booked, on the app's navy: solid, no shadow.
   hero: { backgroundColor: colors.navy, borderRadius: radius.lg, padding: spacing.md + 4, gap: spacing.xs + 2, marginBottom: spacing.md },
-  heroName: { fontSize: 20, lineHeight: 26, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.2 },
+  heroName: { fontSize: textSize.h4, lineHeight: 26, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.2 },
   heroLine: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  heroMuted: { fontSize: 13, lineHeight: 18, color: colors.onNavyMuted, flexShrink: 1 },
+  heroMuted: { fontSize: textSize.sm, lineHeight: 18, color: colors.onNavyMuted, flexShrink: 1 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -414,7 +429,7 @@ const styles = StyleSheet.create({
   },
   chipBooked: { backgroundColor: colors.primary },
   chipDue: { backgroundColor: colors.warningSoft },
-  chipText: { fontSize: 12, fontWeight: '700', color: colors.onNavyMuted, fontVariant: ['tabular-nums'] },
+  chipText: { fontSize: textSize.xs, fontWeight: '700', color: colors.onNavyMuted, fontVariant: ['tabular-nums'] },
   quote: {
     borderLeftWidth: 3,
     borderLeftColor: colors.slate,
@@ -426,8 +441,8 @@ const styles = StyleSheet.create({
   },
   plan: { backgroundColor: colors.warningSoft, borderRadius: radius.lg, padding: spacing.md, gap: spacing.sm, marginBottom: spacing.md },
   planHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2 },
-  planTitle: { fontSize: 15, fontWeight: '700', color: colors.warning, flexShrink: 1 },
-  planBody: { fontSize: 13, lineHeight: 18, color: colors.text },
+  planTitle: { fontSize: textSize.base, fontWeight: '700', color: colors.warning, flexShrink: 1 },
+  planBody: { fontSize: textSize.sm, lineHeight: 18, color: colors.text },
   step: { paddingTop: spacing.md, paddingBottom: spacing.lg, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, gap: spacing.sm + 4 },
   stepLast: { borderBottomWidth: 0, paddingBottom: 0 },
   stepHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 4 },
@@ -441,14 +456,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   stepMarkDone: { backgroundColor: colors.primary, borderColor: colors.primary },
-  stepNumber: { fontSize: 13, fontWeight: '700', color: colors.slate },
+  stepNumber: { fontSize: textSize.sm, fontWeight: '700', color: colors.slate },
   stepText: { flex: 1, gap: 2 },
   tabular: { fontVariant: ['tabular-nums'] },
   warnLine: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs + 2 },
-  warnText: { fontSize: 13, lineHeight: 18, color: colors.warning, fontWeight: '600', flexShrink: 1 },
+  warnText: { fontSize: textSize.sm, lineHeight: 18, color: colors.warning, fontWeight: '600', flexShrink: 1 },
   flex: { flex: 1 },
   spinner: { marginVertical: spacing.lg },
-  error: { fontSize: 13, color: colors.danger, marginTop: spacing.xs },
+  error: { fontSize: textSize.sm, color: colors.danger, marginTop: spacing.xs },
   footer: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
@@ -461,10 +476,10 @@ const styles = StyleSheet.create({
   send: { marginTop: spacing.xs },
   center: { flex: 1, alignItems: 'stretch', justifyContent: 'center', padding: spacing.lg, gap: spacing.sm },
   centerText: { textAlign: 'center' },
-  sentBand: { height: 260, borderRadius: radius.lg, marginBottom: spacing.md },
+  sentBand: { minHeight: 260, borderRadius: radius.lg, marginBottom: spacing.md },
   sentFoot: { flex: 1, justifyContent: 'flex-end', padding: spacing.md + 4, gap: spacing.xs },
-  sentTitle: { fontSize: 24, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.3 },
-  sentBody: { fontSize: 15, lineHeight: 21, color: colors.primaryText, fontVariant: ['tabular-nums'] },
+  sentTitle: { fontSize: textSize.h2, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.3 },
+  sentBody: { fontSize: textSize.base, lineHeight: 21, color: colors.primaryText, fontVariant: ['tabular-nums'] },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,

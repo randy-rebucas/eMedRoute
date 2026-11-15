@@ -4,7 +4,7 @@ import { formatTime } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
 import { InboxItem, InboxKind } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { IconName, IconTile } from './ui';
 
 const ICON: Record<InboxKind, IconName> = {
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
   rule: { borderTopWidth: StyleSheet.hairlineWidth },
   text: { flex: 1, gap: 2 },
   titleLine: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
-  title: { flex: 1, fontSize: 15, lineHeight: 21, color: colors.text },
+  title: { flex: 1, fontSize: textSize.base, lineHeight: 21, color: colors.text },
   titleUnread: { fontWeight: '700' },
   // A clock time beside a title: tabular figures on the normal face (monospace spreads "2 : 30").
   time: { ...type.secondary, fontVariant: ['tabular-nums'] },

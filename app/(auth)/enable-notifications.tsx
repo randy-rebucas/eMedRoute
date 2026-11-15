@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { Redirect, router } from 'expo-router';
 import { useAuth } from '@/lib/auth';
+import { takeReturnPath } from '@/lib/returnTo';
 import { registerForPushNotifications, shouldAskForNotifications } from '@/lib/push';
 import { spacing } from '@/lib/theme';
 import { type } from '@/lib/typography';
@@ -18,7 +19,9 @@ import { useT } from '@/lib/i18n';
  * through here; it skips straight to Home once the OS has been asked.
  */
 export default function EnableNotificationsScreen() {
-  const { signedIn } = useAuth();
+  const { signedIn, rep } = useAuth();
+  // Back to the screen a lost session left, when it was this rep's (lib/returnTo.ts).
+  const [returnPath] = useState(() => takeReturnPath(rep?.id));
   const t = useT();
   const [needed, setNeeded] = useState<boolean | null>(null);
   const [asking, setAsking] = useState(false);
@@ -33,9 +36,13 @@ export default function EnableNotificationsScreen() {
 
   if (!signedIn) return <Redirect href="/login" />;
   if (needed === null) return <LoadingView />;
-  if (!needed) return <Redirect href="/home" />;
+  if (!needed) return returnPath ? <ReturnTo path={returnPath} /> : <Redirect href="/home" />;
 
-  const done = () => router.replace('/home');
+  // Home underneath, so Back from the returned-to screen still has somewhere to go.
+  const done = () => {
+    router.replace('/home');
+    if (returnPath) router.push(returnPath as never);
+  };
 
   async function allow() {
     setAsking(true);
@@ -71,3 +78,12 @@ const styles = StyleSheet.create({
   later: { marginTop: -spacing.sm },
   notNow: { alignSelf: 'center' },
 });
+
+/** Home, then the screen the expired session left. */
+function ReturnTo({ path }: { path: string }) {
+  useEffect(() => {
+    router.replace('/home');
+    router.push(path as never);
+  }, [path]);
+  return <LoadingView />;
+}

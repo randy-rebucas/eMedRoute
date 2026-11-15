@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -7,9 +8,9 @@ import { holdingsFor, useProductDeliveries } from '@/lib/deliveries';
 import { daysFromToday, formatDay } from '@/lib/format';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Product } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { scheduleDelete } from '@/lib/undo';
-import { ErrorState } from '@/components/ErrorState';
+import { ErrorState, NotFoundState } from '@/components/ErrorState';
 import { HoldingsChart } from '@/components/HoldingsChart';
 import { ThinProgress } from '@/components/Loading';
 import { OfflineBanner } from '@/components/OfflineBanner';
@@ -26,17 +27,21 @@ const METER_DAYS = 365;
 export default function ProductDetailScreen() {
   const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: product, loading, refreshing, error, offline, stale, updatedAt, refresh } = useProduct(id);
+  const { data: product, loading, refreshing, error, offline, stale, updatedAt, refresh, notFound } = useProduct(id);
+  const removing = useRef(false);
   const paddingBottom = useBottomPadding();
   const deliveries = useProductDeliveries(id);
 
   if (!product) {
+    if (notFound) return <NotFoundState />;
     if (loading) return <LoadingView />;
     return <ErrorState message={error ?? t('common.failedToLoad')} onRetry={refresh} />;
   }
 
   function remove() {
-    if (!product) return;
+    // Two taps would go back twice, past the list.
+    if (!product || removing.current) return;
+    removing.current = true;
     scheduleDelete({
       id: product._id,
       message: t('products.deleted'),
@@ -72,7 +77,7 @@ export default function ProductDetailScreen() {
       {stale || offline ? (
         <View style={styles.status}>
           <ThinProgress active={stale && !offline} />
-          <OfflineBanner offline={offline} updatedAt={updatedAt} subject={t('products.offlineSubjectOne')} />
+          <OfflineBanner offline={offline} updatedAt={updatedAt} refreshError={error} subject={t('products.offlineSubjectOne')} />
         </View>
       ) : null}
 
@@ -186,18 +191,18 @@ const styles = StyleSheet.create({
   hero: { backgroundColor: colors.navy, borderRadius: radius.lg, padding: spacing.md + 4, marginBottom: spacing.md },
   heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   heroIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.navyLine, alignItems: 'center', justifyContent: 'center' },
-  name: { fontSize: 24, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.3, marginTop: spacing.md },
-  muted: { fontSize: 13, lineHeight: 18, color: colors.onNavyMuted, marginTop: 2 },
+  name: { fontSize: textSize.h2, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.3, marginTop: spacing.md },
+  muted: { fontSize: textSize.sm, lineHeight: 18, color: colors.onNavyMuted, marginTop: 2 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.sm },
   chipActive: { backgroundColor: colors.primary },
   chipMuted: { borderWidth: 1, borderColor: colors.navyLine },
   chipSoon: { backgroundColor: colors.warningSoft },
   chipExpired: { backgroundColor: colors.dangerSoft },
-  chipText: { fontSize: 12, fontWeight: '700', color: colors.primaryText },
+  chipText: { fontSize: textSize.xs, fontWeight: '700', color: colors.primaryText },
   expiry: { marginTop: spacing.md, paddingTop: spacing.sm + 4, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.navyLine, gap: spacing.sm },
   expiryHead: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm, flexWrap: 'wrap' },
-  eyebrow: { fontSize: 12, fontWeight: '600', color: colors.onNavyMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
-  date: { fontSize: 17, fontWeight: '700', color: colors.primaryText, fontVariant: ['tabular-nums'], marginTop: 2 },
+  eyebrow: { fontSize: textSize.xs, fontWeight: '600', color: colors.onNavyMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
+  date: { fontSize: textSize.xl, fontWeight: '700', color: colors.primaryText, fontVariant: ['tabular-nums'], marginTop: 2 },
   meter: { height: 6, borderRadius: 3, backgroundColor: colors.navyLine, overflow: 'hidden' },
   meterFill: { height: 6, borderRadius: 3 },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.md },

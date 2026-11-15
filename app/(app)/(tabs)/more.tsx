@@ -14,7 +14,7 @@ import { sponsorshipSummary, useSponsorships } from '@/lib/sponsorships';
 import { useTeam } from '@/lib/team';
 import { colors, radius, spacing } from '@/lib/theme';
 import { SponsorshipsState, Subscription, TeamState } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { Avatar } from '@/components/Avatar';
 import { NavRow, RowGroup } from '@/components/forms';
 import { screenStyles } from '@/components/ui';
@@ -209,8 +209,8 @@ const styles = StyleSheet.create({
   hero: { backgroundColor: colors.navy, borderRadius: radius.lg, padding: spacing.md + 4, marginBottom: spacing.lg },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   heroText: { flex: 1, gap: 2 },
-  name: { fontSize: 20, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.2 },
-  muted: { fontSize: 13, lineHeight: 18, color: colors.onNavyMuted, flexShrink: 1 },
+  name: { fontSize: textSize.h4, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.2 },
+  muted: { fontSize: textSize.sm, lineHeight: 18, color: colors.onNavyMuted, flexShrink: 1 },
   territory: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   heroFoot: {
     flexDirection: 'row',
@@ -225,8 +225,8 @@ const styles = StyleSheet.create({
   },
   cover: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.sm, backgroundColor: colors.primary },
   coverWarn: { backgroundColor: colors.warningSoft },
-  coverText: { fontSize: 12, fontWeight: '700', color: colors.primaryText },
+  coverText: { fontSize: textSize.xs, fontWeight: '700', color: colors.primaryText },
   view: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 32 },
-  viewText: { fontSize: 14, fontWeight: '600', color: colors.primaryText },
+  viewText: { fontSize: textSize.md, fontWeight: '600', color: colors.primaryText },
   version: { ...type.secondary, textAlign: 'center', marginTop: spacing.sm, fontVariant: ['tabular-nums'] },
 });

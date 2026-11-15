@@ -3,7 +3,7 @@ import { addDays, clinicTodayYmd, formatDay } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Visit } from '@/lib/types';
-import { mono, type } from '@/lib/typography';
+import { mono, textSize, type } from '@/lib/typography';
 import { visitDay } from '@/lib/visits';
 
 /** Same validated pair as Home's chart: confirmed in brand teal, waiting in slate. */
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: spacing.sm },
   total: { fontVariant: ['tabular-nums'] },
   readout: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: spacing.sm, minHeight: 20, marginTop: spacing.xs, marginBottom: spacing.sm + 4 },
-  readoutDay: { fontSize: 13, fontWeight: '700', color: colors.text, textTransform: 'uppercase', letterSpacing: 0.4 },
+  readoutDay: { fontSize: textSize.sm, fontWeight: '700', color: colors.text, textTransform: 'uppercase', letterSpacing: 0.4 },
   tabular: { fontVariant: ['tabular-nums'] },
   columns: { flexDirection: 'row', gap: 4 },
   column: { flex: 1, alignItems: 'center', paddingTop: spacing.xs, paddingBottom: spacing.xs + 2, borderRadius: radius.sm, minHeight: 48 },
@@ -151,11 +151,11 @@ const styles = StyleSheet.create({
   block: { width: '100%', borderRadius: 3 },
   // An open day: a dashed outline where visits would stack, so "free" reads as a slot, not a gap.
   free: { height: 14, width: '100%', borderRadius: 3, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border },
-  weekday: { fontSize: 12, fontWeight: '600', color: colors.textMuted, marginTop: spacing.xs + 2, textTransform: 'uppercase' },
+  weekday: { fontSize: textSize.xs, fontWeight: '600', color: colors.textMuted, marginTop: spacing.xs + 2, textTransform: 'uppercase' },
   textPicked: { color: colors.primaryOnSoft },
   date: { minWidth: 26, paddingHorizontal: 2, paddingVertical: 1, borderRadius: 6, alignItems: 'center', marginTop: 2 },
   dateToday: { backgroundColor: colors.navy },
-  dateText: { fontSize: 14, fontWeight: '700', color: colors.text },
+  dateText: { fontSize: textSize.md, fontWeight: '700', color: colors.text },
   dateTextToday: { color: colors.primaryText },
   legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.md, rowGap: spacing.xs, marginTop: spacing.sm + 4 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2 },

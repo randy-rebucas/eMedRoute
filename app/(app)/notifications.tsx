@@ -7,7 +7,7 @@ import { inboxByDay, markInboxRead, useInbox } from '@/lib/inbox';
 import { routeForNotification } from '@/lib/push';
 import { colors, spacing } from '@/lib/theme';
 import { InboxItem } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { dayHeading } from '@/lib/visits';
 import { EmptyState } from '@/components/EmptyState';
@@ -37,7 +37,12 @@ export default function NotificationsScreen() {
     setItems((prev) => prev.map((i) => (ids === 'all' || ids.includes(i.id) ? { ...i, read: true } : i)));
   }
 
+  // Two quick taps would push the same screen twice.
+  const lastOpen = useRef(0);
   function open(item: InboxItem) {
+    const now = Date.now();
+    if (now - lastOpen.current < 800) return;
+    lastOpen.current = now;
     if (!item.read) {
       showRead([item.id]);
       markInboxRead({ ids: [item.id] }).catch(() => {});
@@ -134,10 +139,10 @@ const styles = StyleSheet.create({
   countUnread: { color: colors.text },
   markAll: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.xs },
   // The darker teal: this sits on the page background, where `primary` is under 4.5:1.
-  markAllText: { fontSize: 15, fontWeight: '600', color: colors.primaryOnSoft },
+  markAllText: { fontSize: textSize.base, fontWeight: '600', color: colors.primaryOnSoft },
   markAllOff: { color: colors.textMuted },
   dayTitle: {
-    fontSize: 13,
+    fontSize: textSize.sm,
     fontWeight: '700',
     color: colors.textMuted,
     textTransform: 'uppercase',

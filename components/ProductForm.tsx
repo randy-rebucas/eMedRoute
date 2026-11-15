@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from 'expo-router';
-import { usePreventRemove } from 'expo-router/react-navigation';
+import { usePreventRemove, useHeaderHeight } from 'expo-router/react-navigation';
 import { errorMessage } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/lib/theme';
@@ -45,6 +45,8 @@ export function ProductForm({
   submitLabel: string;
   onSubmit: (input: ProductInput) => Promise<void>;
 }) {
+  // The stack header's real height (it grows with large text and differs per platform).
+  const headerHeight = useHeaderHeight();
   const t = useT();
   const navigation = useNavigation();
   const [start] = useState<FormState>(() => initial(product));
@@ -119,7 +121,7 @@ export function ProductForm({
   );
 
   return (
-    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={96}>
+    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={headerHeight}>
       <ScrollView contentContainerStyle={[screenStyles.content, { paddingBottom }]} keyboardShouldPersistTaps="handled">
         {text('name', t('products.form.name'))}
         {text('strength', t('products.form.strength'), { optional: true, hint: t('products.form.strengthHint') })}

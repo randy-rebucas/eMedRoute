@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { PlainKey, useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
 import { VisitOutcomes } from '@/lib/types';
-import { mono, type } from '@/lib/typography';
+import { mono, textSize, type } from '@/lib/typography';
 import { Outcome } from '@/lib/visits';
 
 type Bucket = keyof VisitOutcomes;
@@ -106,9 +106,9 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   headText: { flex: 1 },
   rate: { alignItems: 'flex-end' },
-  rateValue: { fontSize: 22, fontWeight: '700', color: colors.text },
-  rateSign: { fontSize: 13, color: colors.textMuted },
-  rateLabel: { fontSize: 12, color: colors.textMuted },
+  rateValue: { fontSize: textSize.h3, fontWeight: '700', color: colors.text },
+  rateSign: { fontSize: textSize.sm, color: colors.textMuted },
+  rateLabel: { fontSize: textSize.xs, color: colors.textMuted },
   bar: { flexDirection: 'row', height: 14, gap: 2, borderRadius: 4, overflow: 'hidden', marginTop: spacing.md, marginBottom: spacing.sm },
   segment: { height: '100%', minWidth: 4 },
   dim: { opacity: 0.3 },
@@ -126,5 +126,5 @@ const styles = StyleSheet.create({
   selectedText: { fontWeight: '700', color: colors.primaryOnSoft },
   swatch: { width: 10, height: 10, borderRadius: 2 },
   rowText: { flex: 1 },
-  count: { fontSize: 15, fontWeight: '700', color: colors.text, minWidth: 28, textAlign: 'right' },
+  count: { fontSize: textSize.base, fontWeight: '700', color: colors.text, minWidth: 28, textAlign: 'right' },
 });

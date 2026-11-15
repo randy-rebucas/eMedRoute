@@ -160,8 +160,20 @@ export function routeForNotification(data: Record<string, unknown> | undefined):
       return { href: '/sponsorships', topics: ['sponsorships'] };
     // Support answered or resolved one of the rep's requests.
     case 'support':
-      return { href: '/support', topics: ['support', 'dashboard'] };
+      return { href: id ? `/support?open=${encodeURIComponent(id)}` : '/support', topics: ['support', 'dashboard'] };
     default:
       return { href: null, topics: ['visits', 'clinics', 'products', 'team', 'dashboard', 'sponsorships', 'support'] };
   }
+}
+
+/**
+ * Signed out or expired: the tray must not keep this rep's notifications (clinic names, visit
+ * times) for whoever signs in next, and the app icon badge goes back to zero. Never throws.
+ */
+export async function clearDeliveredNotifications(): Promise<void> {
+  if (!Notifications) return;
+  await Promise.all([
+    Notifications.dismissAllNotificationsAsync().catch(() => {}),
+    Notifications.setBadgeCountAsync(0).catch(() => {}),
+  ]);
 }

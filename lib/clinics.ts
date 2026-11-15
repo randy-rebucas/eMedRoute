@@ -93,15 +93,22 @@ export async function withdrawClinicAccess(clinicId: string): Promise<void> {
  * One clinic: from this session's list loads, else the directory filtered to that id. Null once
  * loaded and not found: the rep can't book it any more.
  */
-export function useClinic(id: string | null | undefined): { clinic: Clinic | null; loading: boolean } {
+export function useClinic(id: string | null | undefined): {
+  clinic: Clinic | null;
+  loading: boolean;
+  /** The lookup failed (offline, a server error): unknown, not gone. Retry with `refresh`. */
+  error: string | null;
+  refresh: () => void;
+} {
   const cached = id ? known.get(id) : undefined;
   const gone = useDropped();
-  const { data, loading } = useApiData<Clinic[]>(id && !cached ? CLINICS_PATH + query({ id, limit: 1 }) : null);
+  const { data, loading, error, refresh } = useApiData<Clinic[]>(id && !cached ? CLINICS_PATH + query({ id, limit: 1 }) : null);
   useEffect(() => {
     data?.forEach((c) => known.set(c.id, c));
   }, [data]);
-  if (!id || gone.has(id)) return { clinic: null, loading: false };
-  return { clinic: cached ?? data?.find((c) => c.id === id) ?? null, loading: !cached && loading };
+  if (!id || gone.has(id)) return { clinic: null, loading: false, error: null, refresh };
+  const clinic = cached ?? data?.find((c) => c.id === id) ?? null;
+  return { clinic, loading: !cached && loading, error: clinic || cached ? null : error, refresh };
 }
 
 // ── Visiting hours and days ──────────────────────────────────────────────────
@@ -223,8 +230,8 @@ export function useSlots(clinicId: string | null, day: string | null) {
  * 402 SUBSCRIPTION_REQUIRED, 400 SLOT_UNAVAILABLE, 409 SLOT_FULL, 409 DUPLICATE_REQUEST,
  * 400 INVALID_PRODUCTS, 404 (the clinic can't be booked).
  */
-export async function requestVisit(input: BookingInput): Promise<Visit> {
-  const visit = await apiRequest<Visit>(VISITS_PATH, { method: 'POST', body: input });
+export async function requestVisit(input: BookingInput, requestKey?: string): Promise<Visit> {
+  const visit = await apiRequest<Visit>(VISITS_PATH, { method: 'POST', body: input, idempotencyKey: requestKey });
   emitRefresh('visits', 'dashboard', 'clinics');
   return visit;
 }

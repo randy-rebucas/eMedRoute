@@ -59,8 +59,8 @@ export function useProduct(id: string | undefined) {
   return useApiData<Product>(id ? `${PRODUCTS_PATH}/${encodeURIComponent(id)}` : null, { refreshOn: ['products'], offline: true });
 }
 
-export async function createProduct(input: ProductInput): Promise<Product> {
-  const product = await apiRequest<Product>(PRODUCTS_PATH, { method: 'POST', body: input });
+export async function createProduct(input: ProductInput, requestKey?: string): Promise<Product> {
+  const product = await apiRequest<Product>(PRODUCTS_PATH, { method: 'POST', body: input, idempotencyKey: requestKey });
   emitRefresh('products', 'dashboard');
   return product;
 }

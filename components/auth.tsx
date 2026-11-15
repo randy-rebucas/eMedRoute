@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, useRef, useState } from 'react';
+import { ReactNode, Ref, useCallback, useRef, useState } from 'react';
 import {
   BackHandler,
   ImageSourcePropType,
@@ -25,6 +25,7 @@ import { t as translate, useT } from '@/lib/i18n';
 import { BrandLogo } from './BrandLogo';
 import { ScrimPhoto } from './Photo';
 import { Button, IconName, useAnnounce } from './ui';
+import { textSize } from '@/lib/typography';
 
 // Building blocks for the signed-out and onboarding screens, so they share
 // one layout, field and full-screen-state look.
@@ -134,7 +135,7 @@ export function IconField({
   error,
   secureTextEntry,
   ...rest
-}: TextInputProps & { icon: IconName; label: string; error?: boolean }) {
+}: TextInputProps & { icon: IconName; label: string; error?: boolean; ref?: Ref<TextInput> }) {
   const t = useT();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(true);
@@ -161,7 +162,7 @@ export function IconField({
       {isSecret ? (
         <TouchableOpacity
           onPress={() => setHidden((h) => !h)}
-          hitSlop={10}
+          hitSlop={12}
           accessibilityRole="button"
           accessibilityLabel={hidden ? t('auth.showPassword') : t('auth.hidePassword')}
         >
@@ -403,9 +404,9 @@ const styles = StyleSheet.create({
   band: { borderRadius: radius.lg, marginBottom: spacing.lg },
   bandInner: { flex: 1, justifyContent: 'space-between', padding: spacing.md + 4, gap: spacing.lg },
   bandText: { gap: spacing.xs },
-  bandTitle: { fontSize: 24, lineHeight: 30, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.3 },
-  bandLine: { fontSize: 15, lineHeight: 21, color: colors.onNavyMuted },
-  bandLead: { fontSize: 18, lineHeight: 24, fontWeight: '700', color: colors.primaryText },
+  bandTitle: { fontSize: textSize.h2, lineHeight: 30, fontWeight: '700', color: colors.primaryText, letterSpacing: -0.3 },
+  bandLine: { fontSize: textSize.base, lineHeight: 21, color: colors.onNavyMuted },
+  bandLead: { fontSize: textSize.xxl, lineHeight: 24, fontWeight: '700', color: colors.primaryText },
   flex: { flex: 1 },
   screen: { flex: 1, backgroundColor: colors.surface },
   back: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, alignSelf: 'flex-start' },
@@ -413,8 +414,8 @@ const styles = StyleSheet.create({
   contentCenter: { justifyContent: 'center' },
   footer: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
   header: { marginBottom: spacing.lg },
-  title: { fontSize: 26, fontWeight: '700', color: colors.text, letterSpacing: -0.3 },
-  subtitle: { fontSize: 15, lineHeight: 22, color: colors.textMuted, marginTop: spacing.sm },
+  title: { fontSize: textSize.h1, fontWeight: '700', color: colors.text, letterSpacing: -0.3 },
+  subtitle: { fontSize: textSize.base, lineHeight: 22, color: colors.textMuted, marginTop: spacing.sm },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -429,7 +430,7 @@ const styles = StyleSheet.create({
   },
   fieldFocused: { borderColor: colors.primary, backgroundColor: colors.surface },
   fieldError: { borderColor: colors.danger },
-  fieldInput: { flex: 1, fontSize: 16, color: colors.text, paddingVertical: spacing.sm + 4 },
+  fieldInput: { flex: 1, fontSize: textSize.lg, color: colors.text, paddingVertical: spacing.sm + 4 },
   otpRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.sm, marginVertical: spacing.lg },
   otpBox: {
     // Not individual tap targets (the whole row is); shrink on narrow phones, grow with text.
@@ -446,11 +447,11 @@ const styles = StyleSheet.create({
   },
   otpBoxFilled: { backgroundColor: colors.surface },
   otpBoxActive: { borderColor: colors.primary, borderWidth: 2, backgroundColor: colors.surface },
-  otpDigit: { fontSize: 22, fontWeight: '600', color: colors.text },
+  otpDigit: { fontSize: textSize.h3, fontWeight: '600', color: colors.text },
   otpHidden: { position: 'absolute', width: 1, height: 1, opacity: 0 },
   // 48pt tall so the link meets the minimum touch target on its own.
   linkTarget: { minHeight: 48, justifyContent: 'center' },
-  link: { fontSize: 14, fontWeight: '600', color: colors.primary },
+  link: { fontSize: textSize.md, fontWeight: '600', color: colors.primary },
   linkDisabled: { color: colors.textMuted },
   badgeCircle: { alignItems: 'center', justifyContent: 'center', alignSelf: 'center' },
   cornerBadge: {
@@ -466,9 +467,9 @@ const styles = StyleSheet.create({
     borderColor: colors.surface,
   },
   status: { alignItems: 'center', marginBottom: spacing.xl },
-  statusTitle: { fontSize: 24, fontWeight: '700', color: colors.text, textAlign: 'center', marginTop: spacing.lg },
+  statusTitle: { fontSize: textSize.h2, fontWeight: '700', color: colors.text, textAlign: 'center', marginTop: spacing.lg },
   statusMessage: {
-    fontSize: 15,
+    fontSize: textSize.base,
     lineHeight: 22,
     color: colors.textMuted,
     textAlign: 'center',

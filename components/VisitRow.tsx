@@ -5,7 +5,7 @@ import { daysFromToday, formatDay, formatTime } from '@/lib/format';
 import { TFunction, useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Visit } from '@/lib/types';
-import { mono, type } from '@/lib/typography';
+import { mono, textSize, type } from '@/lib/typography';
 import { isOwnLog, LOG_STATUS_LABEL, nextStep, NextStep, VISIT_STATE_LABEL, visitDay, visitState } from '@/lib/visits';
 import { StatusPill } from './StatusPill';
 
@@ -133,8 +133,8 @@ const styles = StyleSheet.create({
   // The date as a tile; today's is navy, the rep app's own colour (not teal, which means "act").
   day: { width: 56, alignItems: 'center', alignSelf: 'flex-start', borderRadius: radius.sm + 2, backgroundColor: colors.slateSoft, paddingVertical: spacing.sm },
   dayToday: { backgroundColor: colors.navy },
-  dayWeek: { textTransform: 'uppercase', fontSize: 12, fontWeight: '600' },
-  dayNumber: { fontSize: 22, lineHeight: 26, fontWeight: '700', color: colors.text },
+  dayWeek: { textTransform: 'uppercase', fontSize: textSize.xs, fontWeight: '600' },
+  dayNumber: { fontSize: textSize.h3, lineHeight: 26, fontWeight: '700', color: colors.text },
   onNavy: { color: colors.primaryText },
   onNavyMuted: { color: colors.onNavyMuted },
   chevron: { alignSelf: 'center' },
@@ -145,8 +145,8 @@ const styles = StyleSheet.create({
   inDayRule: { borderTopWidth: StyleSheet.hairlineWidth },
   clock: { width: 56, alignSelf: 'flex-start', paddingTop: 1 },
   // Normal face with tabular figures: Android's monospace spaces out the colon ("14 : 30").
-  clockTime: { fontSize: 17, lineHeight: 22, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
-  clockLength: { fontSize: 12, marginTop: 2 },
+  clockTime: { fontSize: textSize.xl, lineHeight: 22, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
+  clockLength: { fontSize: textSize.xs, marginTop: 2 },
   body: { flex: 1, gap: 2 },
   time: { color: colors.text, fontWeight: '600' },
   status: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs, flexWrap: 'wrap' },

@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { useHeaderHeight } from 'expo-router/react-navigation';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { apiFetch, ApiError, errorMessage, rotateSession } from '@/lib/api';
@@ -20,6 +21,8 @@ const MIN_LENGTH = 12;
  * this one, which is stored before anything else happens.
  */
 export default function ChangePasswordScreen() {
+  // The stack header's real height (it grows with large text and differs per platform).
+  const headerHeight = useHeaderHeight();
   const t = useT();
   const { applyRotatedTokens } = useAuth();
   const [current, setCurrent] = useState('');
@@ -30,6 +33,10 @@ export default function ChangePasswordScreen() {
   const [error, setError] = useState<string | null>(null);
   const [wrongCurrent, setWrongCurrent] = useState(false);
   const [done, setDone] = useState(false);
+  // State lags a frame: the keyboard's Go plus a tap must not send twice (the second would fail).
+  const savingRef = useRef(false);
+  const newInput = useRef<TextInput>(null);
+  const confirmInput = useRef<TextInput>(null);
   const paddingBottom = useBottomPadding();
 
   const tooShort = [...next].length < MIN_LENGTH;
@@ -40,7 +47,8 @@ export default function ChangePasswordScreen() {
     setSubmitted(true);
     setError(null);
     setWrongCurrent(false);
-    if (!current || tooShort || mismatch) return;
+    if (!current || tooShort || mismatch || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       // The server revokes every refresh token before answering: a refresh racing this one waits
@@ -62,6 +70,7 @@ export default function ChangePasswordScreen() {
       else if (err instanceof ApiError && err.status === 429) setError(t('common.tooManyAttempts'));
       else setError(isNetworkError(err) ? t('common.needsConnection') : errorMessage(err));
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -84,7 +93,7 @@ export default function ChangePasswordScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={96}>
+    <KeyboardAvoidingView style={screenStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={headerHeight}>
       <ScrollView contentContainerStyle={[screenStyles.content, { paddingBottom }]} keyboardShouldPersistTaps="handled">
         <Text style={[type.secondary, styles.intro]}>{t('password.intro')}</Text>
         <Field
@@ -97,9 +106,13 @@ export default function ChangePasswordScreen() {
           secureTextEntry
           autoComplete="current-password"
           textContentType="password"
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => newInput.current?.focus()}
           error={wrongCurrent ? t('password.wrongCurrent') : submitted && !current ? t('password.currentRequired') : null}
         />
         <Field
+          ref={newInput}
           label={t('password.new')}
           value={next}
           onChangeText={setNext}
@@ -107,9 +120,13 @@ export default function ChangePasswordScreen() {
           autoComplete="new-password"
           textContentType="newPassword"
           hint={t('password.rules', { min: MIN_LENGTH })}
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => confirmInput.current?.focus()}
           error={submitted && tooShort ? t('password.tooShort', { min: MIN_LENGTH }) : null}
         />
         <Field
+          ref={confirmInput}
           label={t('password.confirm')}
           value={confirm}
           onChangeText={setConfirm}

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Redirect, router } from 'expo-router';
 import { ApiError } from '@/lib/api';
 import { SignInResult, useAuth } from '@/lib/auth';
@@ -7,7 +7,7 @@ import { activationCheckout, beginActivation, looksLikeMobile } from '@/lib/onbo
 import { useCooldown } from '@/lib/useCooldown';
 import { useT } from '@/lib/i18n';
 import { colors, spacing } from '@/lib/theme';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { photos } from '@/components/Photo';
 import { Banner, Button } from '@/components/ui';
 import {
@@ -44,6 +44,7 @@ type Failure =
 export default function LoginScreen() {
   const auth = useAuth();
   const t = useT();
+  const passwordInput = useRef<TextInput>(null);
   const [phone, setPhone] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [code, setCode] = useState('');
@@ -356,8 +357,11 @@ export default function LoginScreen() {
         keyboardType="email-address"
         textContentType="username"
         returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => passwordInput.current?.focus()}
       />
       <IconField
+        ref={passwordInput}
         icon="lock-closed-outline"
         label={t('auth.login.password')}
         value={password}
@@ -394,7 +398,7 @@ const styles = StyleSheet.create({
   rule: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
   dividerText: { textAlign: 'center' },
   note: { textAlign: 'center', marginTop: spacing.md },
-  codeError: { color: colors.danger, fontSize: 14, textAlign: 'center', marginTop: -spacing.sm, marginBottom: spacing.sm },
+  codeError: { color: colors.danger, fontSize: textSize.md, textAlign: 'center', marginTop: -spacing.sm, marginBottom: spacing.sm },
   centerLink: { alignSelf: 'center', marginTop: spacing.md },
   noText: { textAlign: 'center', marginTop: spacing.lg },
   footer: {

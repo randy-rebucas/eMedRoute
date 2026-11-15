@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { Alert, BackHandler, StyleSheet, Text, View } from 'react-native';
+import { Alert, BackHandler, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Redirect, router, useFocusEffect } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { ApiError } from '@/lib/api';
@@ -22,7 +22,7 @@ import {
 } from '@/lib/onboarding';
 import { colors, spacing } from '@/lib/theme';
 import { useCooldown } from '@/lib/useCooldown';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { photos } from '@/components/Photo';
 import { Banner, Button } from '@/components/ui';
 import { TurnstileCheck, type TurnstileState } from '@/components/TurnstileCheck';
@@ -75,6 +75,13 @@ export default function RegisterScreen() {
   const [cooldown, startCooldown] = useCooldown();
   // A keyboard "Go", the button and the sixth digit can all fire before `busy` re-renders.
   const inFlight = useRef(false);
+  // Next on the keyboard moves down the form.
+  const confirmInput = useRef<TextInput>(null);
+  const lastNameInput = useRef<TextInput>(null);
+  const companyInput = useRef<TextInput>(null);
+  const territoryInput = useRef<TextInput>(null);
+  const emailInput = useRef<TextInput>(null);
+  const phoneInput = useRef<TextInput>(null);
 
   const describe = useCallback(
     (err: unknown): string => {
@@ -372,8 +379,11 @@ export default function RegisterScreen() {
           autoComplete="new-password"
           textContentType="newPassword"
           returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => confirmInput.current?.focus()}
         />
         <IconField
+          ref={confirmInput}
           icon="lock-closed-outline"
           label={t('onboarding.password.confirm')}
           value={confirm}
@@ -428,10 +438,14 @@ export default function RegisterScreen() {
             textContentType="givenName"
             autoCapitalize="words"
             maxLength={100}
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => lastNameInput.current?.focus()}
           />
         </View>
         <View style={styles.half}>
           <IconField
+            ref={lastNameInput}
             icon="person-outline"
             label={t('onboarding.details.lastName')}
             value={details.lastName}
@@ -441,10 +455,14 @@ export default function RegisterScreen() {
             textContentType="familyName"
             autoCapitalize="words"
             maxLength={100}
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => companyInput.current?.focus()}
           />
         </View>
       </View>
       <IconField
+        ref={companyInput}
         icon="business-outline"
         label={t('onboarding.details.company')}
         value={details.company}
@@ -454,16 +472,24 @@ export default function RegisterScreen() {
         textContentType="organizationName"
         autoCapitalize="words"
         maxLength={200}
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => territoryInput.current?.focus()}
       />
       <IconField
+        ref={territoryInput}
         icon="map-outline"
         label={t('onboarding.details.territory')}
         value={details.territory}
         onChangeText={set('territory')}
         autoCapitalize="words"
         maxLength={200}
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => emailInput.current?.focus()}
       />
       <IconField
+        ref={emailInput}
         icon="mail-outline"
         label={t('onboarding.details.email')}
         value={details.email}
@@ -475,8 +501,12 @@ export default function RegisterScreen() {
         keyboardType="email-address"
         textContentType="emailAddress"
         maxLength={254}
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => phoneInput.current?.focus()}
       />
       <IconField
+        ref={phoneInput}
         icon="call-outline"
         label={t('onboarding.details.phone')}
         value={details.phone}
@@ -518,8 +548,8 @@ const styles = StyleSheet.create({
   hintError: { color: colors.danger },
   agree: { marginBottom: spacing.md, lineHeight: 20 },
   inlineLink: { color: colors.primary, fontWeight: '600' },
-  error: { color: colors.danger, fontSize: 14, textAlign: 'center', marginTop: -spacing.sm, marginBottom: spacing.sm },
-  statusError: { color: colors.danger, fontSize: 14, textAlign: 'center', marginTop: spacing.md },
+  error: { color: colors.danger, fontSize: textSize.md, textAlign: 'center', marginTop: -spacing.sm, marginBottom: spacing.sm },
+  statusError: { color: colors.danger, fontSize: textSize.md, textAlign: 'center', marginTop: spacing.md },
   centerLink: { alignSelf: 'center', marginTop: spacing.md },
   footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing.xs },
 });

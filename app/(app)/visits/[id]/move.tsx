@@ -10,22 +10,23 @@ import { useT } from '@/lib/i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing } from '@/lib/theme';
 import { Clinic, Visit } from '@/lib/types';
-import { type } from '@/lib/typography';
+import { textSize, type } from '@/lib/typography';
 import { isNetworkError } from '@/lib/useApiData';
 import { isOpenBooking, useVisit, visitDay } from '@/lib/visits';
 import { TextLink } from '@/components/auth';
 import { DateStrip, SlotGrid } from '@/components/booking';
-import { ErrorState } from '@/components/ErrorState';
+import { ErrorState, NotFoundState } from '@/components/ErrorState';
 import { Banner, Button, LoadingView, screenStyles } from '@/components/ui';
 
 /** Move a clinic booking to another slot. The clinic answers again, so it goes back to Waiting. */
 export default function MoveVisitScreen() {
   const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: visit, loading, error, refresh } = useVisit(id);
-  const { clinic, loading: clinicLoading } = useClinic(visit?.clinicId);
+  const { data: visit, loading, error, refresh, notFound } = useVisit(id);
+  const { clinic, loading: clinicLoading, error: clinicError, refresh: refreshClinic } = useClinic(visit?.clinicId);
 
   if (!visit) {
+    if (notFound) return <NotFoundState />;
     if (loading) return <LoadingView />;
     return <ErrorState message={error ?? t('common.failedToLoad')} onRetry={refresh} />;
   }
@@ -35,6 +36,7 @@ export default function MoveVisitScreen() {
   }
   if (!clinic) {
     if (clinicLoading) return <LoadingView />;
+    if (clinicError) return <ErrorState message={clinicError} onRetry={refreshClinic} />;
     return <ErrorState message={t('booking.goneCantMove')} onRetry={() => router.back()} actionLabel={t('common.goBack')} />;
   }
   return <MoveSheet visit={visit} clinic={clinic} />;
@@ -158,7 +160,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   label: { marginTop: spacing.lg, marginBottom: spacing.sm },
   spinner: { marginVertical: spacing.lg },
-  error: { fontSize: 13, color: colors.danger, marginTop: spacing.xs },
+  error: { fontSize: textSize.sm, color: colors.danger, marginTop: spacing.xs },
   footer: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,

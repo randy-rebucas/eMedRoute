@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { PlainKey, TFunction, useT } from '@/lib/i18n';
 import { colors, radius, spacing } from '@/lib/theme';
 import { ProductExpiry } from '@/lib/types';
-import { mono, type } from '@/lib/typography';
+import { mono, textSize, type } from '@/lib/typography';
 import { IconName } from './ui';
 
 type Bucket = keyof ProductExpiry;
@@ -75,7 +75,7 @@ export function ShelfLifeChart({ expiry, onShowExpiring }: { expiry: ProductExpi
           <>
             <Text style={[type.secondary, styles.readoutText]}>{words(t, sel.key, expiry[sel.key])}</Text>
             {(sel.key === 'expired' || sel.key === 'soon') && expiry[sel.key] > 0 ? (
-              <TouchableOpacity onPress={onShowExpiring} hitSlop={10} accessibilityRole="button">
+              <TouchableOpacity onPress={onShowExpiring} hitSlop={14} accessibilityRole="button">
                 <Text style={styles.readoutAction}>{t('products.shelf.show')}</Text>
               </TouchableOpacity>
             ) : null}
@@ -135,19 +135,19 @@ const styles = StyleSheet.create({
   },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   urgent: { alignItems: 'flex-end' },
-  urgentValue: { fontSize: 22, fontWeight: '700', color: colors.text },
-  urgentLabel: { fontSize: 12, color: colors.textMuted },
+  urgentValue: { fontSize: textSize.h3, fontWeight: '700', color: colors.text },
+  urgentLabel: { fontSize: textSize.xs, color: colors.textMuted },
   readout: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: spacing.sm, minHeight: 20, marginTop: spacing.sm, marginBottom: spacing.sm },
   readoutText: { color: colors.text },
-  readoutAction: { fontSize: 13, fontWeight: '700', color: colors.primaryOnSoft },
+  readoutAction: { fontSize: textSize.sm, fontWeight: '700', color: colors.primaryOnSoft },
   plot: { flexDirection: 'row', gap: 4, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing.sm },
   column: { flex: 1, alignItems: 'center', borderRadius: radius.sm, paddingVertical: spacing.xs, minHeight: 48 },
   columnPicked: { backgroundColor: colors.surfaceMuted },
-  value: { fontSize: 14, fontWeight: '700', color: colors.text },
+  value: { fontSize: textSize.md, fontWeight: '700', color: colors.text },
   barArea: { height: PLOT, justifyContent: 'flex-end', width: '56%', maxWidth: 30, marginTop: 4 },
   bar: { width: '100%', borderTopLeftRadius: 4, borderTopRightRadius: 4 },
   dim: { opacity: 0.35 },
   tick: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: spacing.xs + 2, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 4, alignSelf: 'stretch', justifyContent: 'center' },
-  tickText: { fontSize: 12, color: colors.textMuted },
+  tickText: { fontSize: textSize.xs, color: colors.textMuted },
   tickPicked: { color: colors.text, fontWeight: '700' },
 });
