@@ -2,9 +2,16 @@
 
 ## 1.0.2
 
-Fixes from the 2026-11-15 standards audit: account deletion inside the app, a crash screen and
-crash reports, a not-found screen, an update check, no more duplicate saves after a timeout,
-unsaved-work warnings, double-tap protection, and accessibility and keyboard fixes.
+Fixes from the 2026-11-15 standards audit:
+
+- Account deletion inside the app
+- A crash screen and crash reports
+- A not-found screen
+- An update check
+- No more duplicate saves after a timeout
+- Unsaved-work warnings
+- Double-tap protection
+- Accessibility and keyboard fixes
 
 **Deploy the backend first** (clinic-management `main` with PR #52), then run
 `pnpm prod db:indexes --apply`: the new IdempotencyKey collection needs its unique and expiry
